@@ -1,0 +1,8 @@
+{
+  "name": "Registro de Alterações",
+  "description": "Sistema de Gestão de Alterações Prediais e digitalização de ocorrências para vigilância municipal.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
