@@ -95,8 +95,8 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, collaps
   <button
     onClick={onClick}
     className={`w-full flex items-center p-3 transition-colors duration-200 relative group ${active
-        ? 'bg-brand-600 text-white shadow-md'
-        : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+      ? 'bg-brand-600 text-white shadow-md'
+      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
       } ${collapsed ? 'justify-center' : ''} ${isSubItem ? 'pl-11' : ''}`}
     title={collapsed ? label : ''}
   >
@@ -215,47 +215,86 @@ const IncidentHistory: React.FC<{
 
     return (
       <div className="space-y-4">
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm no-print flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-lg ${filterStatus === 'PENDING' ? 'bg-amber-100 text-amber-600' : 'bg-brand-100 text-brand-600'}`}>
-                {filterStatus === 'PENDING' ? <Clock size={20} /> : <History size={20} />}
-              </div>
-              <div>
-                <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 uppercase leading-none">
-                  {filterStatus === 'PENDING' ? 'Atendimentos Pendentes' : 'Histórico de Atendimentos'}
-                </h2>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                  {filterStatus === 'PENDING' ? 'Aguardando validação ou recebimento' : 'Registros validados e cancelados'}
-                </p>
-              </div>
+        {/* Header Section */}
+        <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm no-print">
+          {/* Title Row */}
+          <div className="flex items-center gap-3 mb-5">
+            <div className={`p-2.5 rounded-xl ${filterStatus === 'PENDING' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+              {filterStatus === 'PENDING' ? <Clock size={22} strokeWidth={2} /> : <History size={22} strokeWidth={2} />}
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-              <div className="relative flex-grow sm:flex-grow-0 sm:w-64">
-                <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-                <input
-                  type="text"
-                  placeholder="Buscar RA, Local, Descrição..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500 dark:text-white transition-all"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-black border transition-colors flex items-center justify-center gap-2 ${showFilters ? 'bg-brand-50 border-brand-200 text-brand-700 dark:bg-brand-900/20' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
-                >
-                  <Filter size={14} /> Filtros
-                </button>
-                {canExport && filterStatus === 'COMPLETED' && (
-                  <button onClick={handleExportPDF} disabled={isExporting} className="flex-1 sm:flex-none px-4 py-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-lg text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all">
-                    {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} PDF
-                  </button>
-                )}
-              </div>
+            <div className="flex-1">
+              <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                {filterStatus === 'PENDING' ? 'Atendimentos Pendentes' : 'Histórico de Atendimentos'}
+              </h2>
+              <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                {filterStatus === 'PENDING' ? 'Aguardando validação ou recebimento' : 'Gestão de registros de atendimento'}
+              </p>
             </div>
           </div>
+
+          {/* Search and Actions Row */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search Input - Full Width */}
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                type="text"
+                placeholder="Buscar por RA, local ou descrição..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 sm:flex-shrink-0">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex-1 sm:flex-none px-4 sm:px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all duration-200 flex items-center justify-center gap-2 ${showFilters
+                  ? 'bg-brand-600 border-brand-600 text-white shadow-lg shadow-brand-500/25'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand-300 hover:text-brand-600 dark:hover:border-brand-600 dark:hover:text-brand-400'
+                  }`}
+              >
+                <Filter size={16} />
+                <span className="hidden sm:inline">Filtros</span>
+              </button>
+              {canExport && filterStatus === 'COMPLETED' && (
+                <button
+                  onClick={handleExportPDF}
+                  disabled={isExporting}
+                  className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 dark:from-slate-700 dark:to-slate-800 dark:hover:from-slate-600 dark:hover:to-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 transition-all duration-200 disabled:opacity-50"
+                >
+                  {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                  <span className="hidden sm:inline">Exportar</span>
+                  <span className="sm:hidden">PDF</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filter Panel */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-top-2">
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Data Inicial</label>
+                <input
+                  type="date"
+                  value={dateStart}
+                  onChange={e => setDateStart(e.target.value)}
+                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Data Final</label>
+                <input
+                  type="date"
+                  value={dateEnd}
+                  onChange={e => setDateEnd(e.target.value)}
+                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+            </div>
+          )}
         </div>
         <div className="grid gap-3">
           {displayIncidents.map(incident => {
@@ -1056,7 +1095,7 @@ export function App() {
       case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} />;
       case 'PENDING_APPROVALS':
         return (
-          <div className="space-y-6 animate-fade-in">
+          <div className="space-y-4 animate-fade-in">
             <div className="animate-in slide-in-from-bottom-2 duration-300">
               {pendingSubTab === 'INCIDENTS' ? (
                 <IncidentHistory
