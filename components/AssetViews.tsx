@@ -8,27 +8,42 @@ const inputClass = "block w-full rounded-md border-slate-300 dark:border-slate-6
 const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px] tracking-wide";
 const selectClass = "block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 uppercase text-xs md:text-sm appearance-none";
 
-const SectionHeader = ({ title, icon, onAdd }: { title: string, icon: React.ReactNode, onAdd: () => void }) => (
-    <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm mb-4">
-        <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 uppercase tracking-tight">
-            {icon} {title}
-        </h2>
-        <button onClick={onAdd} className="w-full md:w-auto bg-blue-900 text-white px-4 py-2 rounded-lg text-xs font-black uppercase hover:bg-blue-800 transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-95">
-            <Plus size={16} /> Novo
-        </button>
+
+const SectionHeader = ({ title, subtitle, icon, onAdd, addLabel, count }: { title: string, subtitle?: string, icon: React.ReactNode, onAdd: () => void, addLabel?: string, count?: number }) => (
+    <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
+                    {icon}
+                </div>
+                <div>
+                    <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                        {title}
+                    </h2>
+                    <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                        {subtitle || (count !== undefined ? `Total: ${count} itens cadastrados` : 'Gestão de cadastros')}
+                    </p>
+                </div>
+            </div>
+            <button onClick={onAdd} className="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95">
+                <Plus size={16} /> {addLabel || 'Novo'}
+            </button>
+        </div>
     </div>
 );
 
 const SearchBar = ({ value, onChange, placeholder }: { value: string, onChange: (v: string) => void, placeholder: string }) => (
-    <div className="relative mb-4">
-        <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
-        <input 
-            type="text" 
-            value={value} 
-            onChange={e => onChange(e.target.value)} 
-            placeholder={placeholder} 
-            className="w-full pl-9 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-white text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-        />
+    <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+                type="text"
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                placeholder={placeholder}
+                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+            />
+        </div>
     </div>
 );
 
@@ -41,14 +56,14 @@ const EmptyState = ({ message }: { message: string }) => (
 
 // --- GENERIC FORM COMPONENT ---
 interface GenericFormProps {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  onSubmit: (e: React.FormEvent) => void;
-  onCancel: () => void;
-  onDelete?: () => void;
-  isEditing: boolean;
-  maxWidth?: string;
+    title: string;
+    icon: React.ReactNode;
+    children: React.ReactNode;
+    onSubmit: (e: React.FormEvent) => void;
+    onCancel: () => void;
+    onDelete?: () => void;
+    isEditing: boolean;
+    maxWidth?: string;
 }
 
 const GenericForm: React.FC<GenericFormProps> = ({ title, icon, children, onSubmit, onCancel, onDelete, isEditing, maxWidth = 'max-w-3xl' }) => (
@@ -88,7 +103,7 @@ export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit
 
     return (
         <div className="animate-fade-in space-y-4">
-            <SectionHeader title="Frota de Veículos" icon={<Car className="text-blue-600" />} onAdd={onAdd} />
+            <SectionHeader title="Frota de Veículos" subtitle={`Total: ${items.length} veículos cadastrados`} icon={<Car size={22} strokeWidth={2} />} onAdd={onAdd} addLabel="Novo Veículo" />
             <SearchBar value={search} onChange={setSearch} placeholder="Buscar por Prefixo, Placa ou Modelo..." />
 
             <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -145,7 +160,7 @@ export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit
                             <h3 className="font-bold text-slate-800 dark:text-slate-100 uppercase text-xs">{i.model}</h3>
                             <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-[10px] text-slate-500 uppercase">{i.fuelType}</span>
-                                <span className="text-[10px] text-slate-400 flex items-center gap-1 font-mono"><Gauge size={10}/> {i.currentKm ? i.currentKm.toLocaleString('pt-BR') : '---'} KM</span>
+                                <span className="text-[10px] text-slate-400 flex items-center gap-1 font-mono"><Gauge size={10} /> {i.currentKm ? i.currentKm.toLocaleString('pt-BR') : '---'} KM</span>
                             </div>
                         </div>
                         <div className="flex gap-2">
@@ -166,29 +181,29 @@ export const VehicleForm: React.FC<any> = ({ initialData, onSave, onCancel, onDe
     const handlePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let value = e.target.value.toUpperCase();
         // Remove tudo que não é letra ou número
-        value = value.replace(/[^A-Z0-9]/g, ''); 
-        
+        value = value.replace(/[^A-Z0-9]/g, '');
+
         if (value.length > 7) value = value.slice(0, 7);
-        
+
         // Aplica a máscara visual AAA-0000 para facilitar
         // Se tiver mais de 3 chars, insere o hífen
         let formatted = value;
         if (value.length > 3) {
             formatted = `${value.slice(0, 3)}-${value.slice(3)}`;
         }
-        
-        setData({...data, plate: formatted});
+
+        setData({ ...data, plate: formatted });
     };
 
     return (
         <GenericForm title={initialData ? 'Editar Veículo' : 'Novo Veículo'} icon={<Car className="w-6 h-6 text-blue-600" />} onSubmit={(e) => { e.preventDefault(); onSave(data); }} onCancel={onCancel} onDelete={() => onDelete(data.id)} isEditing={!!initialData}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
+
                 <div>
                     <label className={labelClass}>Prefixo da Viatura</label>
-                    <input className={inputClass} value={data.prefix} onChange={e => setData({...data, prefix: e.target.value.toUpperCase()})} placeholder="Ex: VTR-01" required />
+                    <input className={inputClass} value={data.prefix} onChange={e => setData({ ...data, prefix: e.target.value.toUpperCase() })} placeholder="Ex: VTR-01" required />
                 </div>
-                
+
                 <div>
                     <label className={labelClass}>Placa</label>
                     <input className={inputClass} value={data.plate} onChange={handlePlateChange} placeholder="AAA-0000" maxLength={8} required />
@@ -196,18 +211,18 @@ export const VehicleForm: React.FC<any> = ({ initialData, onSave, onCancel, onDe
 
                 <div className="md:col-span-2">
                     <label className={labelClass}>Modelo do Veículo</label>
-                    <input className={inputClass} value={data.model} onChange={e => setData({...data, model: e.target.value})} placeholder="Ex: Fiat Toro Freedom 2.0 Diesel" required />
+                    <input className={inputClass} value={data.model} onChange={e => setData({ ...data, model: e.target.value })} placeholder="Ex: Fiat Toro Freedom 2.0 Diesel" required />
                 </div>
 
                 <div>
                     <label className={labelClass}>Número de Frota</label>
-                    <input className={inputClass} value={data.fleetNumber} onChange={e => setData({...data, fleetNumber: e.target.value})} placeholder="001" />
+                    <input className={inputClass} value={data.fleetNumber} onChange={e => setData({ ...data, fleetNumber: e.target.value })} placeholder="001" />
                 </div>
 
                 <div>
                     <label className={labelClass}>Combustível</label>
                     <div className="relative">
-                        <select className={selectClass} value={data.fuelType} onChange={e => setData({...data, fuelType: e.target.value})}>
+                        <select className={selectClass} value={data.fuelType} onChange={e => setData({ ...data, fuelType: e.target.value })}>
                             <option value="">Selecione...</option>
                             <option value="Gasolina">Gasolina</option>
                             <option value="Etanol">Etanol</option>
@@ -222,14 +237,14 @@ export const VehicleForm: React.FC<any> = ({ initialData, onSave, onCancel, onDe
                 <div>
                     <label className={labelClass}>Quilometragem Atual (KM)</label>
                     <div className="relative">
-                        <input type="number" className={inputClass} value={data.currentKm || ''} onChange={e => setData({...data, currentKm: parseInt(e.target.value) || 0})} placeholder="0" min="0" />
+                        <input type="number" className={inputClass} value={data.currentKm || ''} onChange={e => setData({ ...data, currentKm: parseInt(e.target.value) || 0 })} placeholder="0" min="0" />
                         <Gauge className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={16} />
                     </div>
                 </div>
 
                 <div className="md:col-span-2">
                     <label className={labelClass}>Secretaria / Departamento</label>
-                    <input className={inputClass} value={data.department} onChange={e => setData({...data, department: e.target.value})} placeholder="Ex: Secretaria de Segurança Pública" />
+                    <input className={inputClass} value={data.department} onChange={e => setData({ ...data, department: e.target.value })} placeholder="Ex: Secretaria de Segurança Pública" />
                 </div>
             </div>
         </GenericForm>
@@ -244,7 +259,7 @@ export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: 
 
     return (
         <div className="animate-fade-in space-y-4">
-            <SectionHeader title="Coletes Balísticos" icon={<Shield className="text-blue-600" />} onAdd={onAdd} />
+            <SectionHeader title="Coletes Balísticos" subtitle={`Total: ${items.length} coletes cadastrados`} icon={<Shield size={22} strokeWidth={2} />} onAdd={onAdd} addLabel="Novo Colete" />
             <SearchBar value={search} onChange={setSearch} placeholder="Buscar por Número de Série..." />
 
             <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -304,11 +319,11 @@ export const VestForm: React.FC<any> = ({ initialData, onSave, onCancel, onDelet
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className={labelClass}>Número de Série</label>
-                    <input className={inputClass} value={data.number} onChange={e => setData({...data, number: e.target.value})} placeholder="Ex: 12345678" required />
+                    <input className={inputClass} value={data.number} onChange={e => setData({ ...data, number: e.target.value })} placeholder="Ex: 12345678" required />
                 </div>
                 <div>
                     <label className={labelClass}>Tamanho</label>
-                    <select className={selectClass} value={data.size} onChange={e => setData({...data, size: e.target.value})}>
+                    <select className={selectClass} value={data.size} onChange={e => setData({ ...data, size: e.target.value })}>
                         <option>PP</option>
                         <option>P</option>
                         <option>M</option>
@@ -330,7 +345,7 @@ export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r
 
     return (
         <div className="animate-fade-in space-y-4">
-            <SectionHeader title="Rádios HT" icon={<RadioIcon className="text-blue-600" />} onAdd={onAdd} />
+            <SectionHeader title="Rádios HT" subtitle={`Total: ${items.length} rádios cadastrados`} icon={<RadioIcon size={22} strokeWidth={2} />} onAdd={onAdd} addLabel="Novo Rádio" />
             <SearchBar value={search} onChange={setSearch} placeholder="Buscar por Número ou Serial..." />
 
             <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -392,15 +407,15 @@ export const RadioForm: React.FC<any> = ({ initialData, onSave, onCancel, onDele
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className={labelClass}>Identificador (HT)</label>
-                    <input className={inputClass} value={data.number} onChange={e => setData({...data, number: e.target.value})} placeholder="Ex: 05" required />
+                    <input className={inputClass} value={data.number} onChange={e => setData({ ...data, number: e.target.value })} placeholder="Ex: 05" required />
                 </div>
                 <div>
                     <label className={labelClass}>Marca / Modelo</label>
-                    <input className={inputClass} value={data.brand} onChange={e => setData({...data, brand: e.target.value})} placeholder="Ex: Motorola" required />
+                    <input className={inputClass} value={data.brand} onChange={e => setData({ ...data, brand: e.target.value })} placeholder="Ex: Motorola" required />
                 </div>
                 <div className="md:col-span-2">
                     <label className={labelClass}>Número de Série</label>
-                    <input className={inputClass} value={data.serialNumber} onChange={e => setData({...data, serialNumber: e.target.value})} placeholder="SN: 123456" required />
+                    <input className={inputClass} value={data.serialNumber} onChange={e => setData({ ...data, serialNumber: e.target.value })} placeholder="SN: 123456" required />
                 </div>
             </div>
         </GenericForm>
@@ -415,7 +430,7 @@ export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, on
 
     return (
         <div className="animate-fade-in space-y-4">
-            <SectionHeader title="Outros Equipamentos" icon={<Package className="text-blue-600" />} onAdd={onAdd} />
+            <SectionHeader title="Outros Equipamentos" subtitle={`Total: ${items.length} equipamentos cadastrados`} icon={<Package size={22} strokeWidth={2} />} onAdd={onAdd} addLabel="Novo Item" />
             <SearchBar value={search} onChange={setSearch} placeholder="Buscar por Nome..." />
 
             <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -477,15 +492,15 @@ export const EquipmentForm: React.FC<any> = ({ initialData, onSave, onCancel, on
             <div className="space-y-6">
                 <div>
                     <label className={labelClass}>Nome do Item</label>
-                    <input className={inputClass} value={data.name} onChange={e => setData({...data, name: e.target.value})} required placeholder="Ex: Lanterna Tática" />
+                    <input className={inputClass} value={data.name} onChange={e => setData({ ...data, name: e.target.value })} required placeholder="Ex: Lanterna Tática" />
                 </div>
                 <div>
                     <label className={labelClass}>Quantidade</label>
-                    <input type="number" className={inputClass} value={data.quantity} onChange={e => setData({...data, quantity: parseInt(e.target.value) || 0})} required min="0" />
+                    <input type="number" className={inputClass} value={data.quantity} onChange={e => setData({ ...data, quantity: parseInt(e.target.value) || 0 })} required min="0" />
                 </div>
                 <div>
                     <label className={labelClass}>Descrição / Detalhes</label>
-                    <textarea className={`${inputClass} h-24 resize-none`} value={data.description} onChange={e => setData({...data, description: e.target.value})} placeholder="Detalhes adicionais do equipamento..." />
+                    <textarea className={`${inputClass} h-24 resize-none`} value={data.description} onChange={e => setData({ ...data, description: e.target.value })} placeholder="Detalhes adicionais do equipamento..." />
                 </div>
             </div>
         </GenericForm>

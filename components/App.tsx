@@ -343,13 +343,42 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
   const filtered = buildings.filter(b => b.name.toLowerCase().includes(search.toLowerCase()) || b.buildingNumber.toLowerCase().includes(search.toLowerCase()));
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 uppercase"><BuildingIcon size={20} className="text-blue-600" /> Próprios Municipais</h2>
-        {canEdit && <button onClick={onAdd} className="bg-blue-900 text-white px-4 py-2 rounded-lg text-xs font-black uppercase hover:bg-blue-800 flex items-center gap-2 shadow-sm"><Plus size={16} /> Novo Prédio</button>}
+      {/* Header Section */}
+      <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
+              <BuildingIcon size={22} strokeWidth={2} />
+            </div>
+            <div>
+              <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                Próprios Municipais
+              </h2>
+              <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                Total: {buildings.length} prédios cadastrados
+              </p>
+            </div>
+          </div>
+          {canEdit && (
+            <button onClick={onAdd} className="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95">
+              <Plus size={16} /> Novo Prédio
+            </button>
+          )}
+        </div>
       </div>
-      <div className="relative">
-        <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-        <input type="text" placeholder="Buscar prédio..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-blue-500" />
+
+      {/* Search Bar */}
+      <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input
+            type="text"
+            placeholder="Buscar prédio por nome ou número..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+          />
+        </div>
       </div>
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
@@ -423,30 +452,43 @@ const UserList: React.FC<{ users: User[], onEdit: (u: User) => void, onDelete: (
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all">
-        <div>
-          <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-2 uppercase tracking-tight">
-            <Users size={24} className="text-brand-600" /> Gestão de Usuários
-          </h2>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Total: {users.length} Colaboradores</p>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
+              <Users size={22} strokeWidth={2} />
+            </div>
+            <div>
+              <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                Gestão de Usuários
+              </h2>
+              <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                Total: {users.length} Colaboradores
+              </p>
+            </div>
+          </div>
+          {canEdit && (
+            <button onClick={onAdd} className="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95">
+              <Plus size={16} /> Novo Usuário
+            </button>
+          )}
         </div>
-        {canEdit && (
-          <button onClick={onAdd} className="w-full sm:w-auto bg-brand-700 text-white px-6 py-3 rounded-xl text-xs font-black uppercase hover:bg-brand-800 flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20 active:scale-95 transition-all">
-            <Plus size={18} /> Novo Usuário
-          </button>
-        )}
       </div>
 
-      <div className="relative group">
-        <Search className="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-brand-500 transition-colors" size={20} />
-        <input
-          type="text"
-          placeholder="Pesquisar por nome ou matrícula..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full pl-12 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold uppercase outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all shadow-sm"
-        />
+      {/* Search Bar */}
+      <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input
+            type="text"
+            placeholder="Pesquisar por nome ou matrícula..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+          />
+        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
@@ -506,10 +548,27 @@ const UserList: React.FC<{ users: User[], onEdit: (u: User) => void, onDelete: (
 
 const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onDelete: (id: string) => void, onAdd: () => void }> = ({ sectors, onEdit, onDelete, onAdd }) => {
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 uppercase"><Map size={20} className="text-blue-600" /> Setores Operacionais</h2>
-        <button onClick={onAdd} className="bg-blue-900 text-white px-4 py-2 rounded-lg text-xs font-black uppercase hover:bg-blue-800 flex items-center gap-2 shadow-sm"><Plus size={16} /> Novo Setor</button>
+    <div className="space-y-4">
+      {/* Header Section */}
+      <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
+              <Map size={22} strokeWidth={2} />
+            </div>
+            <div>
+              <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                Setores Operacionais
+              </h2>
+              <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                Total: {sectors.length} setores cadastrados
+              </p>
+            </div>
+          </div>
+          <button onClick={onAdd} className="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95">
+            <Plus size={16} /> Novo Setor
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-1 gap-2">
         {sectors.map(s => (
