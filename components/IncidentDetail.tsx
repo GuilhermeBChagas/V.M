@@ -94,7 +94,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                             .no-print { display: none !important; }
                         }
                         body { 
-                            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; 
+                            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; 
                             background: white; 
                             color: black;
                             padding: 0;
@@ -213,7 +213,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
 
             {/* --- ÁREA DE IMPRESSÃO / RELATÓRIO (FOLHA A4) --- */}
             <div className="w-full overflow-x-auto md:overflow-x-visible pb-6">
-                <div ref={contentRef} className={`bg-white text-black shadow-2xl relative flex flex-col mx-auto w-full min-w-[320px] md:max-w-[210mm] min-h-[280mm] p-4 md:p-10 transition-colors ${isCancelled ? 'grayscale opacity-75' : ''}`}>
+                <div ref={contentRef} className={`bg-white text-black shadow-2xl relative flex flex-col mx-auto w-full min-w-[320px] md:max-w-[210mm] min-h-[280mm] p-4 md:p-10 transition-colors ${isCancelled ? 'grayscale opacity-75' : ''}`} style={{ fontFamily: "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif" }}>
 
                     {/* CABEÇALHO - BRASÕES MAIS PRÓXIMOS DAS ESCRITAS */}
                     <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12">
@@ -259,7 +259,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     {/* TÍTULO COM LINHAS LATERAIS */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
                         <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
-                        <h2 style={{ fontSize: '14px', fontWeight: '800', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap' }}>
+                        <h2 style={{ fontSize: '14px', fontWeight: '800', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
                             REGISTRO DE ATENDIMENTO
                         </h2>
                         <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
@@ -274,58 +274,58 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                         {/* LINHA 1: RA e NATUREZA */}
                         <div style={{ display: 'flex', borderBottom: '1px solid #334155' }}>
                             <div style={{ width: '90px', background: '#1e3a5f', padding: '8px 10px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', borderRight: '1px solid #334155' }}>
-                                <span style={{ fontSize: '7px', fontWeight: '600', color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '0.08em' }}>R.A</span>
-                                <span style={{ fontSize: '16px', fontWeight: '800', color: 'white', lineHeight: '1' }}>{incident.raCode}</span>
+                                <span style={{ fontSize: '7px', fontWeight: '600', color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>R.A</span>
+                                <span style={{ fontSize: '16px', fontWeight: '800', color: 'white', lineHeight: '1', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{incident.raCode}</span>
                             </div>
                             <div style={{ flex: '1', padding: '8px 10px', background: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <span style={{ fontSize: '7px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px' }}>NATUREZA</span>
-                                <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', textTransform: 'uppercase' }}>{incident.alterationType}</span>
+                                <span style={{ fontSize: '7px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>NATUREZA</span>
+                                <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', textTransform: 'uppercase', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{incident.alterationType}</span>
                             </div>
                         </div>
 
                         {/* LINHA 2: DATA, HORÁRIOS e LOCAL */}
                         <div style={{ display: 'grid', gridTemplateColumns: '75px 60px 60px 1fr', borderBottom: '1px solid #e2e8f0' }}>
                             <div style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px' }}>DATA</span>
-                                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#0f172a' }}>{new Date(incident.date).toLocaleDateString('pt-BR')}</span>
+                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>DATA</span>
+                                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#0f172a', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{new Date(incident.date).toLocaleDateString('pt-BR')}</span>
                             </div>
                             <div style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px' }}>INÍCIO</span>
-                                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#0f172a' }}>{incident.startTime}</span>
+                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>INÍCIO</span>
+                                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#0f172a', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{incident.startTime}</span>
                             </div>
                             <div style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px' }}>TÉRMINO</span>
-                                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#0f172a' }}>{incident.endTime || '--:--'}</span>
+                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>TÉRMINO</span>
+                                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#0f172a', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{incident.endTime || '--:--'}</span>
                             </div>
                             <div style={{ padding: '5px 8px', background: '#eff6ff' }}>
-                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#1e40af', textTransform: 'uppercase', marginBottom: '1px' }}>LOCAL</span>
-                                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#1e3a5f', textTransform: 'uppercase' }}>{building?.name || '---'}</span>
+                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#1e40af', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>LOCAL</span>
+                                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#1e3a5f', textTransform: 'uppercase', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{building?.name || '---'}</span>
                             </div>
                         </div>
 
                         {/* LINHA 3: ENDEREÇO */}
                         <div style={{ padding: '4px 8px', borderBottom: '1px solid #e2e8f0', background: 'white', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                            <span style={{ fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>ENDEREÇO:</span>
-                            <span style={{ fontSize: '9px', fontWeight: '500', color: '#334155', textTransform: 'uppercase' }}>{building?.address || '---'}</span>
+                            <span style={{ fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>ENDEREÇO:</span>
+                            <span style={{ fontSize: '9px', fontWeight: '500', color: '#334155', textTransform: 'uppercase', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{building?.address || '---'}</span>
                         </div>
 
                         {/* LINHA 4: RESPONSÁVEIS */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 0.7fr', background: '#f8fafc' }}>
                             <div style={{ padding: '4px 8px', borderRight: '1px solid #e2e8f0' }}>
-                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px' }}>RESPONSÁVEL</span>
-                                <span style={{ display: 'block', fontSize: '9px', fontWeight: '600', color: '#0f172a', textTransform: 'uppercase' }}>{building?.managerName || '---'}</span>
+                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>RESPONSÁVEL</span>
+                                <span style={{ display: 'block', fontSize: '9px', fontWeight: '600', color: '#0f172a', textTransform: 'uppercase', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{building?.managerName || '---'}</span>
                             </div>
                             <div style={{ padding: '4px 8px', borderRight: '1px solid #e2e8f0' }}>
-                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px' }}>CONTATO</span>
-                                <span style={{ display: 'block', fontSize: '9px', fontWeight: '600', color: '#0f172a', textTransform: 'uppercase' }}>{building?.managerPhone || '---'}</span>
+                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>CONTATO</span>
+                                <span style={{ display: 'block', fontSize: '9px', fontWeight: '600', color: '#0f172a', textTransform: 'uppercase', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{building?.managerPhone || '---'}</span>
                             </div>
                             <div style={{ padding: '4px 8px', borderRight: '1px solid #e2e8f0' }}>
-                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px' }}>CARGO</span>
-                                <span style={{ display: 'block', fontSize: '9px', fontWeight: '600', color: '#0f172a', textTransform: 'uppercase' }}>---</span>
+                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>CARGO</span>
+                                <span style={{ display: 'block', fontSize: '9px', fontWeight: '600', color: '#0f172a', textTransform: 'uppercase', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>---</span>
                             </div>
                             <div style={{ padding: '4px 8px' }}>
-                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px' }}>DOC</span>
-                                <span style={{ display: 'block', fontSize: '9px', fontWeight: '600', color: '#0f172a', textTransform: 'uppercase' }}>---</span>
+                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>DOC</span>
+                                <span style={{ display: 'block', fontSize: '9px', fontWeight: '600', color: '#0f172a', textTransform: 'uppercase', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>---</span>
                             </div>
                         </div>
                     </div>
@@ -333,13 +333,13 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     {/* TÍTULO DO RELATO */}
                     <div className="text-center mb-4 relative">
                         <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-300"></div></div>
-                        <h3 className="relative bg-white px-6 text-[11px] md:text-[14px] font-black uppercase text-blue-900 inline-block font-serif tracking-[0.3em]">
+                        <h3 className="relative bg-white px-6 text-[11px] md:text-[14px] font-black uppercase text-blue-900 inline-block tracking-[0.3em]" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
                             RELATO
                         </h3>
                     </div>
 
                     {/* CORPO DO TEXTO */}
-                    <div className="text-justify text-[11px] md:text-[13px] leading-relaxed font-serif uppercase mb-8 whitespace-pre-wrap px-2 min-h-[6rem] text-slate-900">
+                    <div className="text-justify text-[11px] md:text-[13px] leading-relaxed uppercase mb-8 whitespace-pre-wrap px-2 min-h-[6rem] text-slate-900" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
                         {incident.description}
                     </div>
 
