@@ -3,10 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { LogsView } from './LogsView';
 import { DatabaseSetup } from './DatabaseSetup';
-import { PermissionsView } from './PermissionsView';
+import { AccessControlView } from './AccessControlView';
 import { ImportExportView } from './ImportExportView';
-import { DashboardLayoutManager } from './DashboardLayoutManager';
-import { SystemLog, SystemPermissionMap, UserPermissionOverrides, User, MenuVisibilityMap } from '../types';
+import { SystemLog, SystemPermissionMap, UserPermissionOverrides, User, MenuVisibilityMap, UserMenuVisibilityOverrides } from '../types';
 import { Settings, Shield, Save, Image as ImageIcon, Loader2, Link as LinkIcon, Database, History, RefreshCw, Key, FileSpreadsheet, Info, Github, GitCommit, Calendar, Tag, FileText, CheckCircle, AlertTriangle, Cloud, ArrowRight, Layout } from 'lucide-react';
 
 // Declaração das variáveis globais injetadas pelo Vite (vite.config.ts)
@@ -32,16 +31,19 @@ interface ToolsViewProps {
     onUpdateOverrides?: (overrides: UserPermissionOverrides) => Promise<void>;
     menuVisibility?: MenuVisibilityMap;
     onUpdateMenuVisibility?: (config: MenuVisibilityMap) => Promise<void>;
+    userMenuOverrides?: UserMenuVisibilityOverrides;
+    onUpdateMenuOverrides?: (config: UserMenuVisibilityOverrides) => Promise<void>;
     users?: User[];
     onLogAction: (action: any, details: string) => void;
 }
 
-type Tab = 'LOGS' | 'APPEARANCE' | 'DATABASE' | 'PERMISSIONS' | 'IMPORT_EXPORT' | 'SYSTEM' | 'LAYOUT_MANAGER';
+type Tab = 'LOGS' | 'APPEARANCE' | 'DATABASE' | 'ACCESS_CONTROL' | 'IMPORT_EXPORT' | 'SYSTEM';
 
 export const ToolsView: React.FC<ToolsViewProps> = ({
     logs, onTestLog, currentLogo, onUpdateLogo, currentLogoLeft, onUpdateLogoLeft, initialTab,
     isLocalMode, onToggleLocalMode, unsyncedCount, onSync, permissions, onUpdatePermissions,
-    userOverrides = {}, onUpdateOverrides, menuVisibility, onUpdateMenuVisibility, users = [], onLogAction
+    userOverrides = {}, onUpdateOverrides, menuVisibility, onUpdateMenuVisibility,
+    userMenuOverrides = {}, onUpdateMenuOverrides, users = [], onLogAction
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>(initialTab || 'APPEARANCE');
 
@@ -164,11 +166,48 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
                     {activeTab === 'LOGS' && <><History className="text-blue-600" /> Auditoria de Atividades</>}
                     {activeTab === 'APPEARANCE' && <><Settings className="text-blue-600" /> Personalização Visual</>}
                     {activeTab === 'DATABASE' && <><Database className="text-blue-600" /> Banco de Dados</>}
-                    {activeTab === 'PERMISSIONS' && <><Key className="text-blue-600" /> Permissões de Acesso</>}
+                    {activeTab === 'ACCESS_CONTROL' && <><Key className="text-blue-600" /> Controle de Acessos</>}
                     {activeTab === 'IMPORT_EXPORT' && <><FileSpreadsheet className="text-emerald-600" /> Dados (Excel)</>}
                     {activeTab === 'SYSTEM' && <><Info className="text-purple-600" /> Sobre o Sistema</>}
-                    {activeTab === 'LAYOUT_MANAGER' && <><Layout className="text-blue-600" /> Layout do Painel</>}
                 </h2>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setActiveTab('LOGS')}
+                        className={`px-4 py-3 text-xs font-bold uppercase transition-all flex items-center gap-2 border-b-2 ${activeTab === 'LOGS' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    >
+                        <History size={16} /> Logs
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('APPEARANCE')}
+                        className={`px-4 py-3 text-xs font-bold uppercase transition-all flex items-center gap-2 border-b-2 ${activeTab === 'APPEARANCE' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    >
+                        <Settings size={16} /> Aparência
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('DATABASE')}
+                        className={`px-4 py-3 text-xs font-bold uppercase transition-all flex items-center gap-2 border-b-2 ${activeTab === 'DATABASE' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    >
+                        <Database size={16} /> Banco de Dados
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('ACCESS_CONTROL')}
+                        className={`px-4 py-3 text-xs font-bold uppercase transition-all flex items-center gap-2 border-b-2 ${activeTab === 'ACCESS_CONTROL' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    >
+                        <Key size={16} /> Controle de Acessos
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('IMPORT_EXPORT')}
+                        className={`px-4 py-3 text-xs font-bold uppercase transition-all flex items-center gap-2 border-b-2 ${activeTab === 'IMPORT_EXPORT' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    >
+                        <FileSpreadsheet size={16} /> Importar/Exportar
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('SYSTEM')}
+                        className={`px-4 py-3 text-xs font-bold uppercase transition-all flex items-center gap-2 border-b-2 ${activeTab === 'SYSTEM' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    >
+                        <Info size={16} /> Sistema
+                    </button>
+                </div>
             </div>
 
             {activeTab === 'LOGS' && (
@@ -189,26 +228,18 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
                 </div>
             )}
 
-            {activeTab === 'PERMISSIONS' && permissions && onUpdatePermissions && onUpdateOverrides && (
-                <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-                    <PermissionsView
-                        currentPermissions={permissions}
-                        userOverrides={userOverrides}
-                        users={users}
-                        onUpdatePermissions={onUpdatePermissions}
-                        onUpdateOverrides={onUpdateOverrides}
-                    />
-                </div>
-            )}
-
-            {activeTab === 'LAYOUT_MANAGER' && menuVisibility && onUpdateMenuVisibility && (
-                <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-                    <DashboardLayoutManager
-                        currentConfig={menuVisibility}
-                        systemPermissions={permissions}
-                        onSave={onUpdateMenuVisibility}
-                    />
-                </div>
+            {activeTab === 'ACCESS_CONTROL' && (
+                <AccessControlView
+                    permissions={permissions || {}}
+                    userOverrides={userOverrides || {}}
+                    menuVisibility={menuVisibility || {}}
+                    userMenuOverrides={userMenuOverrides || {}}
+                    users={users || []}
+                    onUpdatePermissions={async (p) => { if (onUpdatePermissions) await onUpdatePermissions(p); }}
+                    onUpdateOverrides={async (o) => { if (onUpdateOverrides) await onUpdateOverrides(o); }}
+                    onUpdateMenuVisibility={async (c) => { if (onUpdateMenuVisibility) await onUpdateMenuVisibility(c); }}
+                    onUpdateMenuOverrides={async (c) => { if (onUpdateMenuOverrides) await onUpdateMenuOverrides(c); }}
+                />
             )}
 
             {activeTab === 'SYSTEM' && (
@@ -230,9 +261,9 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
                                 onClick={checkForUpdates}
                                 disabled={updateStatus === 'CHECKING'}
                                 className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 shadow-sm transition-all ${updateStatus === 'CHECKING' ? 'bg-slate-100 text-slate-500' :
-                                        updateStatus === 'UP_TO_DATE' ? 'bg-emerald-100 text-emerald-700' :
-                                            updateStatus === 'OUTDATED' ? 'bg-amber-100 text-amber-700' :
-                                                'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                                    updateStatus === 'UP_TO_DATE' ? 'bg-emerald-100 text-emerald-700' :
+                                        updateStatus === 'OUTDATED' ? 'bg-amber-100 text-amber-700' :
+                                            'bg-blue-50 text-blue-700 hover:bg-blue-100'
                                     }`}
                             >
                                 {updateStatus === 'CHECKING' ? <Loader2 size={12} className="animate-spin" /> : <Cloud size={12} />}

@@ -41,6 +41,10 @@ export interface MenuVisibilityMap {
   [role: string]: string[]; // Array de MenuIDs visíveis
 }
 
+export interface UserMenuVisibilityOverrides {
+  [userId: string]: string[]; // Array de MenuIDs visíveis específicos para o usuário
+}
+
 export interface Sector {
   id: string;
   name: string;

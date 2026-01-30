@@ -17,7 +17,7 @@ import { AlterationTypeManager } from './AlterationTypeManager';
 import { ProfileView } from './ProfileView';
 import { VehicleList, VehicleForm, VestList, VestForm, RadioList, RadioForm, EquipmentList, EquipmentForm } from './AssetViews';
 import { LoanViews } from './LoanViews';
-import { User, Building, Incident, ViewState, UserRole, Sector, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides, MenuVisibilityMap } from '../types';
+import { User, Building, Incident, ViewState, UserRole, Sector, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides, MenuVisibilityMap, UserMenuVisibilityOverrides } from '../types';
 import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
@@ -605,6 +605,7 @@ export function App() {
   const [user, setUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<SystemPermissionMap>(DEFAULT_PERMISSIONS);
   const [userOverrides, setUserOverrides] = useState<UserPermissionOverrides>({});
+  const [userMenuOverrides, setUserMenuOverrides] = useState<UserMenuVisibilityOverrides>({});
   const [menuVisibility, setMenuVisibility] = useState<MenuVisibilityMap>({});
   const [view, setView] = useState<ViewState>('DASHBOARD');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -809,9 +810,14 @@ export function App() {
       if (overrideData && overrideData.value) { setUserOverrides(JSON.parse(overrideData.value)); }
       else { setUserOverrides({}); }
 
-      const { data: menuData } = await supabase.from('app_config').select('value').eq('key', 'menu_visibility').single();
-      if (menuData && menuData.value) { setMenuVisibility(JSON.parse(menuData.value)); }
-      else { setMenuVisibility({}); }
+      const { data: mvData } = await supabase.from('app_config').select('value').eq('key', 'menu_visibility').single();
+      if (mvData && mvData.value) setMenuVisibility(JSON.parse(mvData.value));
+      else setMenuVisibility({});
+
+      const { data: umoData } = await supabase.from('app_config').select('value').eq('key', 'user_menu_visibility_overrides').single();
+      if (umoData && umoData.value) setUserMenuOverrides(JSON.parse(umoData.value));
+      else setUserMenuOverrides({});
+
     } catch (e) { setPermissions(DEFAULT_PERMISSIONS); }
   }, []);
 
@@ -839,23 +845,47 @@ export function App() {
       setMenuVisibility(newConfig);
       createLog('MANAGE_SETTINGS', 'Atualizou layout de menus por cargo');
       showAlert('Sucesso', 'Layout atualizado com sucesso.');
-    } catch (e: any) { showError('Erro', e.message); }
+    } catch (e: any) {
+      console.error(e);
+      alert('Erro ao salvar visibilidade do menu.');
+    }
   };
 
+  const handleUpdateMenuOverrides = async (newConfig: UserMenuVisibilityOverrides) => {
+    try {
+      await supabase.from('app_config').upsert({ key: 'user_menu_visibility_overrides', value: JSON.stringify(newConfig) });
+      setUserMenuOverrides(newConfig);
+      await createLog('MANAGE_SETTINGS', 'Atualizou permissões de menu (overrides por usuário)');
+      showAlert('Sucesso', 'Exceções de menu salvas com sucesso.');
+    } catch (e: any) {
+      console.error(e);
+      alert('Erro ao salvar overrides de menu.');
+    }
+  };
+
+  // --- PERMISSION CHECKER ---
   const can = (action: PermissionKey): boolean => {
     if (!user) return false;
+    if (user.role === UserRole.ADMIN) return true; // ADMIN always has full access
 
     // Check for user-specific override first
     const override = userOverrides[user.id]?.[action];
     if (override !== undefined) return override;
 
     // Fallback to role-based permission
-    const allowedRoles = permissions[action] || [];
+    const allowedRoles = permissions[action] || DEFAULT_PERMISSIONS[action] || [];
     return allowedRoles.includes(user.role);
   };
 
   const isMenuVisible = (menuId: string): boolean => {
     if (!user) return false;
+    if (user.role === UserRole.ADMIN) return true; // ADMIN always sees everything
+
+    // Check specific user override first
+    if (userMenuOverrides[user.id]) {
+      return userMenuOverrides[user.id].includes(menuId);
+    }
+
     const roleConfig = menuVisibility[user.role];
     // If no config exists for the role, default to showing everything (permissive by default for easy start)
     if (!roleConfig) return true;
@@ -1231,8 +1261,8 @@ export function App() {
       case 'LOGS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} onLogAction={createLog} initialTab='LOGS' />;
       case 'TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='APPEARANCE' />;
       case 'IMPORT_EXPORT': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='IMPORT_EXPORT' />;
-      case 'PERMISSIONS_TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} initialTab='PERMISSIONS' onLogAction={createLog} permissions={permissions} onUpdatePermissions={handleUpdatePermissions} userOverrides={userOverrides} onUpdateOverrides={handleUpdateOverrides} users={users} />;
-      case 'LAYOUT_MANAGER': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} initialTab='LAYOUT_MANAGER' menuVisibility={menuVisibility} onUpdateMenuVisibility={handleUpdateMenuVisibility} onLogAction={createLog} permissions={permissions} />;
+      case 'PERMISSIONS_TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} initialTab='ACCESS_CONTROL' onLogAction={createLog} permissions={permissions} onUpdatePermissions={handleUpdatePermissions} userOverrides={userOverrides} onUpdateOverrides={handleUpdateOverrides} users={users} menuVisibility={menuVisibility} onUpdateMenuVisibility={handleUpdateMenuVisibility} userMenuOverrides={userMenuOverrides} onUpdateMenuOverrides={handleUpdateMenuOverrides} />;
+      case 'LAYOUT_MANAGER': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} initialTab='ACCESS_CONTROL' menuVisibility={menuVisibility} onUpdateMenuVisibility={handleUpdateMenuVisibility} onLogAction={createLog} permissions={permissions} userMenuOverrides={userMenuOverrides} onUpdateMenuOverrides={handleUpdateMenuOverrides} users={users} onUpdatePermissions={handleUpdatePermissions} userOverrides={userOverrides} onUpdateOverrides={handleUpdateOverrides} />;
       case 'DATABASE_TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} initialTab='DATABASE' onLogAction={createLog} permissions={permissions} onUpdatePermissions={handleUpdatePermissions} />;
       case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} onBack={() => handleNavigate('DASHBOARD')} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} />;
       case 'PROFILE': return <ProfileView user={user!} onUpdatePassword={handleUpdatePassword} />;
