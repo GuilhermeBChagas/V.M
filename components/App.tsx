@@ -20,6 +20,7 @@ import { LoanViews } from './LoanViews';
 import { User, Building, Incident, ViewState, UserRole, Sector, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides, MenuVisibilityMap } from '../types';
 import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
+import { normalizeString } from '../utils/stringUtils';
 
 declare var html2pdf: any;
 declare var XLSX: any;
@@ -186,16 +187,16 @@ const IncidentHistory: React.FC<{
     });
 
     const displayIncidents = sortedIncidents.filter(i => {
-      const searchLower = search.toLowerCase();
+      const searchNorm = normalizeString(search);
       const building = buildings.find(b => b.id === i.buildingId);
-      const buildingName = building?.name.toLowerCase() || '';
-      const buildingNumber = building?.buildingNumber.toLowerCase() || '';
+      const buildingName = normalizeString(building?.name || '');
+      const buildingNumber = normalizeString(building?.buildingNumber || '');
 
       return (
-        (i.raCode?.toLowerCase() || '').includes(searchLower) ||
-        i.description.toLowerCase().includes(searchLower) ||
-        buildingName.includes(searchLower) ||
-        buildingNumber.includes(searchLower)
+        normalizeString(i.raCode || '').includes(searchNorm) ||
+        normalizeString(i.description).includes(searchNorm) ||
+        buildingName.includes(searchNorm) ||
+        buildingNumber.includes(searchNorm)
       );
     });
 
@@ -340,7 +341,7 @@ const IncidentHistory: React.FC<{
 
 const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit: (b: Building) => void, onDelete: (id: string) => void, onAdd: () => void, onRefresh: () => void, canEdit: boolean, canDelete: boolean }> = ({ buildings, onEdit, onAdd, canEdit }) => {
   const [search, setSearch] = useState('');
-  const filtered = buildings.filter(b => b.name.toLowerCase().includes(search.toLowerCase()) || b.buildingNumber.toLowerCase().includes(search.toLowerCase()));
+  const filtered = buildings.filter(b => normalizeString(b.name).includes(normalizeString(search)) || normalizeString(b.buildingNumber).includes(normalizeString(search)));
   return (
     <div className="space-y-4">
       {/* Unified Header Section */}
@@ -432,7 +433,7 @@ const UserList: React.FC<{ users: User[], onEdit: (u: User) => void, onDelete: (
   const [search, setSearch] = useState('');
 
   const filtered = users
-    .filter(u => u.name.toLowerCase().includes(search.toLowerCase()) || u.matricula.toLowerCase().includes(search.toLowerCase()))
+    .filter(u => normalizeString(u.name).includes(normalizeString(search)) || normalizeString(u.matricula).includes(normalizeString(search)))
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const getRoleStyles = (role: UserRole) => {
@@ -546,7 +547,7 @@ const UserList: React.FC<{ users: User[], onEdit: (u: User) => void, onDelete: (
 
 const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onDelete: (id: string) => void, onAdd: () => void }> = ({ sectors, onEdit, onDelete, onAdd }) => {
   const [search, setSearch] = useState('');
-  const filtered = sectors.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = sectors.filter(s => normalizeString(s.name).includes(normalizeString(search)));
 
   return (
     <div className="space-y-4">

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { AlterationType } from '../types';
 import { Tag, Plus, Trash2, X, Save, AlertCircle, Pencil, Search } from 'lucide-react';
+import { normalizeString } from '../utils/stringUtils';
 
 interface AlterationTypeManagerProps {
     types: AlterationType[];
@@ -24,7 +25,7 @@ export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ ty
     };
 
     const [search, setSearch] = useState('');
-    const filteredTypes = types.filter(t => t.name.toLowerCase().includes(search.toLowerCase()));
+    const filteredTypes = types.filter(t => normalizeString(t.name).includes(normalizeString(search)));
 
     return (
         <div className="space-y-4 animate-fade-in pb-10">

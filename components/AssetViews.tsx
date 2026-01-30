@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import { Vehicle, Vest, Radio, Equipment } from '../types';
 import { Plus, Pencil, Trash2, Search, Save, X, Car, Shield, Radio as RadioIcon, Package, Fuel, AlertCircle, Gauge } from 'lucide-react';
+import { normalizeString } from '../utils/stringUtils';
 
 // --- STYLES & UTILS (MATCHING BUILDING FORM) ---
-const inputClass = "block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 uppercase transition-all text-xs md:text-sm";
+const inputClass = "block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm";
 const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px] tracking-wide";
-const selectClass = "block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 uppercase text-xs md:text-sm appearance-none";
+const selectClass = "block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none";
 
 
 // Unified List Header Component - Exactly like IncidentHistory design
@@ -119,7 +120,7 @@ const GenericForm: React.FC<GenericFormProps> = ({ title, icon, children, onSubm
 
 export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit: (v: Vehicle) => void, onDelete: (id: string) => void }> = ({ items, onAdd, onEdit, onDelete }) => {
     const [search, setSearch] = useState('');
-    const filtered = items.filter(i => i.plate.toLowerCase().includes(search.toLowerCase()) || i.prefix.toLowerCase().includes(search.toLowerCase()) || i.model.toLowerCase().includes(search.toLowerCase()));
+    const filtered = items.filter(i => normalizeString(i.plate).includes(normalizeString(search)) || normalizeString(i.prefix).includes(normalizeString(search)) || normalizeString(i.model).includes(normalizeString(search)));
 
     return (
         <div className="animate-fade-in space-y-4">
@@ -283,7 +284,7 @@ export const VehicleForm: React.FC<any> = ({ initialData, onSave, onCancel, onDe
 
 export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: Vest) => void, onDelete: (id: string) => void }> = ({ items, onAdd, onEdit, onDelete }) => {
     const [search, setSearch] = useState('');
-    const filtered = items.filter(i => i.number.toLowerCase().includes(search.toLowerCase()));
+    const filtered = items.filter(i => normalizeString(i.number).includes(normalizeString(search)));
 
     return (
         <div className="animate-fade-in space-y-4">
@@ -377,7 +378,7 @@ export const VestForm: React.FC<any> = ({ initialData, onSave, onCancel, onDelet
 
 export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r: Radio) => void, onDelete: (id: string) => void }> = ({ items, onAdd, onEdit, onDelete }) => {
     const [search, setSearch] = useState('');
-    const filtered = items.filter(i => i.number.toLowerCase().includes(search.toLowerCase()) || i.serialNumber.toLowerCase().includes(search.toLowerCase()));
+    const filtered = items.filter(i => normalizeString(i.number).includes(normalizeString(search)) || normalizeString(i.serialNumber).includes(normalizeString(search)));
 
     return (
         <div className="animate-fade-in space-y-4">
@@ -470,7 +471,7 @@ export const RadioForm: React.FC<any> = ({ initialData, onSave, onCancel, onDele
 
 export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, onEdit: (e: Equipment) => void, onDelete: (id: string) => void }> = ({ items, onAdd, onEdit, onDelete }) => {
     const [search, setSearch] = useState('');
-    const filtered = items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+    const filtered = items.filter(i => normalizeString(i.name).includes(normalizeString(search)));
 
     return (
         <div className="animate-fade-in space-y-4">

@@ -339,7 +339,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     </div>
 
                     {/* CORPO DO TEXTO */}
-                    <div className="text-justify text-[11px] md:text-[13px] leading-relaxed uppercase mb-8 whitespace-pre-wrap px-2 min-h-[6rem] text-slate-900" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+                    <div className="text-justify text-[11px] md:text-[13px] leading-relaxed mb-8 whitespace-pre-wrap px-2 min-h-[6rem] text-slate-900" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
                         {incident.description}
                     </div>
 

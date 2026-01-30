@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Incident, Building, User, AlterationType } from '../types';
 import { Save, X, Clock, MapPin, FileText, Loader2, Search, Users, Navigation, Check, AlertTriangle, Plus, UserPlus, UserMinus, Calendar, ChevronDown, Send, Camera, ImagePlus, Trash2, Zap } from 'lucide-react';
+import { normalizeString } from '../utils/stringUtils';
 
 interface IncidentFormProps {
     user: User;
@@ -147,12 +148,12 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
     };
 
     const filteredBuildings = buildings.filter(b =>
-        b.name.toLowerCase().includes(buildingSearch.toLowerCase()) ||
-        b.buildingNumber.toLowerCase().includes(buildingSearch.toLowerCase())
+        normalizeString(b.name).includes(normalizeString(buildingSearch)) ||
+        normalizeString(b.buildingNumber).includes(normalizeString(buildingSearch))
     );
 
     const filteredUsers = users.filter(u =>
-        u.name.toLowerCase().includes(vigilantSearch.toLowerCase())
+        normalizeString(u.name).includes(normalizeString(vigilantSearch))
     );
 
     const handleAddVigilant = (name: string) => {
@@ -419,7 +420,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                         if (buildingId) setBuildingId('');
                                     }}
                                     onFocus={() => setIsBuildingDropdownOpen(true)}
-                                    className={`w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 rounded-2xl text-sm font-bold uppercase outline-none transition-all ${buildingId ? 'border-emerald-500 focus:border-emerald-600 bg-emerald-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500'}`}
+                                    className={`w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 rounded-2xl text-sm font-semibold outline-none transition-all ${buildingId ? 'border-emerald-500 focus:border-emerald-600 bg-emerald-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500'}`}
                                 />
                             </div>
                             <button
@@ -473,7 +474,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                         setIsVigilantDropdownOpen(true);
                                     }}
                                     onFocus={() => setIsVigilantDropdownOpen(true)}
-                                    className="w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold uppercase outline-none focus:border-blue-500 transition-all"
+                                    className="w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-semibold outline-none focus:border-blue-500 transition-all"
                                 />
                             </div>
                             {isVigilantDropdownOpen && (
@@ -521,7 +522,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                 value={alterationType}
                                 onChange={e => setAlterationType(e.target.value)}
                                 required
-                                className="w-full p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold uppercase outline-none focus:border-blue-500 transition-all appearance-none pr-10"
+                                className="w-full p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-semibold outline-none focus:border-blue-500 transition-all appearance-none pr-10"
                             >
                                 <option value="">SELECIONE O TIPO</option>
                                 {alterationTypes.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
@@ -535,7 +536,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">DATA</label>
                             <div className="relative">
                                 <Calendar className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
-                                <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full pl-11 p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-blue-500 transition-all uppercase" />
+                                <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full pl-11 p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 rounded-2xl text-sm font-semibold outline-none focus:border-blue-500 transition-all" />
                             </div>
                         </div>
                         <div className="space-y-1.5">
@@ -563,8 +564,8 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                         value={description}
                         onChange={e => setDescription(e.target.value)}
                         rows={6}
-                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-3xl text-sm font-medium outline-none focus:border-blue-500 transition-all uppercase resize-none shadow-inner"
-                        placeholder="DESCREVA A ALTERAÇÃO"
+                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-3xl text-sm font-medium outline-none focus:border-blue-500 transition-all resize-none shadow-inner"
+                        placeholder="Descreva a alteração"
                     />
                 </div>
 

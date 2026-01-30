@@ -9,6 +9,7 @@ import {
     AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download
 } from 'lucide-react';
 import { Modal } from './Modal';
+import { normalizeString } from '../utils/stringUtils';
 
 declare var html2pdf: any;
 
@@ -343,8 +344,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         if (filterStatus === 'ACTIVE') return l.status === 'ACTIVE';
         return l.status === 'ACTIVE' || l.status === 'PENDING';
     }).filter(l =>
-        l.receiverName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        l.assetDescription.toLowerCase().includes(searchTerm.toLowerCase())
+        normalizeString(l.receiverName).includes(normalizeString(searchTerm)) ||
+        normalizeString(l.assetDescription).includes(normalizeString(searchTerm))
     ).filter(l => {
         // Date filtering
         const loanDate = new Date(l.checkoutTime);
