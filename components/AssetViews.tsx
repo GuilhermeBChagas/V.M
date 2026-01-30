@@ -9,40 +9,60 @@ const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 m
 const selectClass = "block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 uppercase text-xs md:text-sm appearance-none";
 
 
-const SectionHeader = ({ title, subtitle, icon, onAdd, addLabel, count }: { title: string, subtitle?: string, icon: React.ReactNode, onAdd: () => void, addLabel?: string, count?: number }) => (
-    <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
-                    {icon}
-                </div>
-                <div>
-                    <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
-                        {title}
-                    </h2>
-                    <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
-                        {subtitle || (count !== undefined ? `Total: ${count} itens cadastrados` : 'Gestão de cadastros')}
-                    </p>
-                </div>
-            </div>
-            <button onClick={onAdd} className="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95">
-                <Plus size={16} /> {addLabel || 'Novo'}
-            </button>
-        </div>
-    </div>
-);
+// Unified List Header Component - Exactly like IncidentHistory design
+interface ListHeaderProps {
+    title: string;
+    subtitle: string;
+    icon: React.ReactNode;
+    searchValue: string;
+    onSearchChange: (v: string) => void;
+    searchPlaceholder: string;
+    onAdd?: () => void;
+    addLabel?: string;
+}
 
-const SearchBar = ({ value, onChange, placeholder }: { value: string, onChange: (v: string) => void, placeholder: string }) => (
+const ListHeader: React.FC<ListHeaderProps> = ({
+    title, subtitle, icon, searchValue, onSearchChange, searchPlaceholder, onAdd, addLabel
+}) => (
     <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input
-                type="text"
-                value={value}
-                onChange={e => onChange(e.target.value)}
-                placeholder={placeholder}
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
-            />
+        {/* Title Row */}
+        <div className="flex items-center gap-3 mb-5">
+            <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
+                {icon}
+            </div>
+            <div className="flex-1">
+                <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                    {title}
+                </h2>
+                <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                    {subtitle}
+                </p>
+            </div>
+        </div>
+
+        {/* Search and Actions Row */}
+        <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search Input - Full Width */}
+            <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input
+                    type="text"
+                    placeholder={searchPlaceholder}
+                    value={searchValue}
+                    onChange={e => onSearchChange(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+                />
+            </div>
+
+            {/* Add Button */}
+            {onAdd && (
+                <button
+                    onClick={onAdd}
+                    className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200"
+                >
+                    <Plus size={16} /> <span className="hidden sm:inline">{addLabel || 'Novo'}</span><span className="sm:hidden">+</span>
+                </button>
+            )}
         </div>
     </div>
 );
@@ -103,8 +123,16 @@ export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit
 
     return (
         <div className="animate-fade-in space-y-4">
-            <SectionHeader title="Frota de Veículos" subtitle={`Total: ${items.length} veículos cadastrados`} icon={<Car size={22} strokeWidth={2} />} onAdd={onAdd} addLabel="Novo Veículo" />
-            <SearchBar value={search} onChange={setSearch} placeholder="Buscar por Prefixo, Placa ou Modelo..." />
+            <ListHeader
+                title="Frota de Veículos"
+                subtitle={`Total: ${items.length} veículos cadastrados`}
+                icon={<Car size={22} strokeWidth={2} />}
+                searchValue={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Buscar por Prefixo, Placa ou Modelo..."
+                onAdd={onAdd}
+                addLabel="Novo Veículo"
+            />
 
             <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                 <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
@@ -259,8 +287,16 @@ export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: 
 
     return (
         <div className="animate-fade-in space-y-4">
-            <SectionHeader title="Coletes Balísticos" subtitle={`Total: ${items.length} coletes cadastrados`} icon={<Shield size={22} strokeWidth={2} />} onAdd={onAdd} addLabel="Novo Colete" />
-            <SearchBar value={search} onChange={setSearch} placeholder="Buscar por Número de Série..." />
+            <ListHeader
+                title="Coletes Balísticos"
+                subtitle={`Total: ${items.length} coletes cadastrados`}
+                icon={<Shield size={22} strokeWidth={2} />}
+                searchValue={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Buscar por Número de Série..."
+                onAdd={onAdd}
+                addLabel="Novo Colete"
+            />
 
             <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                 <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
@@ -345,8 +381,16 @@ export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r
 
     return (
         <div className="animate-fade-in space-y-4">
-            <SectionHeader title="Rádios HT" subtitle={`Total: ${items.length} rádios cadastrados`} icon={<RadioIcon size={22} strokeWidth={2} />} onAdd={onAdd} addLabel="Novo Rádio" />
-            <SearchBar value={search} onChange={setSearch} placeholder="Buscar por Número ou Serial..." />
+            <ListHeader
+                title="Rádios HT"
+                subtitle={`Total: ${items.length} rádios cadastrados`}
+                icon={<RadioIcon size={22} strokeWidth={2} />}
+                searchValue={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Buscar por Número ou Serial..."
+                onAdd={onAdd}
+                addLabel="Novo Rádio"
+            />
 
             <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                 <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
@@ -430,8 +474,16 @@ export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, on
 
     return (
         <div className="animate-fade-in space-y-4">
-            <SectionHeader title="Outros Equipamentos" subtitle={`Total: ${items.length} equipamentos cadastrados`} icon={<Package size={22} strokeWidth={2} />} onAdd={onAdd} addLabel="Novo Item" />
-            <SearchBar value={search} onChange={setSearch} placeholder="Buscar por Nome..." />
+            <ListHeader
+                title="Outros Equipamentos"
+                subtitle={`Total: ${items.length} equipamentos cadastrados`}
+                icon={<Package size={22} strokeWidth={2} />}
+                searchValue={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Buscar por Nome..."
+                onAdd={onAdd}
+                addLabel="Novo Item"
+            />
 
             <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                 <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">

@@ -7,7 +7,7 @@ export enum UserRole {
   OUTROS = 'OUTROS'
 }
 
-export type PermissionKey = 
+export type PermissionKey =
   | 'VIEW_DASHBOARD'
   | 'CREATE_INCIDENT'
   | 'VIEW_ALL_INCIDENTS' // Ver histórico completo (não apenas os seus) ou menu Histórico
@@ -98,7 +98,7 @@ export interface Incident {
   photoUrl?: string;
   photos?: string[];
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
-  approvedBy?: string; 
+  approvedBy?: string;
   approvedAt?: string;
   isEdited?: boolean;
   lastEditedAt?: string;
@@ -149,7 +149,7 @@ export interface LoanRecord {
   returnTime?: string;
   status: 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'REJECTED';
   isLocal?: boolean; // Flag para indicar que o dado só existe localmente
-  
+
   // Metadados específicos (JSON no banco)
   meta?: {
     kmStart?: number;
@@ -171,14 +171,14 @@ export interface SystemLog {
   timestamp: string;
 }
 
-export type ViewState = 
-  | 'DASHBOARD' 
-  | 'BUILDINGS' | 'BUILDING_FORM' 
-  | 'USERS' | 'USER_FORM' 
-  | 'SECTORS' | 'SECTOR_FORM' 
-  | 'ALTERATION_TYPES' | 'ALTERATION_TYPE_FORM' 
-  | 'NEW_RECORD' | 'HISTORY' | 'INCIDENT_DETAIL' | 'PENDING_APPROVALS' 
-  | 'CHARTS' | 'LOGS' | 'TOOLS' | 'DATABASE_TOOLS' | 'PERMISSIONS_TOOLS' | 'LAYOUT_MANAGER' | 'PROFILE'
+export type ViewState =
+  | 'DASHBOARD'
+  | 'BUILDINGS' | 'BUILDING_FORM'
+  | 'USERS' | 'USER_FORM'
+  | 'SECTORS' | 'SECTOR_FORM'
+  | 'ALTERATION_TYPES' | 'ALTERATION_TYPE_FORM'
+  | 'NEW_RECORD' | 'HISTORY' | 'INCIDENT_DETAIL' | 'PENDING_APPROVALS'
+  | 'CHARTS' | 'LOGS' | 'TOOLS' | 'DATABASE_TOOLS' | 'PERMISSIONS_TOOLS' | 'LAYOUT_MANAGER' | 'PROFILE' | 'SYSTEM_INFO'
   | 'VEHICLES' | 'VEHICLE_FORM'
   | 'VESTS' | 'VEST_FORM'
   | 'RADIOS' | 'RADIO_FORM'

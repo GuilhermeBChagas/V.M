@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { AlterationType } from '../types';
-import { Tag, Plus, Trash2, X, Save, AlertCircle, Pencil } from 'lucide-react';
+import { Tag, Plus, Trash2, X, Save, AlertCircle, Pencil, Search } from 'lucide-react';
 
 interface AlterationTypeManagerProps {
     types: AlterationType[];
@@ -23,30 +23,46 @@ export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ ty
         }
     };
 
+    const [search, setSearch] = useState('');
+    const filteredTypes = types.filter(t => t.name.toLowerCase().includes(search.toLowerCase()));
+
     return (
         <div className="space-y-4 animate-fade-in pb-10">
-            {/* Header Section */}
+            {/* Unified Header Section */}
             <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
-                            <Tag size={22} strokeWidth={2} />
-                        </div>
-                        <div>
-                            <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
-                                Tipos de Alteração
-                            </h2>
-                            <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
-                                Total: {types.length} tipos cadastrados
-                            </p>
-                        </div>
+                {/* Title Row */}
+                <div className="flex items-center gap-3 mb-5">
+                    <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
+                        <Tag size={22} strokeWidth={2} />
+                    </div>
+                    <div className="flex-1">
+                        <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                            Tipos de Alteração
+                        </h2>
+                        <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                            Total: {types.length} tipos cadastrados
+                        </p>
+                    </div>
+                </div>
+
+                {/* Search and Actions Row */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Buscar tipo de alteração..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+                        />
                     </div>
                     {!isAdding && (
                         <button
                             onClick={() => setIsAdding(true)}
-                            className="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95"
+                            className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200"
                         >
-                            <Plus size={16} /> Nova Alteração
+                            <Plus size={16} /> <span className="hidden sm:inline">Nova Alteração</span><span className="sm:hidden">+</span>
                         </button>
                     )}
                 </div>
@@ -84,8 +100,8 @@ export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ ty
             )}
 
             <div className="grid grid-cols-1 gap-2">
-                {types.length > 0 ? (
-                    types.map((t) => (
+                {filteredTypes.length > 0 ? (
+                    filteredTypes.map((t) => (
                         <div
                             key={t.id}
                             className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group transition-all"
