@@ -166,6 +166,17 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
         setVigilantsList(vigilantsList.filter(v => v !== name));
     };
 
+    const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string) => void) => {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 4) value = value.slice(0, 4);
+
+        if (value.length >= 3) {
+            value = value.slice(0, 2) + ':' + value.slice(2);
+        }
+
+        setter(value);
+    };
+
     // --- Image Handling ---
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -490,14 +501,32 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">HORA INICIAL</label>
                             <div className="relative">
                                 <Clock className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
-                                <input type="time" required value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full pl-11 p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-blue-500" />
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={5}
+                                    placeholder="HH:MM"
+                                    required
+                                    value={startTime}
+                                    onChange={e => handleTimeChange(e, setStartTime)}
+                                    className="w-full pl-11 p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-blue-500"
+                                />
                             </div>
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">HORA FINAL</label>
                             <div className="relative">
                                 <Clock className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
-                                <input type="time" required value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full pl-11 p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-blue-500" />
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={5}
+                                    placeholder="HH:MM"
+                                    required
+                                    value={endTime}
+                                    onChange={e => handleTimeChange(e, setEndTime)}
+                                    className="w-full pl-11 p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-blue-500"
+                                />
                             </div>
                         </div>
                     </div>
