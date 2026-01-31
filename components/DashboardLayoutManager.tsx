@@ -40,24 +40,24 @@ export const MENU_STRUCTURE: MenuItemDef[] = [
   { id: 'loans_root', label: 'Cautelas (Menu Principal)' },
   {
     id: 'monitoring_group', label: 'Monitoramento', children: [
-      { 
+      {
         id: 'history_root', label: 'Históricos', children: [
           { id: 'history_incidents', label: 'Atendimentos' },
           { id: 'history_loans', label: 'Cautelas' }
-        ] 
+        ]
       },
-      { 
+      {
         id: 'pending_root', label: 'Pendentes', children: [
           { id: 'pending_incidents', label: 'Atendimentos' },
           { id: 'pending_loans', label: 'Cautelas' }
-        ] 
+        ]
       },
       { id: 'charts', label: 'Estatísticas' }
     ]
   },
   {
     id: 'admin_group', label: 'Administração', children: [
-      { 
+      {
         id: 'registrations_root', label: 'Cadastros', children: [
           { id: 'reg_buildings', label: 'Próprios' },
           { id: 'reg_types', label: 'Tipos de Alteração' },
@@ -87,7 +87,7 @@ interface DashboardLayoutManagerProps {
 }
 
 export const DashboardLayoutManager: React.FC<DashboardLayoutManagerProps> = ({ currentConfig, systemPermissions, onSave }) => {
-  const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.OPERATOR);
+  const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.OPERADOR);
   const [localConfig, setLocalConfig] = useState<MenuVisibilityMap>(currentConfig);
   const [saving, setSaving] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>(['monitoring_group', 'admin_group', 'history_root', 'pending_root', 'registrations_root', 'tools_root']);
@@ -97,7 +97,7 @@ export const DashboardLayoutManager: React.FC<DashboardLayoutManagerProps> = ({ 
   }, [currentConfig]);
 
   const toggleExpand = (id: string) => {
-    setExpandedItems(prev => 
+    setExpandedItems(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -105,30 +105,30 @@ export const DashboardLayoutManager: React.FC<DashboardLayoutManagerProps> = ({ 
   const isVisible = (role: UserRole, id: string) => {
     const roleConfig = localConfig[role];
     // Se não houver configuração, assume visível por padrão para evitar bloqueios acidentais em novos cargos
-    if (!roleConfig) return true; 
+    if (!roleConfig) return true;
     return roleConfig.includes(id);
   };
 
   // Verifica se o cargo tem a permissão técnica necessária no SystemPermissionMap
   const hasTechnicalPermission = (role: UserRole, menuId: string): { hasAccess: boolean, missingPermissions: string[] } => {
     if (!systemPermissions) return { hasAccess: true, missingPermissions: [] };
-    
+
     const requiredKeys = MENU_PERMISSION_REQ[menuId];
     if (!requiredKeys || requiredKeys.length === 0) return { hasAccess: true, missingPermissions: [] };
 
     // Verifica se o cargo tem PELO MENOS UMA das permissões necessárias (OR logic)
     // Para menus que requerem múltiplas permissões ESTRITAS, a lógica precisaria ser ajustada, 
     // mas aqui assumimos que se o menu leva a uma tela, basta ter acesso a essa tela.
-    
+
     // Check if user has ANY of the required permissions
     const hasAccess = requiredKeys.some(key => {
-        const rolesWithPermission = systemPermissions[key] || [];
-        return rolesWithPermission.includes(role);
+      const rolesWithPermission = systemPermissions[key] || [];
+      return rolesWithPermission.includes(role);
     });
 
-    return { 
-        hasAccess, 
-        missingPermissions: hasAccess ? [] : requiredKeys 
+    return {
+      hasAccess,
+      missingPermissions: hasAccess ? [] : requiredKeys
     };
   };
 
@@ -172,9 +172,9 @@ export const DashboardLayoutManager: React.FC<DashboardLayoutManagerProps> = ({ 
   const handleToggle = (id: string) => {
     setLocalConfig(prev => {
       // Se a config for undefined, inicializa com todos os IDs para garantir comportamento seguro
-      const currentRoleConfig = prev[selectedRole] || getAllIds(MENU_STRUCTURE); 
+      const currentRoleConfig = prev[selectedRole] || getAllIds(MENU_STRUCTURE);
       const isCurrentlyVisible = currentRoleConfig.includes(id);
-      
+
       let newRoleConfig = [...currentRoleConfig];
 
       if (isCurrentlyVisible) {
@@ -186,16 +186,16 @@ export const DashboardLayoutManager: React.FC<DashboardLayoutManagerProps> = ({ 
         // ATIVAR: Adiciona o item E todos os seus ancestrais (pais, avôs, etc.)
         // Isso garante que se eu ativar 'history_incidents', o 'history_root' E 'monitoring_group' sejam ativados.
         const path = findPathToNode(id, MENU_STRUCTURE, []);
-        
+
         if (path) {
-            path.forEach(pathId => {
-                if (!newRoleConfig.includes(pathId)) {
-                    newRoleConfig.push(pathId);
-                }
-            });
+          path.forEach(pathId => {
+            if (!newRoleConfig.includes(pathId)) {
+              newRoleConfig.push(pathId);
+            }
+          });
         } else {
-            // Fallback simples se não achar o caminho (não deve acontecer)
-            newRoleConfig.push(id);
+          // Fallback simples se não achar o caminho (não deve acontecer)
+          newRoleConfig.push(id);
         }
       }
 
@@ -215,41 +215,41 @@ export const DashboardLayoutManager: React.FC<DashboardLayoutManagerProps> = ({ 
 
     return (
       <div key={item.id} className="select-none">
-        <div 
+        <div
           className={`flex items-center justify-between p-3 border-b border-slate-100 dark:border-slate-800 transition-all duration-200 ${actuallyVisible ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 dark:bg-slate-800/40 opacity-70'}`}
           style={{ paddingLeft: `${depth * 24 + 16}px` }}
         >
           <div className="flex items-center gap-3 flex-1 overflow-hidden">
             {hasChildren ? (
-              <button 
-                onClick={(e) => { e.stopPropagation(); toggleExpand(item.id); }} 
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleExpand(item.id); }}
                 className="text-slate-400 hover:text-blue-500 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
               </button>
             ) : (
-                <div className="w-6" /> // Spacer para alinhamento
+              <div className="w-6" /> // Spacer para alinhamento
             )}
-            
+
             <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-2">
-                    <span className={`text-sm font-bold uppercase truncate ${actuallyVisible ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 decoration-slate-400'}`}>
-                        {item.label}
-                    </span>
-                    {hasConflict && (
-                        <div className="group relative flex items-center">
-                            <AlertTriangle size={14} className="text-amber-500 animate-pulse" />
-                            <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 w-48 bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-100 text-[10px] p-2 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 font-bold border border-amber-200 dark:border-amber-800">
-                                Menu visível, mas permissão técnica ausente: {missingPermissions.join(', ')}
-                            </div>
-                        </div>
-                    )}
-                </div>
-                <span className="text-[9px] font-mono text-slate-300 ml-0.5 truncate">{item.id}</span>
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-bold uppercase truncate ${actuallyVisible ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 decoration-slate-400'}`}>
+                  {item.label}
+                </span>
+                {hasConflict && (
+                  <div className="group relative flex items-center">
+                    <AlertTriangle size={14} className="text-amber-500 animate-pulse" />
+                    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 w-48 bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-100 text-[10px] p-2 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 font-bold border border-amber-200 dark:border-amber-800">
+                      Menu visível, mas permissão técnica ausente: {missingPermissions.join(', ')}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <span className="text-[9px] font-mono text-slate-300 ml-0.5 truncate">{item.id}</span>
             </div>
           </div>
 
-          <button 
+          <button
             onClick={() => handleToggle(item.id)}
             disabled={!parentVisible} // Não pode ativar filho se o pai estiver oculto visualmente
             className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${actuallyVisible ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'} ${!parentVisible ? 'cursor-not-allowed opacity-40' : ''}`}
@@ -278,10 +278,10 @@ export const DashboardLayoutManager: React.FC<DashboardLayoutManagerProps> = ({ 
             Defina a visibilidade dos menus para cada perfil.
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3 w-full md:w-auto bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg">
-          <Shield size={16} className="ml-2 text-slate-500"/>
-          <select 
+          <Shield size={16} className="ml-2 text-slate-500" />
+          <select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value as UserRole)}
             className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none uppercase p-1 w-full md:w-48"
@@ -294,21 +294,21 @@ export const DashboardLayoutManager: React.FC<DashboardLayoutManagerProps> = ({ 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800 flex items-start gap-3">
-              <Info className="text-blue-500 mt-0.5 flex-shrink-0" size={18} />
-              <p className="text-xs text-blue-800 dark:text-blue-300 font-medium">
-                  <strong>Nota Técnica:</strong> Ao ativar um item, o sistema ativará automaticamente seus grupos superiores. Desativar um grupo oculta todos os seus itens.
-              </p>
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800 flex items-start gap-3">
+          <Info className="text-blue-500 mt-0.5 flex-shrink-0" size={18} />
+          <p className="text-xs text-blue-800 dark:text-blue-300 font-medium">
+            <strong>Nota Técnica:</strong> Ao ativar um item, o sistema ativará automaticamente seus grupos superiores. Desativar um grupo oculta todos os seus itens.
+          </p>
+        </div>
+
+        {systemPermissions && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-800 flex items-start gap-3">
+            <AlertTriangle className="text-amber-500 mt-0.5 flex-shrink-0" size={18} />
+            <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
+              <strong>Detector de Conflitos:</strong> Ícones de alerta indicarão menus visíveis que o cargo não conseguirá acessar devido à falta de permissões técnicas.
+            </p>
           </div>
-          
-          {systemPermissions && (
-              <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-800 flex items-start gap-3">
-                  <AlertTriangle className="text-amber-500 mt-0.5 flex-shrink-0" size={18} />
-                  <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
-                      <strong>Detector de Conflitos:</strong> Ícones de alerta indicarão menus visíveis que o cargo não conseguirá acessar devido à falta de permissões técnicas.
-                  </p>
-              </div>
-          )}
+        )}
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -318,20 +318,20 @@ export const DashboardLayoutManager: React.FC<DashboardLayoutManagerProps> = ({ 
             Editando: {selectedRole}
           </span>
         </div>
-        
+
         <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
           {MENU_STRUCTURE.map(item => renderTreeItem(item))}
         </div>
       </div>
 
       <div className="flex justify-end gap-3 sticky bottom-4 z-20">
-        <button 
+        <button
           onClick={() => setLocalConfig(currentConfig)}
           className="px-6 py-3 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-black uppercase hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm"
         >
           <RefreshCw size={16} /> Restaurar
         </button>
-        <button 
+        <button
           onClick={async () => {
             setSaving(true);
             await onSave(localConfig);

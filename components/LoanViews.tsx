@@ -74,9 +74,15 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     // Filter lists for Form
     const availableVehicles = useMemo(() => vehicles.filter(v => !loans.some(l => l.assetId === v.id && (l.status === 'ACTIVE' || l.status === 'PENDING'))), [vehicles, loans]);
 
-    const availableVests = useMemo(() => vests.filter(v => !loans.some(l => l.assetId === v.id && (l.status === 'ACTIVE' || l.status === 'PENDING'))), [vests, loans]);
+    const availableVests = useMemo(() => vests
+        .filter(v => !loans.some(l => l.assetId === v.id && (l.status === 'ACTIVE' || l.status === 'PENDING')))
+        .sort((a, b) => parseInt(a.number) - parseInt(b.number)),
+        [vests, loans]);
 
-    const availableRadios = useMemo(() => radios.filter(r => !loans.some(l => l.assetId === r.id && (l.status === 'ACTIVE' || l.status === 'PENDING'))), [radios, loans]);
+    const availableRadios = useMemo(() => radios
+        .filter(r => !loans.some(l => l.assetId === r.id && (l.status === 'ACTIVE' || l.status === 'PENDING')))
+        .sort((a, b) => parseInt(a.number) - parseInt(b.number)),
+        [radios, loans]);
 
     const handleCreateLoan = async () => {
         if (!receiverId || selectedAssets.length === 0) return alert("Selecione um recebedor e ao menos um item.");
@@ -615,7 +621,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                         <button
                             onClick={() => { setActiveTab('ACTIVE'); }}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 border-2 ${activeTab === 'ACTIVE'
+                            className={`flex-1 justify-center px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 border-2 ${activeTab === 'ACTIVE'
                                 ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/25'
                                 : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-blue-300 hover:text-blue-600'
                                 }`}
@@ -624,7 +630,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                         </button>
                         <button
                             onClick={() => setActiveTab('NEW')}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 border-2 flex items-center gap-1.5 ${activeTab === 'NEW'
+                            className={`flex-1 justify-center px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 border-2 flex items-center gap-1.5 ${activeTab === 'NEW'
                                 ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/25'
                                 : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-blue-300 hover:text-blue-600'
                                 }`}
@@ -697,110 +703,118 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                 <Package size={16} className="text-blue-500" /> 2. Selecione os Itens
                             </h3>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto p-1">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-1">
                                 {/* Vehicles */}
-                                {availableVehicles.length > 0 && (
-                                    <div className="col-span-full">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Veículos Disponíveis</p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                            {availableVehicles.map(v => (
-                                                <div
-                                                    key={v.id}
-                                                    onClick={() => toggleAsset('VEHICLE', v.id)}
-                                                    className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3 ${selectedAssets.some(a => a.id === v.id) ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/30 dark:border-blue-500' : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700 hover:border-blue-300'}`}
-                                                >
-                                                    <Car size={16} className="text-slate-500" />
-                                                    <div>
-                                                        <p className="text-xs font-bold uppercase">{v.model}</p>
-                                                        <p className="text-[10px] text-slate-500">{v.plate} - {v.prefix}</p>
-                                                    </div>
-                                                    {selectedAssets.some(a => a.id === v.id) && <CheckCircle size={16} className="ml-auto text-blue-600" />}
-                                                </div>
-                                            ))}
-                                        </div>
+                                <div className={`flex flex-col gap-3 p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 shadow-sm ${availableVehicles.length === 0 ? 'opacity-50' : ''}`}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="h-4 w-1 bg-blue-500 rounded-full"></div>
+                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Veículos</p>
                                     </div>
-                                )}
+                                    <div className="flex flex-col gap-2">
+                                        {availableVehicles.map(v => (
+                                            <div
+                                                key={v.id}
+                                                onClick={() => toggleAsset('VEHICLE', v.id)}
+                                                className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${selectedAssets.some(a => a.id === v.id) ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700 hover:border-blue-400'}`}
+                                            >
+                                                <Car size={14} className={selectedAssets.some(a => a.id === v.id) ? 'text-white' : 'text-slate-400'} />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-[11px] font-black uppercase truncate leading-none">{v.model}</p>
+                                                    <p className={`text-[9px] uppercase mt-1 ${selectedAssets.some(a => a.id === v.id) ? 'text-blue-100' : 'text-slate-500'}`}>{v.plate} • {v.prefix}</p>
+                                                </div>
+                                                {selectedAssets.some(a => a.id === v.id) && <CheckCircle size={14} className="text-white" />}
+                                            </div>
+                                        ))}
+                                        {availableVehicles.length === 0 && <p className="text-[9px] font-bold text-slate-400 uppercase text-center py-4 italic">Nenhum disponível</p>}
+                                    </div>
+                                </div>
+
+                                {/* Vests (Coletes) */}
+                                <div className={`flex flex-col gap-3 p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 shadow-sm ${availableVests.length === 0 ? 'opacity-50' : ''}`}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="h-4 w-1 bg-emerald-500 rounded-full"></div>
+                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Coletes</p>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        {availableVests.map(v => (
+                                            <div
+                                                key={v.id}
+                                                onClick={() => toggleAsset('VEST', v.id)}
+                                                className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${selectedAssets.some(a => a.id === v.id) ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700 hover:border-emerald-400'}`}
+                                            >
+                                                <Shield size={14} className={selectedAssets.some(a => a.id === v.id) ? 'text-white' : 'text-slate-400'} />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-[11px] font-black uppercase truncate leading-none">Nº {v.number}</p>
+                                                    <p className={`text-[9px] uppercase mt-1 ${selectedAssets.some(a => a.id === v.id) ? 'text-emerald-100' : 'text-slate-500'}`}>TAM: {v.size}</p>
+                                                </div>
+                                                {selectedAssets.some(a => a.id === v.id) && <CheckCircle size={14} className="text-white" />}
+                                            </div>
+                                        ))}
+                                        {availableVests.length === 0 && <p className="text-[9px] font-bold text-slate-400 uppercase text-center py-4 italic">Nenhum disponível</p>}
+                                    </div>
+                                </div>
 
                                 {/* Radios */}
-                                {availableRadios.length > 0 && (
-                                    <div className="col-span-full">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase mb-2 mt-2">Rádios Disponíveis</p>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                                            {availableRadios.map(r => (
-                                                <div
-                                                    key={r.id}
-                                                    onClick={() => toggleAsset('RADIO', r.id)}
-                                                    className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3 ${selectedAssets.some(a => a.id === r.id) ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/30 dark:border-blue-500' : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700 hover:border-blue-300'}`}
-                                                >
-                                                    <RadioIcon size={16} className="text-slate-500" />
-                                                    <div>
-                                                        <p className="text-xs font-bold uppercase">HT {r.number}</p>
-                                                    </div>
-                                                    {selectedAssets.some(a => a.id === r.id) && <CheckCircle size={16} className="ml-auto text-blue-600" />}
-                                                </div>
-                                            ))}
-                                        </div>
+                                <div className={`flex flex-col gap-3 p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 shadow-sm ${availableRadios.length === 0 ? 'opacity-50' : ''}`}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="h-4 w-1 bg-amber-500 rounded-full"></div>
+                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Rádios</p>
                                     </div>
-                                )}
+                                    <div className="flex flex-col gap-2">
+                                        {availableRadios.map(r => (
+                                            <div
+                                                key={r.id}
+                                                onClick={() => toggleAsset('RADIO', r.id)}
+                                                className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${selectedAssets.some(a => a.id === r.id) ? 'bg-amber-600 border-amber-600 text-white shadow-md' : 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700 hover:border-amber-400'}`}
+                                            >
+                                                <RadioIcon size={14} className={selectedAssets.some(a => a.id === r.id) ? 'text-white' : 'text-slate-400'} />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-[11px] font-black uppercase truncate leading-none">HT {r.number}</p>
+                                                </div>
+                                                {selectedAssets.some(a => a.id === r.id) && <CheckCircle size={14} className="text-white" />}
+                                            </div>
+                                        ))}
+                                        {availableRadios.length === 0 && <p className="text-[9px] font-bold text-slate-400 uppercase text-center py-4 italic">Nenhum disponível</p>}
+                                    </div>
+                                </div>
 
-                                {/* Vests */}
-                                {availableVests.length > 0 && (
-                                    <div className="col-span-full">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase mb-2 mt-2">Coletes Disponíveis</p>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                                            {availableVests.map(v => (
-                                                <div
-                                                    key={v.id}
-                                                    onClick={() => toggleAsset('VEST', v.id)}
-                                                    className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3 ${selectedAssets.some(a => a.id === v.id) ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/30 dark:border-blue-500' : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700 hover:border-blue-300'}`}
-                                                >
-                                                    <Shield size={16} className="text-slate-500" />
-                                                    <div>
-                                                        <p className="text-xs font-bold uppercase">Nº {v.number}</p>
-                                                        <p className="text-[10px] text-slate-500">Tam: {v.size}</p>
-                                                    </div>
-                                                    {selectedAssets.some(a => a.id === v.id) && <CheckCircle size={16} className="ml-auto text-blue-600" />}
-                                                </div>
-                                            ))}
-                                        </div>
+                                {/* Equipments (Outros) */}
+                                <div className={`flex flex-col gap-3 p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 shadow-sm ${equipments.length === 0 ? 'opacity-50' : ''}`}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="h-4 w-1 bg-purple-500 rounded-full"></div>
+                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Outros</p>
                                     </div>
-                                )}
-
-                                {/* Equipments */}
-                                {equipments.length > 0 && (
-                                    <div className="col-span-full">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase mb-2 mt-2">Outros Equipamentos</p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                            {equipments.map(e => (
-                                                <div
-                                                    key={e.id}
-                                                    onClick={() => toggleAsset('EQUIPMENT', e.id)}
-                                                    className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3 ${selectedAssets.some(a => a.id === e.id) ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/30 dark:border-blue-500' : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700 hover:border-blue-300'}`}
-                                                >
-                                                    <Package size={16} className="text-slate-500" />
-                                                    <div>
-                                                        <p className="text-xs font-bold uppercase">{e.name}</p>
-                                                    </div>
-                                                    {selectedAssets.some(a => a.id === e.id) && <CheckCircle size={16} className="ml-auto text-blue-600" />}
+                                    <div className="flex flex-col gap-2">
+                                        {equipments.map(e => (
+                                            <div
+                                                key={e.id}
+                                                onClick={() => toggleAsset('EQUIPMENT', e.id)}
+                                                className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${selectedAssets.some(a => a.id === e.id) ? 'bg-purple-600 border-purple-600 text-white shadow-md' : 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700 hover:border-purple-400'}`}
+                                            >
+                                                <Package size={14} className={selectedAssets.some(a => a.id === e.id) ? 'text-white' : 'text-slate-400'} />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-[11px] font-black uppercase truncate leading-none">{e.name}</p>
                                                 </div>
-                                            ))}
-                                        </div>
+                                                {selectedAssets.some(a => a.id === e.id) && <CheckCircle size={14} className="text-white" />}
+                                            </div>
+                                        ))}
+                                        {equipments.length === 0 && <p className="text-[9px] font-bold text-slate-400 uppercase text-center py-4 italic">Nenhum equipamento</p>}
                                     </div>
-                                )}
+                                </div>
                             </div>
                         </div>
 
                         {/* Summary Footer */}
-                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                            <div>
+                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div className="w-full sm:w-auto">
                                 <p className="text-xs font-black uppercase text-slate-500">Itens Selecionados: {selectedAssets.length}</p>
                             </div>
-                            <div className="flex gap-3">
-                                <button onClick={() => { setSelectedAssets([]); setActiveTab('ACTIVE'); }} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:text-slate-700">Cancelar</button>
+                            <div className="flex gap-3 w-full sm:w-auto">
+                                <button onClick={() => { setSelectedAssets([]); setActiveTab('ACTIVE'); }} className="flex-1 sm:flex-none justify-center px-4 py-3 sm:py-2 text-xs font-bold uppercase text-slate-500 hover:text-slate-700 bg-slate-100 dark:bg-slate-800 rounded-lg sm:bg-transparent sm:dark:bg-transparent">Cancelar</button>
                                 <button
                                     onClick={handleCreateLoan}
                                     disabled={isSubmitting || !receiverId || selectedAssets.length === 0}
-                                    className="bg-blue-900 text-white px-6 py-2 rounded-lg text-xs font-black uppercase hover:bg-blue-800 transition-colors flex items-center gap-2 disabled:opacity-50"
+                                    className="flex-1 sm:flex-none justify-center bg-blue-900 text-white px-6 py-3 sm:py-2 rounded-lg text-xs font-black uppercase hover:bg-blue-800 transition-colors flex items-center gap-2 disabled:opacity-50"
                                 >
                                     {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />}
                                     Confirmar Cautela

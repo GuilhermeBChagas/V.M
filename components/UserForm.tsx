@@ -20,7 +20,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
         userCode: '',
         email: '',
         jobTitleId: '',
-        role: UserRole.OPERATOR,
+        role: UserRole.OPERADOR,
         status: 'ACTIVE'
     });
     const [password, setPassword] = useState('');
@@ -194,10 +194,10 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 uppercase text-[10px] font-black tracking-widest">Nível de Permissão</label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                             <div
-                                onClick={() => setFormData({ ...formData, role: UserRole.OPERATOR })}
-                                className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.OPERATOR ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 ring-1 ring-brand-500' : 'border-slate-200 dark:border-slate-700'}`}
+                                onClick={() => setFormData({ ...formData, role: UserRole.OPERADOR })}
+                                className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.OPERADOR ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 ring-1 ring-brand-500' : 'border-slate-200 dark:border-slate-700'}`}
                             >
-                                <UserIcon className={`w-6 h-6 mb-2 ${formData.role === UserRole.OPERATOR ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                                <UserIcon className={`w-6 h-6 mb-2 ${formData.role === UserRole.OPERADOR ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
                                 <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Operador</p>
                             </div>
 

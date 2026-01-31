@@ -45,10 +45,10 @@ const PERMISSION_GROUPS = [
   }
 ];
 
-const ROLES: UserRole[] = [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERATOR, UserRole.RONDA, UserRole.OUTROS];
+const ROLES: UserRole[] = [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA, UserRole.OUTROS];
 
-export const PermissionsView: React.FC<PermissionsViewProps> = ({ 
-  currentPermissions, userOverrides, users, onUpdatePermissions, onUpdateOverrides 
+export const PermissionsView: React.FC<PermissionsViewProps> = ({
+  currentPermissions, userOverrides, users, onUpdatePermissions, onUpdateOverrides
 }) => {
   const [activeTab, setActiveTab] = useState<'ROLES' | 'USERS'>('ROLES');
   const [localPermissions, setLocalPermissions] = useState<SystemPermissionMap>(currentPermissions);
@@ -64,7 +64,7 @@ export const PermissionsView: React.FC<PermissionsViewProps> = ({
 
   const hasChanges = useMemo(() => {
     return JSON.stringify(localPermissions) !== JSON.stringify(currentPermissions) ||
-           JSON.stringify(localOverrides) !== JSON.stringify(userOverrides);
+      JSON.stringify(localOverrides) !== JSON.stringify(userOverrides);
   }, [localPermissions, currentPermissions, localOverrides, userOverrides]);
 
   const toggleRolePermission = (key: string, role: UserRole) => {
@@ -82,7 +82,7 @@ export const PermissionsView: React.FC<PermissionsViewProps> = ({
       const currentOverrideValue = userPrev[key as PermissionKey];
 
       let newOverrideValue: boolean | undefined;
-      
+
       // Lógica de 3 estados: Indefinido (Herda) -> Forçado Sim -> Forçado Não -> Herda
       if (currentOverrideValue === undefined) newOverrideValue = true;
       else if (currentOverrideValue === true) newOverrideValue = false;
@@ -109,8 +109,8 @@ export const PermissionsView: React.FC<PermissionsViewProps> = ({
   };
 
   const filteredUsers = useMemo(() => {
-    return users.filter(u => 
-      u.name.toLowerCase().includes(userSearch.toLowerCase()) || 
+    return users.filter(u =>
+      u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
       u.matricula.toLowerCase().includes(userSearch.toLowerCase())
     ).slice(0, 10);
   }, [users, userSearch]);
@@ -208,9 +208,9 @@ export const PermissionsView: React.FC<PermissionsViewProps> = ({
       <div className="lg:col-span-1 space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-3 text-slate-400" size={16} />
-          <input 
-            type="text" 
-            placeholder="BUSCAR USUÁRIO..." 
+          <input
+            type="text"
+            placeholder="BUSCAR USUÁRIO..."
             value={userSearch}
             onChange={(e) => setUserSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-blue-500"
@@ -218,7 +218,7 @@ export const PermissionsView: React.FC<PermissionsViewProps> = ({
         </div>
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm divide-y dark:divide-slate-800 overflow-hidden max-h-[500px] overflow-y-auto">
           {filteredUsers.map(u => (
-            <button 
+            <button
               key={u.id}
               onClick={() => setSelectedUserId(u.id)}
               className={`w-full flex items-center gap-3 p-4 text-left transition-colors ${selectedUserId === u.id ? 'bg-blue-50 dark:bg-blue-900/20 ring-1 ring-inset ring-blue-500' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
@@ -250,7 +250,7 @@ export const PermissionsView: React.FC<PermissionsViewProps> = ({
                 <p className="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase">{selectedUser.role}</p>
               </div>
             </div>
-            
+
             <div className="divide-y dark:divide-slate-800 max-h-[550px] overflow-y-auto">
               {PERMISSION_GROUPS.map(group => (
                 <div key={group.category} className="bg-slate-50/30 dark:bg-slate-900/30">
@@ -300,13 +300,13 @@ export const PermissionsView: React.FC<PermissionsViewProps> = ({
     <div className="space-y-6">
       {/* TABS SELECTOR */}
       <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-fit shadow-inner">
-        <button 
+        <button
           onClick={() => setActiveTab('ROLES')}
           className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs font-black uppercase flex items-center justify-center gap-2 transition-all ${activeTab === 'ROLES' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
         >
           <Users size={16} /> Por Cargo
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('USERS')}
           className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs font-black uppercase flex items-center justify-center gap-2 transition-all ${activeTab === 'USERS' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
         >
@@ -319,8 +319,8 @@ export const PermissionsView: React.FC<PermissionsViewProps> = ({
         <Info className="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" size={18} />
         <div>
           <p className="text-[11px] font-bold text-blue-800 dark:text-blue-300 leading-normal uppercase">
-            {activeTab === 'ROLES' 
-              ? 'As permissões por cargo definem o comportamento padrão para todos os membros de uma função.' 
+            {activeTab === 'ROLES'
+              ? 'As permissões por cargo definem o comportamento padrão para todos os membros de uma função.'
               : 'As permissões individuais permitem que você adicione ou remova privilégios de um usuário específico, ignorando a herança do cargo.'}
           </p>
         </div>
@@ -340,14 +340,14 @@ export const PermissionsView: React.FC<PermissionsViewProps> = ({
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t dark:border-slate-800 lg:relative lg:bg-transparent lg:border-0 lg:p-0 z-40">
         <div className="max-w-7xl mx-auto flex justify-end gap-3">
           {hasChanges && (
-            <button 
+            <button
               onClick={() => { setLocalPermissions(currentPermissions); setLocalOverrides(userOverrides); }}
               className="px-6 py-3 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-black uppercase hover:bg-slate-50 transition-all flex items-center gap-2"
             >
               <RefreshCw size={16} /> Descartar
             </button>
           )}
-          <button 
+          <button
             onClick={handleSave}
             disabled={saving || !hasChanges}
             className={`px-8 py-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:shadow-none ${hasChanges ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-400'}`}

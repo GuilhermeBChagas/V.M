@@ -103,7 +103,7 @@ export const Auth: React.FC<AuthProps> = ({
          }
       } else {
          if (!regName || !regPassword) { setLoginError("Nome e Senha são obrigatórios."); return; }
-         const newUser: Omit<User, 'id'> = { name: regName, cpf: regCpf, matricula: regMatricula, email: regEmail || '', role: UserRole.OPERATOR, passwordHash: regPassword };
+         const newUser: Omit<User, 'id'> = { name: regName, cpf: regCpf, matricula: regMatricula, email: regEmail || '', role: UserRole.OPERADOR, passwordHash: regPassword };
          onRegister(newUser);
       }
    };

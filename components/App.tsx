@@ -34,16 +34,16 @@ declare const __BUILD_DATE__: string;
 
 // --- CONFIGURAÇÃO PADRÃO DE PERMISSÕES (FALLBACK) ---
 const DEFAULT_PERMISSIONS: SystemPermissionMap = {
-  VIEW_DASHBOARD: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERATOR, UserRole.RONDA, UserRole.OUTROS],
-  CREATE_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERATOR, UserRole.RONDA],
+  VIEW_DASHBOARD: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA, UserRole.OUTROS],
+  CREATE_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA],
   VIEW_ALL_INCIDENTS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   EDIT_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR],
   APPROVE_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR],
   DELETE_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR],
   MANAGE_ASSETS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   DELETE_ASSETS: [UserRole.ADMIN],
-  MANAGE_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERATOR],
-  RETURN_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERATOR],
+  MANAGE_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
+  RETURN_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
   MANAGE_USERS: [UserRole.ADMIN],
   DELETE_USERS: [UserRole.ADMIN],
   MANAGE_BUILDINGS: [UserRole.ADMIN, UserRole.SUPERVISOR],
@@ -595,7 +595,7 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
         return "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-800";
       case UserRole.SUPERVISOR:
         return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800";
-      case UserRole.OPERATOR:
+      case UserRole.OPERADOR:
         return "bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-800";
       case UserRole.RONDA:
         return "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800";
@@ -1551,7 +1551,6 @@ export function App() {
       case 'TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='APPEARANCE' />;
       case 'IMPORT_EXPORT': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='IMPORT_EXPORT' />;
       case 'PERMISSIONS_TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} initialTab='ACCESS_CONTROL' onLogAction={createLog} permissions={permissions} onUpdatePermissions={handleUpdatePermissions} userOverrides={userOverrides} onUpdateOverrides={handleUpdateOverrides} users={users} menuVisibility={menuVisibility} onUpdateMenuVisibility={handleUpdateMenuVisibility} userMenuOverrides={userMenuOverrides} onUpdateMenuOverrides={handleUpdateMenuOverrides} />;
-      case 'LAYOUT_MANAGER': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} initialTab='ACCESS_CONTROL' menuVisibility={menuVisibility} onUpdateMenuVisibility={handleUpdateMenuVisibility} onLogAction={createLog} permissions={permissions} userMenuOverrides={userMenuOverrides} onUpdateMenuOverrides={handleUpdateMenuOverrides} users={users} onUpdatePermissions={handleUpdatePermissions} userOverrides={userOverrides} onUpdateOverrides={handleUpdateOverrides} />;
       case 'DATABASE_TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} initialTab='DATABASE' onLogAction={createLog} permissions={permissions} onUpdatePermissions={handleUpdatePermissions} />;
       case 'SYSTEM_INFO': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='SYSTEM' />;
 
@@ -1688,12 +1687,11 @@ export function App() {
                 )}
                 {can('ACCESS_TOOLS') && isMenuVisible('tools_root') && (
                   <div className="relative">
-                    <NavItem icon={<Wrench />} label="Ferramentas" active={view === 'TOOLS' || view === 'LOGS' || view === 'DATABASE_TOOLS' || view === 'PERMISSIONS_TOOLS' || view === 'IMPORT_EXPORT' || view === 'LAYOUT_MANAGER' || view === 'SYSTEM_INFO'} onClick={() => setToolsMenuOpen(!toolsMenuOpen)} collapsed={isSidebarCollapsed} />
+                    <NavItem icon={<Wrench />} label="Ferramentas" active={view === 'TOOLS' || view === 'LOGS' || view === 'DATABASE_TOOLS' || view === 'PERMISSIONS_TOOLS' || view === 'IMPORT_EXPORT' || view === 'SYSTEM_INFO'} onClick={() => setToolsMenuOpen(!toolsMenuOpen)} collapsed={isSidebarCollapsed} />
                     {!isSidebarCollapsed && <div className="absolute right-3 top-3.5 pointer-events-none text-brand-300">{toolsMenuOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</div>}
                     {toolsMenuOpen && !isSidebarCollapsed && (
                       <div className="space-y-1 mt-1">
                         {isMenuVisible('tool_appearance') && <NavItem label="Aparência" active={view === 'TOOLS'} onClick={() => handleNavigate('TOOLS')} collapsed={isSidebarCollapsed} isSubItem />}
-                        {isMenuVisible('tool_layout') && <NavItem label="Layout do Painel" active={view === 'LAYOUT_MANAGER'} onClick={() => handleNavigate('LAYOUT_MANAGER')} collapsed={isSidebarCollapsed} isSubItem />}
                         {isMenuVisible('tool_import') && <NavItem label="Importação / Exportação" active={view === 'IMPORT_EXPORT'} onClick={() => handleNavigate('IMPORT_EXPORT')} collapsed={isSidebarCollapsed} isSubItem />}
                         {isMenuVisible('tool_permissions') && <NavItem label="Permissões" active={view === 'PERMISSIONS_TOOLS'} onClick={() => handleNavigate('PERMISSIONS_TOOLS')} collapsed={isSidebarCollapsed} isSubItem />}
                         {isMenuVisible('tool_logs') && <NavItem label="Log do sistema" active={view === 'LOGS'} onClick={() => handleNavigate('LOGS')} collapsed={isSidebarCollapsed} isSubItem />}
@@ -1732,7 +1730,7 @@ export function App() {
             <button onClick={() => handleNavigate('PROFILE')} className="flex items-center gap-3 border-l pl-3 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg p-1 transition-colors group">
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-black uppercase text-slate-900 dark:text-slate-100 leading-tight group-hover:text-brand-600 transition-colors">{user.name.split(' ')[0]}</p>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{user.role}</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{user.role === 'OPERADOR' ? 'OPERADOR' : user.role}</p>
               </div>
               <div className="h-10 w-10 bg-brand-900 rounded-full flex items-center justify-center text-white font-bold uppercase border-2 border-white shadow-sm ring-1 ring-brand-100 transition-all">{user.name.charAt(0)}</div>
             </button>

@@ -133,7 +133,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">
-                        Olá, {currentUser.name.split(' ')[0]} 👋
+                        Olá, {currentUser.name.split(' ')[0]}
                     </h1>
                     <p className="text-sm text-slate-500 font-bold uppercase tracking-wider">Bem-vindo ao Painel de Controle</p>
                 </div>

@@ -57,7 +57,7 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
     onUpdatePermissions, onUpdateOverrides, onUpdateMenuVisibility, onUpdateMenuOverrides
 }) => {
     const [mode, setMode] = useState<'ROLES' | 'USERS'>('ROLES');
-    const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.OPERATOR);
+    const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.OPERADOR);
     const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [saving, setSaving] = useState(false);
 
@@ -355,65 +355,65 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
     return (
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col min-h-[600px]">
             {/* Header */}
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="p-4 md:p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50 dark:bg-slate-800/20">
                 <div>
-                    <h2 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight flex items-center gap-2">
-                        <Key className="text-blue-600" /> Controle de Acessos
+                    <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight flex items-center gap-2">
+                        <Key className="text-blue-600" size={20} /> Controle de Acessos
                     </h2>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
-                        Gerencie permissões e visibilidade de layout centralizado
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Configure permissões e visibilidade de menus
                     </p>
                 </div>
 
-                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl w-full md:w-auto">
                     <button
                         onClick={() => setMode('ROLES')}
-                        className={`px-4 py-2 rounded-lg text-xs font-black uppercase flex items-center gap-2 transition-all ${mode === 'ROLES' ? 'bg-white dark:bg-slate-700 shadow text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${mode === 'ROLES' ? 'bg-white dark:bg-slate-700 shadow text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <Shield size={14} /> Por Função (Role)
+                        <Shield size={12} /> Por Função
                     </button>
                     <button
                         onClick={() => setMode('USERS')}
-                        className={`px-4 py-2 rounded-lg text-xs font-black uppercase flex items-center gap-2 transition-all ${mode === 'USERS' ? 'bg-white dark:bg-slate-700 shadow text-purple-600 dark:text-purple-400' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${mode === 'USERS' ? 'bg-white dark:bg-slate-700 shadow text-purple-600 dark:text-purple-400' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <UserCheck size={14} /> Por Usuário Individual
+                        <UserCheck size={12} /> Individual
                     </button>
                 </div>
             </div>
 
             <div className="flex-1 flex flex-col md:flex-row">
                 {/* Sidebar de Seleção */}
-                <div className="w-full md:w-64 bg-slate-50 dark:bg-slate-800/30 border-r border-slate-200 dark:border-slate-700 p-4">
+                <div className="w-full md:w-64 bg-slate-50 dark:bg-slate-800/30 border-r border-slate-200 dark:border-slate-700 p-3 flex flex-col shrink-0">
                     {mode === 'ROLES' ? (
-                        <div className="space-y-2">
-                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Selecione a Função</p>
+                        <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
+                            <p className="col-span-2 md:col-span-1 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Função Base</p>
                             {Object.values(UserRole).map(role => (
                                 <button
                                     key={role}
                                     onClick={() => setSelectedRole(role)}
-                                    className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-between ${selectedRole === role ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                                    className={`text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center justify-between ${selectedRole === role ? 'bg-blue-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'}`}
                                 >
-                                    {role}
-                                    {selectedRole === role && <Check size={14} />}
+                                    {role === 'OPERADOR' ? 'OPERADOR' : role}
+                                    {selectedRole === role && <Check size={12} />}
                                 </button>
                             ))}
                         </div>
                     ) : (
-                        <div className="space-y-4 h-full flex flex-col">
-                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Selecione o Usuário</p>
+                        <div className="space-y-3 h-full flex flex-col">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Pesquisar Usuário</p>
                             <div className="relative">
-                                <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
-                                <input type="text" placeholder="Buscar..." className="w-full pl-9 p-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-purple-500 uppercase" />
+                                <Search className="absolute left-3 top-2.5 text-slate-400" size={12} />
+                                <input type="text" placeholder="Nome ou CPF..." className="w-full pl-9 p-2 text-[10px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-purple-500 uppercase font-bold" />
                             </div>
-                            <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                            <div className="space-y-1.5 pr-1">
                                 {users.map(user => (
                                     <button
                                         key={user.id}
                                         onClick={() => setSelectedUserId(user.id)}
-                                        className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold uppercase transition-all flex flex-col ${selectedUserId === user.id ? 'bg-purple-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'}`}
+                                        className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all flex flex-col ${selectedUserId === user.id ? 'bg-purple-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'}`}
                                     >
                                         <span className="truncate">{user.name}</span>
-                                        <span className={`text-[9px] mt-0.5 ${selectedUserId === user.id ? 'text-purple-200' : 'text-slate-400'}`}>{user.role}</span>
+                                        <span className={`text-[8px] ${selectedUserId === user.id ? 'text-purple-200' : 'text-slate-400'}`}>{user.role === 'OPERADOR' ? 'OPERADOR' : user.role}</span>
                                     </button>
                                 ))}
                             </div>
@@ -422,32 +422,35 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
                 </div>
 
                 {/* Área Principal de Configuração */}
-                <div className="flex-1 p-6 overflow-y-auto max-h-[700px]">
+                <div className="flex-1 p-6">
 
                     {/* Header da Seleção Atual */}
-                    <div className="mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-                        <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
-                            {mode === 'ROLES' ? (
-                                <><Shield className="text-blue-500" /> Configurando: {selectedRole}</>
-                            ) : (
-                                <><UserCheck className="text-purple-500" /> Configurando: {users.find(u => u.id === selectedUserId)?.name || '...'}</>
-                            )}
-                        </h3>
-                        {mode === 'USERS' && (
-                            <div className="flex items-center gap-2 mt-2">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-2 py-0.5 rounded">Cargo Base: {users.find(u => u.id === selectedUserId)?.role}</span>
-                                {localMenuOverrides[selectedUserId] && (
-                                    <button onClick={() => resetUserMenuOverrides(selectedUserId)} className="text-[10px] font-bold text-red-500 uppercase hover:underline flex items-center gap-1">
-                                        <RefreshCw size={10} /> Resetar Menu Personalizado
-                                    </button>
+                    <div className="mb-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <h3 className="text-base font-black text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
+                                {mode === 'ROLES' ? (
+                                    <><Shield className="text-blue-500" size={18} /> Editando: {selectedRole === 'OPERADOR' ? 'OPERADOR' : selectedRole}</>
+                                ) : (
+                                    <><UserCheck className="text-purple-500" size={18} /> Editando: {users.find(u => u.id === selectedUserId)?.name || '...'}</>
                                 )}
-                            </div>
-                        )}
+                            </h3>
+                            {mode === 'USERS' && (
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-[9px] font-black text-slate-500 uppercase bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border dark:border-slate-700">Função Base: {users.find(u => u.id === selectedUserId)?.role === 'OPERADOR' ? 'OPERADOR' : users.find(u => u.id === selectedUserId)?.role}</span>
+                                    {localMenuOverrides[selectedUserId] && (
+                                        <button onClick={() => resetUserMenuOverrides(selectedUserId)} className="text-[9px] font-black text-rose-500 uppercase hover:underline flex items-center gap-1">
+                                            <RefreshCw size={9} /> Resetar Menu
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
                         {isSystemLocked && (
-                            <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center gap-2 animate-in fade-in">
-                                <Lock className="text-amber-500" size={16} />
-                                <p className="text-xs font-black text-amber-700 dark:text-amber-400 uppercase">
-                                    O perfil de Administrador possui acesso total e irrestrito ao sistema.
+                            <div className="p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-2 animate-in fade-in">
+                                <Lock className="text-amber-500" size={14} />
+                                <p className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase">
+                                    Administrador possui acesso total.
                                 </p>
                             </div>
                         )}
@@ -536,7 +539,7 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
                                         {mode === 'ROLES' ? 'Global' : 'Pessoal'}
                                     </span>
                                 </div>
-                                <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
+                                <div>
                                     {renderMenuTree(MENU_STRUCTURE, 0, mode)}
                                 </div>
                             </div>

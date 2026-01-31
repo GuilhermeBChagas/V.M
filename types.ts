@@ -2,7 +2,7 @@
 export enum UserRole {
   ADMIN = 'ADMIN',
   SUPERVISOR = 'SUPERVISOR',
-  OPERATOR = 'OPERATOR',
+  OPERADOR = 'OPERADOR',
   RONDA = 'RONDA',
   OUTROS = 'OUTROS'
 }
@@ -193,7 +193,7 @@ export interface Announcement {
   senderId: string;
   senderName?: string;
   targetType: 'USER' | 'GROUP' | 'BROADCAST';
-  targetId?: string; // Para USER: userId, Para GROUP: string da Role (ADMIN, OPERATOR, etc)
+  targetId?: string; // Para USER: userId, Para GROUP: string da Role (ADMIN, OPERADOR, etc)
   priority: 'INFO' | 'IMPORTANT' | 'URGENT';
   expiresAt?: string;
   isArchived: boolean;
@@ -216,7 +216,7 @@ export type ViewState =
   | 'JOB_TITLES' | 'JOB_TITLE_FORM'
   | 'ALTERATION_TYPES' | 'ALTERATION_TYPE_FORM'
   | 'NEW_RECORD' | 'HISTORY' | 'INCIDENT_DETAIL' | 'PENDING_APPROVALS'
-  | 'CHARTS' | 'LOGS' | 'TOOLS' | 'DATABASE_TOOLS' | 'PERMISSIONS_TOOLS' | 'LAYOUT_MANAGER' | 'PROFILE' | 'SYSTEM_INFO'
+  | 'CHARTS' | 'LOGS' | 'TOOLS' | 'DATABASE_TOOLS' | 'PERMISSIONS_TOOLS' | 'PROFILE' | 'SYSTEM_INFO'
   | 'VEHICLES' | 'VEHICLE_FORM'
   | 'VESTS' | 'VEST_FORM'
   | 'RADIOS' | 'RADIO_FORM'

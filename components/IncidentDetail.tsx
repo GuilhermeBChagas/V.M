@@ -439,7 +439,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                                                 {approverJobTitle ? approverJobTitle :
                                                     approverRole === 'ADMIN' ? 'ADMINISTRADOR' :
                                                         approverRole === 'SUPERVISOR' ? 'SUPERVISOR' :
-                                                            approverRole === 'OPERATOR' ? 'OPERADOR' :
+                                                            approverRole === 'OPERADOR' ? 'OPERADOR' :
                                                                 approverRole === 'RONDA' ? 'RONDA' :
                                                                     'AUTORIDADE VALIDANTE'}
                                             </span>
