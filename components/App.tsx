@@ -1328,7 +1328,19 @@ export function App() {
   const renderContent = () => {
     switch (view) {
       case 'DASHBOARD':
-        return <Dashboard incidents={incidents} buildings={buildings} sectors={sectors} onViewIncident={handleViewIncident} onNavigate={handleNavigate} onRefresh={() => fetchIncidents(false)} onNewIncidentWithBuilding={(bId) => { setPreSelectedBuildingId(bId); setEditingIncident(null); handleNavigate('NEW_RECORD'); }} currentUser={user!} onUnreadChange={fetchAnnouncementsCount} />;
+        return <Dashboard
+          incidents={incidents}
+          buildings={buildings}
+          sectors={sectors}
+          onViewIncident={handleViewIncident}
+          onNavigate={handleNavigate}
+          onRefresh={() => fetchIncidents(false)}
+          onNewIncidentWithBuilding={(bId) => { setPreSelectedBuildingId(bId); setEditingIncident(null); handleNavigate('NEW_RECORD'); }}
+          currentUser={user!}
+          onUnreadChange={fetchAnnouncementsCount}
+          pendingIncidentsCount={pendingIncidentsCount}
+          pendingLoansCount={pendingLoansCount}
+        />;
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
         return <IncidentForm user={user!} users={users} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleNavigate('DASHBOARD'); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} />;
@@ -1407,7 +1419,17 @@ export function App() {
       case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} approverRole={users.find(u => u.name === selectedIncident?.approvedBy)?.role} approverJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.name === selectedIncident?.approvedBy)?.jobTitleId)?.name} onBack={() => handleNavigate('DASHBOARD')} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} currentUser={user!} />;
       case 'ANNOUNCEMENTS': return <AnnouncementManager currentUser={user!} users={users} onAnnouncementCreated={fetchAnnouncementsCount} />;
       case 'PROFILE': return <ProfileView user={user!} onUpdatePassword={handleUpdatePassword} />;
-      default: return <Dashboard incidents={incidents} buildings={buildings} sectors={sectors} onViewIncident={handleViewIncident} onNavigate={handleNavigate} onRefresh={() => fetchIncidents(false)} currentUser={user!} />;
+      default: return <Dashboard
+        incidents={incidents}
+        buildings={buildings}
+        sectors={sectors}
+        onViewIncident={handleViewIncident}
+        onNavigate={handleNavigate}
+        onRefresh={() => fetchIncidents(false)}
+        currentUser={user!}
+        pendingIncidentsCount={pendingIncidentsCount}
+        pendingLoansCount={pendingLoansCount}
+      />;
     }
   };
 

@@ -54,7 +54,7 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ currentUser, onVi
     }
 
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 h-full flex flex-col">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2">
                     <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
@@ -78,7 +78,7 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ currentUser, onVi
                     <p className="text-sm">Nenhum aviso no momento.</p>
                 </div>
             ) : (
-                <div className="space-y-4 overflow-y-auto pr-1 max-h-[500px] custom-scrollbar">
+                <div className="space-y-4">
                     {announcements.slice(0, 5).map(ann => (
                         <AnnouncementCard
                             key={ann.id}
