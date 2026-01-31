@@ -44,14 +44,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ incidents, buildings, sect
         try {
             const today = new Date().toISOString().split('T')[0];
 
-            const [pendingRes, todayRes, approvedRes] = await Promise.all([
+            const [pendingIncidentsRes, pendingLoansRes, todayRes, approvedRes] = await Promise.all([
                 supabase.from('incidents').select('id', { count: 'exact', head: true }).eq('status', 'PENDING'),
+                supabase.from('loan_records').select('id', { count: 'exact', head: true }).eq('status', 'PENDING'),
                 supabase.from('incidents').select('id', { count: 'exact', head: true }).eq('date', today),
                 supabase.from('incidents').select('id', { count: 'exact', head: true }).eq('status', 'APPROVED')
             ]);
 
             setGlobalMetrics({
-                pending: pendingRes.count || 0,
+                pending: (pendingIncidentsRes.count || 0) + (pendingLoansRes.count || 0),
                 today: todayRes.count || 0,
                 approved: approvedRes.count || 0
             });

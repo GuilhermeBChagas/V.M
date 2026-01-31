@@ -1395,8 +1395,14 @@ export function App() {
 
   if (!user) return <Auth onLogin={handleLogin} onRegister={handleRegister} darkMode={darkMode} onToggleDarkMode={() => setDarkMode(!darkMode)} customLogo={customLogoRight} onShowSetup={() => setShowDbSetup(true)} systemVersion={DISPLAY_VERSION} users={users} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} />;
   const pendingIncidentsCount = incidents.filter(i => i.status === 'PENDING').length;
-  // Conta lotes (batches) pendentes para o usuário logado (recebedor)
-  const pendingLoansCount = Array.from(new Set(loans.filter(l => l.status === 'PENDING' && l.receiverId === user.id).map(l => l.batchId))).length;
+  // Conta lotes (batches) pendentes. Supervisores veem tudo, outros veem os seus (como recebedor ou operador)
+  const pendingLoansCount = Array.from(new Set(
+    loans.filter(l => l.status === 'PENDING' && (
+      l.receiverId === user.id ||
+      l.operatorId === user.id ||
+      can('APPROVE_INCIDENT')
+    )).map(l => l.batchId || l.id)
+  )).length;
   // Badge total é a soma
   const totalPendingBadge = pendingIncidentsCount + pendingLoansCount;
 
@@ -1413,8 +1419,17 @@ export function App() {
           </div>
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             {can('VIEW_DASHBOARD') && isMenuVisible('dashboard') && <NavItem icon={<LayoutDashboard />} label="Painel de Controle" active={view === 'DASHBOARD'} onClick={() => handleNavigate('DASHBOARD')} collapsed={isSidebarCollapsed} />}
-            {can('CREATE_INCIDENT') && isMenuVisible('new_record') && <NavItem icon={<FileText />} label="Registar R.A" active={view === 'NEW_RECORD'} onClick={() => { setEditingIncident(null); handleNavigate('NEW_RECORD'); }} collapsed={isSidebarCollapsed} />}
-            {(can('MANAGE_LOANS') || can('RETURN_LOANS')) && isMenuVisible('loans_root') && <NavItem icon={<ArrowRightLeft />} label="Cautelas" active={view === 'LOANS'} onClick={() => handleNavigate('LOANS')} collapsed={isSidebarCollapsed} />}
+            {can('VIEW_DASHBOARD') && isMenuVisible('new_record') && <NavItem icon={<FileText />} label="Registar R.A" active={view === 'NEW_RECORD'} onClick={() => { setEditingIncident(null); handleNavigate('NEW_RECORD'); }} collapsed={isSidebarCollapsed} />}
+            {(can('MANAGE_LOANS') || can('RETURN_LOANS') || loans.some(l => l.receiverId === user.id && l.status === 'ACTIVE')) && isMenuVisible('loans_root') && (
+              <NavItem
+                icon={<ArrowRightLeft />}
+                label="Cautelas"
+                active={view === 'LOANS'}
+                onClick={() => handleNavigate('LOANS')}
+                collapsed={isSidebarCollapsed}
+                badge={pendingLoansCount > 0 ? pendingLoansCount : undefined}
+              />
+            )}
             <div className="pt-4 pb-2 border-t border-brand-800">
               {!isSidebarCollapsed && <p className="px-3 text-[10px] font-bold text-brand-300 mb-2 uppercase tracking-widest">Monitoramento</p>}
               {isMenuVisible('monitoring_group') && (
