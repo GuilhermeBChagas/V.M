@@ -1,16 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, UserRole } from '../types';
-import { Save, X, User as UserIcon, Shield, Trash2, UserCheck, Eye, Activity, Mail, Hash, MoreHorizontal } from 'lucide-react';
+import { User, UserRole, JobTitle } from '../types';
+import { Save, X, User as UserIcon, Shield, Trash2, UserCheck, Eye, Activity, Mail, Hash, MoreHorizontal, Briefcase } from 'lucide-react';
 
 interface UserFormProps {
     initialData?: User | null;
     onSave: (user: User) => void;
     onDelete?: (id: string) => void;
     onCancel: () => void;
+    jobTitles?: JobTitle[];
 }
 
-export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelete, onCancel }) => {
+export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelete, onCancel, jobTitles = [] }) => {
     const [formData, setFormData] = useState<Partial<User>>({
         id: '',
         name: '',
@@ -18,6 +19,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
         matricula: '',
         userCode: '',
         email: '',
+        jobTitleId: '',
         role: UserRole.OPERATOR,
         status: 'ACTIVE'
     });
@@ -39,7 +41,8 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
             setFormData({
                 ...initialData,
                 cpf: initialData.cpf ? maskCPF(initialData.cpf) : '',
-                userCode: initialData.userCode || ''
+                userCode: initialData.userCode || '',
+                jobTitleId: initialData.jobTitleId || ''
             });
         } else {
             setFormData(prev => ({ ...prev, id: Date.now().toString() }));
@@ -71,6 +74,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                 matricula: formData.matricula,
                 userCode: formData.userCode || undefined,
                 email: formData.email || '',
+                jobTitleId: formData.jobTitleId || undefined,
                 role: formData.role as UserRole,
                 status: formData.status as 'ACTIVE' | 'PENDING' | 'BLOCKED',
                 passwordHash: password || undefined
@@ -166,6 +170,27 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                     </div>
 
                     <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex justify-between uppercase text-[10px]">
+                            <span>Cargo / Função</span>
+                            <span className="text-[10px] text-slate-400 uppercase font-black">Opcional</span>
+                        </label>
+                        <div className="relative">
+                            <select
+                                name="jobTitleId"
+                                value={formData.jobTitleId}
+                                onChange={handleChange}
+                                className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 bg-white dark:bg-slate-800 dark:text-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500 appearance-none text-sm pr-10"
+                            >
+                                <option value="">Selecione um Cargo...</option>
+                                {jobTitles.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                            </select>
+                            <Briefcase className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 uppercase text-[10px] font-black tracking-widest">Nível de Permissão</label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                             <div
@@ -232,7 +257,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                         </button>
                     </div>
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 };

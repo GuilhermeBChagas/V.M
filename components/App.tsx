@@ -6,6 +6,7 @@ import { IncidentForm } from './IncidentForm';
 import { BuildingForm } from './BuildingForm';
 import { UserForm } from './UserForm';
 import { SectorForm } from './SectorForm';
+import { JobTitleForm } from './JobTitleForm';
 import { IncidentDetail } from './IncidentDetail';
 import { ChartsView } from './ChartsView';
 import { LogsView } from './LogsView';
@@ -17,8 +18,8 @@ import { AlterationTypeManager } from './AlterationTypeManager';
 import { ProfileView } from './ProfileView';
 import { VehicleList, VehicleForm, VestList, VestForm, RadioList, RadioForm, EquipmentList, EquipmentForm } from './AssetViews';
 import { LoanViews } from './LoanViews';
-import { User, Building, Incident, ViewState, UserRole, Sector, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides, MenuVisibilityMap, UserMenuVisibilityOverrides } from '../types';
-import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet } from 'lucide-react';
+import { User, Building, Incident, ViewState, UserRole, Sector, JobTitle, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides, MenuVisibilityMap, UserMenuVisibilityOverrides } from '../types';
+import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
 
@@ -429,7 +430,7 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
   );
 }
 
-const UserList: React.FC<{ users: User[], onEdit: (u: User) => void, onDelete: (id: string) => void, onAdd: () => void, onRefresh: () => void, canEdit: boolean, canDelete: boolean }> = ({ users, onEdit, onAdd, canEdit }) => {
+const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: User) => void, onDelete: (id: string) => void, onAdd: () => void, onRefresh: () => void, canEdit: boolean, canDelete: boolean }> = ({ users, onEdit, onAdd, canEdit, jobTitles = [] }) => {
   const [search, setSearch] = useState('');
 
   const filtered = users
@@ -515,6 +516,9 @@ const UserList: React.FC<{ users: User[], onEdit: (u: User) => void, onDelete: (
                       <div>
                         <p className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase leading-none group-hover:text-brand-700 dark:group-hover:text-brand-400 transition-colors">{u.name}</p>
                         <p className="text-[10px] text-slate-400 uppercase font-bold mt-1 tracking-wider">Matrícula: {u.matricula}</p>
+                        <p className="text-[9px] text-brand-600 dark:text-brand-400 uppercase font-black tracking-wider mt-0.5">
+                          {jobTitles.find(t => t.id === u.jobTitleId)?.name || ''}
+                        </p>
                       </div>
                     </div>
                   </td>
@@ -540,6 +544,61 @@ const UserList: React.FC<{ users: User[], onEdit: (u: User) => void, onDelete: (
             <p className="text-sm font-black uppercase tracking-widest">Nenhum colaborador encontrado</p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => void, onDelete: (id: string) => void, onAdd: () => void }> = ({ jobTitles, onEdit, onDelete, onAdd }) => {
+  const [search, setSearch] = useState('');
+  const filtered = jobTitles.filter(j => normalizeString(j.name).includes(normalizeString(search)));
+
+  return (
+    <div className="space-y-4">
+      {/* Unified Header Section */}
+      <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        {/* Title Row */}
+        <div className="flex items-center gap-3 mb-5">
+          <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
+            <Briefcase size={22} strokeWidth={2} />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+              Gestão de Cargos
+            </h2>
+            <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+              Total: {jobTitles.length} cargos cadastrados
+            </p>
+          </div>
+        </div>
+
+        {/* Search and Actions Row */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Buscar por nome do cargo..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+            />
+          </div>
+          <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
+            <Plus size={16} /> <span className="hidden sm:inline">Novo Cargo</span><span className="sm:hidden">+</span>
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-2">
+        {filtered.map(s => (
+          <div key={s.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center">
+            <span className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase">{s.name}</span>
+            <div className="flex gap-2">
+              <button onClick={() => onEdit(s)} className="p-2 text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-lg"><Pencil size={14} /></button>
+              <button onClick={() => onDelete(s.id)} className="p-2 text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -623,6 +682,7 @@ export function App() {
 
   // Data States
   const [sectors, setSectors] = useState<Sector[]>([]);
+  const [jobTitles, setJobTitles] = useState<JobTitle[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -652,6 +712,7 @@ export function App() {
   const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editingSector, setEditingSector] = useState<Sector | null>(null);
+  const [editingJobTitle, setEditingJobTitle] = useState<JobTitle | null>(null);
   const [editingAlterationType, setEditingAlterationType] = useState<AlterationType | null>(null);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
@@ -761,10 +822,15 @@ export function App() {
     let atRes;
     try { atRes = await supabase.from('alteration_types').select('*').order('order', { ascending: true }); if (atRes.error) throw atRes.error; }
     catch (err) { atRes = await supabase.from('alteration_types').select('*'); }
-    const [sRes, bRes] = await Promise.all([supabase.from('sectors').select('*'), supabase.from('buildings').select('*')]);
+    const [sRes, bRes, jtRes] = await Promise.all([
+      supabase.from('sectors').select('*'),
+      supabase.from('buildings').select('*'),
+      supabase.from('app_config').select('value').eq('key', 'system_job_titles').single()
+    ]);
     if (sRes.data) setSectors(sRes.data);
     if (bRes.data) setBuildings([...bRes.data].sort((a, b) => a.buildingNumber.localeCompare(b.buildingNumber, undefined, { numeric: true })));
     if (atRes.data) setAlterationTypes(atRes.data);
+    if (jtRes.data && jtRes.data.value) setJobTitles(JSON.parse(jtRes.data.value));
   }, []);
 
   const fetchAssets = useCallback(async () => {
@@ -786,7 +852,7 @@ export function App() {
     try {
       const { data, error } = await supabase.from('users').select('*').order('name', { ascending: true });
       if (error) throw error;
-      const mappedUsers = data ? data.map((u: any) => ({ ...u, userCode: u.user_code })) : [];
+      const mappedUsers = data ? data.map((u: any) => ({ ...u, userCode: u.user_code, jobTitleId: u.job_title_id })) : [];
       setUsers(mappedUsers as User[]);
     } catch (error: any) { console.error(error); } finally { setLoading(false); }
   }, []);
@@ -1092,6 +1158,30 @@ export function App() {
     } catch (err: any) { showError("Erro", err.message); }
   };
 
+  const handleSaveJobTitle = async (jobTitle: JobTitle) => {
+    try {
+      const newJobTitles = jobTitle.id && jobTitles.find(j => j.id === jobTitle.id)
+        ? jobTitles.map(j => j.id === jobTitle.id ? jobTitle : j)
+        : [...jobTitles, jobTitle];
+
+      await supabase.from('app_config').upsert({ key: 'system_job_titles', value: JSON.stringify(newJobTitles) });
+      setJobTitles(newJobTitles);
+      handleNavigate('JOB_TITLES');
+    } catch (err: any) { showError("Erro", err.message); }
+  };
+
+  const handleDeleteJobTitle = (id: string) => {
+    if (!can('MANAGE_JOB_TITLES')) return showError('Acesso Negado', 'Sem permissão.');
+    showConfirm("Remover Cargo", "Deseja realmente remover este cargo?", async () => {
+      try {
+        const newJobTitles = jobTitles.filter(j => j.id !== id);
+        await supabase.from('app_config').upsert({ key: 'system_job_titles', value: JSON.stringify(newJobTitles) });
+        setJobTitles(newJobTitles);
+        handleNavigate('JOB_TITLES');
+      } catch (err: any) { showError("Erro", err.message); }
+    });
+  };
+
   const handleSaveAlterationType = async (type: AlterationType) => {
     try {
       const { error } = await supabase.from('alteration_types').upsert(type);
@@ -1241,8 +1331,10 @@ export function App() {
         );
       case 'BUILDINGS': return <BuildingList buildings={buildings} sectors={sectors} onEdit={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} onDelete={handleDeleteBuilding} onAdd={() => { setEditingBuilding(null); handleNavigate('BUILDING_FORM'); }} onRefresh={fetchStaticData} canEdit={can('MANAGE_BUILDINGS')} canDelete={can('MANAGE_BUILDINGS')} />;
       case 'BUILDING_FORM': return <BuildingForm initialData={editingBuilding} sectors={sectors} onSave={async (b) => { await supabase.from('buildings').upsert(b); fetchStaticData(); handleNavigate('BUILDINGS'); }} onCancel={() => handleNavigate('BUILDINGS')} onDelete={handleDeleteBuilding} />;
-      case 'USERS': return <UserList users={users} onEdit={(u) => { setEditingUser(u); handleNavigate('USER_FORM'); }} onDelete={handleDeleteUser} onAdd={() => { setEditingUser(null); handleNavigate('USER_FORM'); }} onRefresh={fetchUsers} canEdit={can('MANAGE_USERS')} canDelete={can('DELETE_USERS')} />;
-      case 'USER_FORM': return <UserForm initialData={editingUser} onSave={async (u) => { const { userCode, ...rest } = u; await supabase.from('users').upsert({ ...rest, user_code: userCode }); fetchUsers(); handleNavigate('USERS'); }} onCancel={() => handleNavigate('USERS')} onDelete={handleDeleteUser} />;
+      case 'USERS': return <UserList users={users} jobTitles={jobTitles} onEdit={(u) => { setEditingUser(u); handleNavigate('USER_FORM'); }} onDelete={handleDeleteUser} onAdd={() => { setEditingUser(null); handleNavigate('USER_FORM'); }} onRefresh={fetchUsers} canEdit={can('MANAGE_USERS')} canDelete={can('DELETE_USERS')} />;
+      case 'USER_FORM': return <UserForm initialData={editingUser} jobTitles={jobTitles} onSave={async (u) => { const { userCode, jobTitleId, ...rest } = u; await supabase.from('users').upsert({ ...rest, user_code: userCode, job_title_id: jobTitleId }); fetchUsers(); handleNavigate('USERS'); }} onCancel={() => handleNavigate('USERS')} onDelete={handleDeleteUser} />;
+      case 'JOB_TITLES': return <JobTitleList jobTitles={jobTitles} onEdit={(t) => { setEditingJobTitle(t); handleNavigate('JOB_TITLE_FORM'); }} onDelete={handleDeleteJobTitle} onAdd={() => { setEditingJobTitle(null); handleNavigate('JOB_TITLE_FORM'); }} />;
+      case 'JOB_TITLE_FORM': return <JobTitleForm initialData={editingJobTitle} onSave={handleSaveJobTitle} onCancel={() => handleNavigate('JOB_TITLES')} onDelete={handleDeleteJobTitle} />;
       case 'VEHICLES': return <VehicleList items={vehicles} onAdd={() => { setEditingVehicle(null); handleNavigate('VEHICLE_FORM'); }} onEdit={(i) => { setEditingVehicle(i); handleNavigate('VEHICLE_FORM'); }} onDelete={(id) => handleDeleteAsset('vehicles', id, 'Veículo')} />;
       case 'VEHICLE_FORM': return <VehicleForm initialData={editingVehicle} onSave={(i: any) => handleSaveAsset('vehicles', i, 'VEHICLES', 'Veículo')} onCancel={() => handleNavigate('VEHICLES')} onDelete={() => editingVehicle && handleDeleteAsset('vehicles', editingVehicle.id, 'Veículo')} />;
       case 'VESTS': return <VestList items={vests} onAdd={() => { setEditingVest(null); handleNavigate('VEST_FORM'); }} onEdit={(i) => { setEditingVest(i); handleNavigate('VEST_FORM'); }} onDelete={(id) => handleDeleteAsset('vests', id, 'Colete')} />;
@@ -1265,7 +1357,7 @@ export function App() {
       case 'LAYOUT_MANAGER': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} initialTab='ACCESS_CONTROL' menuVisibility={menuVisibility} onUpdateMenuVisibility={handleUpdateMenuVisibility} onLogAction={createLog} permissions={permissions} userMenuOverrides={userMenuOverrides} onUpdateMenuOverrides={handleUpdateMenuOverrides} users={users} onUpdatePermissions={handleUpdatePermissions} userOverrides={userOverrides} onUpdateOverrides={handleUpdateOverrides} />;
       case 'DATABASE_TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} initialTab='DATABASE' onLogAction={createLog} permissions={permissions} onUpdatePermissions={handleUpdatePermissions} />;
       case 'SYSTEM_INFO': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='SYSTEM' />;
-      case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} approverRole={users.find(u => u.name === selectedIncident?.approvedBy)?.role} onBack={() => handleNavigate('DASHBOARD')} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} />;
+      case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} approverRole={users.find(u => u.name === selectedIncident?.approvedBy)?.role} approverJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.name === selectedIncident?.approvedBy)?.jobTitleId)?.name} onBack={() => handleNavigate('DASHBOARD')} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} />;
       case 'PROFILE': return <ProfileView user={user!} onUpdatePassword={handleUpdatePassword} />;
       default: return <Dashboard incidents={incidents} buildings={buildings} sectors={sectors} onViewIncident={handleViewIncident} onNavigate={handleNavigate} onRefresh={() => fetchIncidents(false)} />;
     }
@@ -1327,7 +1419,7 @@ export function App() {
                 {!isSidebarCollapsed && <p className="px-3 text-[10px] font-bold text-brand-300 mb-2 uppercase tracking-widest">Administração</p>}
                 {isMenuVisible('registrations_root') && (
                   <div className="relative">
-                    <NavItem icon={<FolderOpen />} label="Cadastros" active={view.includes('FORM') || view === 'BUILDINGS' || view === 'USERS' || view === 'VEHICLES' || view === 'VESTS' || view === 'RADIOS' || view === 'EQUIPMENTS' || view === 'ALTERATION_TYPES' || view === 'SECTORS'} onClick={() => setRegistrationsMenuOpen(!registrationsMenuOpen)} collapsed={isSidebarCollapsed} />
+                    <NavItem icon={<FolderOpen />} label="Cadastros" active={view.includes('FORM') || view === 'BUILDINGS' || view === 'USERS' || view === 'VEHICLES' || view === 'VESTS' || view === 'RADIOS' || view === 'EQUIPMENTS' || view === 'ALTERATION_TYPES' || view === 'SECTORS' || view === 'JOB_TITLES'} onClick={() => setRegistrationsMenuOpen(!registrationsMenuOpen)} collapsed={isSidebarCollapsed} />
                     {!isSidebarCollapsed && <div className="absolute right-3 top-3.5 pointer-events-none text-brand-300">{registrationsMenuOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</div>}
                   </div>
                 )}
@@ -1343,6 +1435,7 @@ export function App() {
                       <NavItem label="Setores" icon={<Map size={14} className="mr-2" />} active={view === 'SECTORS' || view === 'SECTOR_FORM'} onClick={() => handleNavigate('SECTORS')} collapsed={isSidebarCollapsed} isSubItem />
                     )}
                     {can('MANAGE_USERS') && isMenuVisible('reg_users') && <NavItem label="Usuários" icon={<Users size={14} className="mr-2" />} active={view === 'USERS' || view === 'USER_FORM'} onClick={() => handleNavigate('USERS')} collapsed={isSidebarCollapsed} isSubItem />}
+                    {can('MANAGE_JOB_TITLES') && <NavItem label="Cargos e Funções" icon={<Briefcase size={14} className="mr-2" />} active={view === 'JOB_TITLES' || view === 'JOB_TITLE_FORM'} onClick={() => handleNavigate('JOB_TITLES')} collapsed={isSidebarCollapsed} isSubItem />}
                     {can('MANAGE_ASSETS') && isMenuVisible('reg_assets') && (
                       <>
                         <div className="border-t border-brand-800 my-1 mx-4"></div>

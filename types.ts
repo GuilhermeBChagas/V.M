@@ -22,6 +22,7 @@ export type PermissionKey =
   | 'DELETE_USERS'
   | 'MANAGE_BUILDINGS'   // Gerenciar Prédios
   | 'MANAGE_SECTORS'     // Gerenciar Setores
+  | 'MANAGE_JOB_TITLES'  // Gerenciar Cargos/Funções
   | 'MANAGE_ALTERATION_TYPES' // Gerenciar Tipos de Alteração
   | 'ACCESS_TOOLS'       // Logs, Backup, Config Visual, Permissões
   | 'EXPORT_REPORTS';
@@ -50,6 +51,11 @@ export interface Sector {
   name: string;
 }
 
+export interface JobTitle {
+  id: string;
+  name: string;
+}
+
 export interface AlterationType {
   id: string;
   name: string;
@@ -62,6 +68,7 @@ export interface User {
   cpf: string;
   matricula: string;
   userCode?: string; // Novo campo: Código de 1 a 99
+  jobTitleId?: string; // Cargo/Função selecionável
   role: UserRole;
   status?: 'ACTIVE' | 'PENDING' | 'BLOCKED';
   email?: string;
@@ -180,6 +187,7 @@ export type ViewState =
   | 'BUILDINGS' | 'BUILDING_FORM'
   | 'USERS' | 'USER_FORM'
   | 'SECTORS' | 'SECTOR_FORM'
+  | 'JOB_TITLES' | 'JOB_TITLE_FORM'
   | 'ALTERATION_TYPES' | 'ALTERATION_TYPE_FORM'
   | 'NEW_RECORD' | 'HISTORY' | 'INCIDENT_DETAIL' | 'PENDING_APPROVALS'
   | 'CHARTS' | 'LOGS' | 'TOOLS' | 'DATABASE_TOOLS' | 'PERMISSIONS_TOOLS' | 'LAYOUT_MANAGER' | 'PROFILE' | 'SYSTEM_INFO'

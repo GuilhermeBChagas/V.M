@@ -20,12 +20,13 @@ interface IncidentDetailProps {
     customLogo?: string | null; // Logo Direita (GCM)
     customLogoLeft?: string | null; // Logo Esquerda (Muni)
     approverRole?: string;
+    approverJobTitle?: string;
 }
 
 export const IncidentDetail: React.FC<IncidentDetailProps> = ({
     incident, building, author, onBack, onDelete,
     canEdit = false, canDelete = false, canApprove = false,
-    onApprove, onEdit, customLogo, customLogoLeft, approverRole
+    onApprove, onEdit, customLogo, customLogoLeft, approverRole, approverJobTitle
 }) => {
     const contentRef = useRef<HTMLDivElement>(null);
     const [isExporting, setIsExporting] = useState(false);
@@ -368,36 +369,49 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     <div className="mt-auto pt-6 break-inside-avoid w-full border-t-2 border-slate-100">
                         <div className="grid grid-cols-2 gap-6 md:gap-12 items-end">
                             {/* Assinatura Vigilante */}
-                            <div className="min-w-0">
-                                <div className="text-[7px] md:text-[9px] font-black uppercase text-slate-800 mb-2 tracking-wider">VIGILANTES:</div>
-                                <div className="border-b-2 border-slate-400 text-[10px] md:text-[12px] uppercase px-1 py-2 bg-slate-50/50 min-h-[40px] leading-tight font-bold italic">
-                                    {incident.vigilants}
+                            <div className="flex flex-col items-start justify-end h-full py-2">
+                                <div className="mb-3 w-full">
+                                    <div className="text-[10px] md:text-[13px] font-black text-slate-900 uppercase leading-tight mb-1 text-left flex flex-col">
+                                        {incident.vigilants.split(',').map((name, index) => (
+                                            <span key={index}>{name.trim()}</span>
+                                        ))}
+                                    </div>
+                                    <span className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest block text-left">
+                                        VIGILANTES
+                                    </span>
+                                </div>
+                                <div className="mt-2 pt-2 border-t border-slate-200 w-full max-w-[280px]">
+                                    <span className="text-[6px] md:text-[8px] font-bold uppercase text-slate-400 mr-2 tracking-wide">REGISTRADO POR (USUÁRIO):</span>
+                                    <span className="text-[7px] md:text-[9px] uppercase font-bold text-slate-600">
+                                        {author?.name || '---'}
+                                    </span>
                                 </div>
                             </div>
 
                             {/* Validação Supervisor */}
                             <div className="min-w-0">
                                 {incident.approvedBy ? (
-                                    <div className="border-2 border-slate-900 p-3 relative bg-slate-50 min-w-full rounded-sm shadow-sm">
-                                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white px-3 py-0.5 text-[6px] md:text-[8px] font-black uppercase text-slate-900 tracking-widest border border-slate-900 leading-none whitespace-nowrap">
-                                            {approverRole === 'ADMIN' ? 'ADMINISTRADOR' :
-                                                approverRole === 'SUPERVISOR' ? 'SUPERVISOR' :
-                                                    approverRole === 'OPERATOR' ? 'OPERADOR' :
-                                                        approverRole === 'RONDA' ? 'RONDA' :
-                                                            'AUTORIDADE VALIDANTE'}
+                                    <div className="flex flex-col items-center justify-end h-full py-2">
+                                        <div className="text-center mb-3">
+                                            <span className="text-[10px] md:text-[14px] font-black text-slate-900 uppercase leading-none block mb-1">
+                                                {incident.approvedBy}
+                                            </span>
+                                            <span className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                                {approverJobTitle ? approverJobTitle :
+                                                    approverRole === 'ADMIN' ? 'ADMINISTRADOR' :
+                                                        approverRole === 'SUPERVISOR' ? 'SUPERVISOR' :
+                                                            approverRole === 'OPERATOR' ? 'OPERADOR' :
+                                                                approverRole === 'RONDA' ? 'RONDA' :
+                                                                    'AUTORIDADE VALIDANTE'}
+                                            </span>
                                         </div>
-                                        <div className="flex flex-col items-center justify-center gap-1 pt-2">
-                                            <div className="text-center">
-                                                <span className="text-[10px] md:text-[14px] font-black text-slate-900 uppercase leading-none block scale-y-110 truncate max-w-full mb-1">{incident.approvedBy}</span>
-                                            </div>
-                                            <div className="w-full border-t border-slate-400 mt-1 pt-2 flex flex-col items-center">
-                                                <span className="text-[6px] md:text-[7px] font-bold uppercase text-slate-600 tracking-widest flex items-center gap-1">
-                                                    <ShieldCheck size={8} className="text-blue-900" /> CERTIFICADO DIGITALMENTE
-                                                </span>
-                                                <span className="text-[7px] md:text-[9px] font-mono font-black text-slate-800 mt-0.5">
-                                                    DATA: {new Date(incident.approvedAt!).toLocaleDateString('pt-BR')} ÀS {new Date(incident.approvedAt!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                            </div>
+                                        <div className="flex flex-col items-center border-t border-slate-200 pt-2 w-full max-w-[180px]">
+                                            <span className="text-[6px] md:text-[7px] font-bold uppercase text-slate-500 tracking-widest flex items-center gap-1 mb-0.5">
+                                                <ShieldCheck size={10} className="text-blue-600" /> ASSINADO ELETRONICAMENTE
+                                            </span>
+                                            <span className="text-[6px] md:text-[8px] font-mono font-bold text-slate-400">
+                                                DATA: {new Date(incident.approvedAt!).toLocaleDateString('pt-BR')} ÀS {new Date(incident.approvedAt!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
                                         </div>
                                     </div>
                                 ) : (
