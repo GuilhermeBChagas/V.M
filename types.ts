@@ -112,7 +112,11 @@ export interface Incident {
   approvedBy?: string;
   approvedAt?: string;
   isEdited?: boolean;
+  editedBy?: string;
   lastEditedAt?: string;
+  cancellationReason?: string;
+  cancelledBy?: string;
+  cancelledAt?: string;
   isLocal?: boolean; // Flag para indicar que o dado só existe localmente
 }
 

@@ -21,12 +21,13 @@ interface IncidentDetailProps {
     customLogoLeft?: string | null; // Logo Esquerda (Muni)
     approverRole?: string;
     approverJobTitle?: string;
+    currentUser?: User;
 }
 
 export const IncidentDetail: React.FC<IncidentDetailProps> = ({
     incident, building, author, onBack, onDelete,
     canEdit = false, canDelete = false, canApprove = false,
-    onApprove, onEdit, customLogo, customLogoLeft, approverRole, approverJobTitle
+    onApprove, onEdit, customLogo, customLogoLeft, approverRole, approverJobTitle, currentUser
 }) => {
     const contentRef = useRef<HTMLDivElement>(null);
     const [isExporting, setIsExporting] = useState(false);
@@ -44,7 +45,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
         const element = contentRef.current;
 
         const opt = {
-            margin: [5, 5, 5, 5],
+            margin: 0,
             filename: `RA_${incident.raCode.replace('/', '-')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
@@ -90,7 +91,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     <style>
                         ${styles}
                         * { margin: 0; padding: 0; box-sizing: border-box; }
-                        @page { size: A4; margin: 8mm; }
+                        @page { size: A4; margin: 0mm; }
                         @media print {
                             body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                             .no-print { display: none !important; }
@@ -106,7 +107,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                             width: 100%;
                             max-width: 210mm;
                             margin: 0 auto;
-                            padding: 5mm;
+                            padding: 0;
                             background: white;
                         }
                     </style>
@@ -167,7 +168,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                                 {canDelete && (
                                     <button
                                         onClick={handleDelete}
-                                        className="col-span-1 sm:flex-none px-2 sm:px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 font-black text-[10px] uppercase shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors"
+                                        className="col-span-1 sm:w-28 h-9 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 font-black text-[10px] uppercase shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors"
                                     >
                                         <XCircle size={14} className="flex-shrink-0" />
                                         <span>CANCELAR</span>
@@ -176,8 +177,8 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                                 {canEdit && (
                                     <button
                                         onClick={onEdit}
-                                        disabled={isValidating}
-                                        className="col-span-1 sm:flex-none px-2 sm:px-3 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 font-black text-[10px] uppercase shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 whitespace-nowrap transition-colors"
+                                        disabled={isValidating || incident.status === 'APPROVED'}
+                                        className="col-span-1 sm:w-28 h-9 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 font-black text-[10px] uppercase shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 whitespace-nowrap transition-colors"
                                     >
                                         <Pencil size={14} className="flex-shrink-0" />
                                         <span>EDITAR</span>
@@ -189,7 +190,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                             <button
                                 onClick={handleApprove}
                                 disabled={isValidating}
-                                className="col-span-2 sm:col-span-1 px-3 py-2 bg-blue-900 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-800 dark:hover:bg-blue-600 font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 transition-all active:scale-95 whitespace-nowrap"
+                                className="col-span-2 sm:col-span-1 sm:w-28 h-9 bg-blue-900 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-800 dark:hover:bg-blue-600 font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 transition-all active:scale-95 whitespace-nowrap"
                             >
                                 {isValidating ? <Loader2 size={14} className="animate-spin flex-shrink-0" /> : <CheckCircle size={14} className="flex-shrink-0" />}
                                 {isValidating ? 'VALIDANDO...' : 'VALIDAR'}
@@ -199,23 +200,21 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                 </div>
             )}
 
-            <div className="flex justify-between items-center mb-6 no-print px-4 md:px-0">
+            <div className="flex justify-between items-center mb-6 no-print px-4 md:px-0 w-full max-w-[210mm] mx-auto">
                 <button onClick={onBack} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-black text-[10px] uppercase flex items-center gap-1">
                     <ArrowLeft size={16} /> VOLTAR
                 </button>
                 <div className="flex gap-2">
-                    <button onClick={handlePrint} className="px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-md font-black text-[10px] md:text-xs uppercase flex items-center gap-2 shadow-sm hover:bg-slate-50 transition-colors">
-                        <Printer size={16} /> <span className="hidden sm:inline">IMPRIMIR</span>
-                    </button>
-                    <button onClick={handleExportPDF} disabled={isExporting} className="px-4 py-2 bg-slate-800 dark:bg-slate-700 text-white rounded-md font-black text-[10px] md:text-xs uppercase flex items-center gap-2 shadow-lg hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors">
-                        {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} <span className="hidden sm:inline">{isExporting ? 'PROCESSANDO' : 'GERAR PDF'}</span>
+
+                    <button onClick={handleExportPDF} disabled={isExporting} className="px-6 h-9 bg-slate-800 dark:bg-slate-700 text-white rounded-lg font-black text-[10px] uppercase flex items-center justify-center gap-2 shadow-lg hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors">
+                        {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} <span>{isExporting ? 'PROCESSANDO' : 'GERAR PDF'}</span>
                     </button>
                 </div>
             </div>
 
             {/* --- ÁREA DE IMPRESSÃO / RELATÓRIO (FOLHA A4) --- */}
             <div className="w-full overflow-x-auto md:overflow-x-visible pb-6">
-                <div ref={contentRef} className={`bg-white text-black shadow-2xl relative flex flex-col mx-auto w-full min-w-[320px] md:max-w-[210mm] min-h-[280mm] p-4 md:p-10 transition-colors ${isCancelled ? 'grayscale opacity-75' : ''}`} style={{ fontFamily: "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+                <div ref={contentRef} className={`bg-white text-black shadow-2xl relative flex flex-col mx-auto w-full min-w-[320px] md:max-w-[210mm] h-[297mm] overflow-hidden p-4 md:p-10 transition-colors ${isCancelled ? 'grayscale opacity-75' : ''}`} style={{ fontFamily: "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif" }}>
 
                     {/* CABEÇALHO - BRASÕES MAIS PRÓXIMOS DAS ESCRITAS */}
                     <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12">
@@ -280,8 +279,8 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                                 <span style={{ fontSize: '16px', fontWeight: '800', color: 'white', lineHeight: '1', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{incident.raCode}</span>
                             </div>
                             <div style={{ flex: '1', padding: '8px 10px', background: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <span style={{ fontSize: '7px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>NATUREZA</span>
-                                <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', textTransform: 'uppercase', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{incident.alterationType}</span>
+                                <span style={{ fontSize: '7px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>LOCAL</span>
+                                <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', textTransform: 'uppercase', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{building?.name || '---'}</span>
                             </div>
                         </div>
 
@@ -300,8 +299,8 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                                 <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#0f172a', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{incident.endTime || '--:--'}</span>
                             </div>
                             <div style={{ padding: '5px 8px', background: '#eff6ff' }}>
-                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#1e40af', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>LOCAL</span>
-                                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#1e3a5f', textTransform: 'uppercase', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{building?.name || '---'}</span>
+                                <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#1e40af', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>NATUREZA</span>
+                                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#1e3a5f', textTransform: 'uppercase', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{incident.alterationType}</span>
                             </div>
                         </div>
 
@@ -345,6 +344,25 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                         {incident.description}
                     </div>
 
+                    {/* MOTIVO DO CANCELAMENTO - APENAS ADMIN */}
+                    {isCancelled && incident.cancellationReason && currentUser?.role === 'ADMIN' && (
+                        <div className="mb-8 border border-red-200 bg-red-50 p-4 rounded-sm text-center">
+                            <h4 className="text-[10px] font-black uppercase text-red-700 mb-1">MOTIVO DO CANCELAMENTO</h4>
+                            <p className="text-[10px] uppercase text-red-900 font-bold mb-2">{incident.cancellationReason}</p>
+
+                            {incident.cancelledBy && (
+                                <div className="text-[9px] uppercase text-red-800 font-medium border-t border-red-200 pt-2 mt-2 inline-block px-4">
+                                    <span className="font-bold">CANCELADO POR:</span> {incident.cancelledBy}
+                                    {incident.cancelledAt && (
+                                        <span className="block text-[8px] text-red-600 mt-0.5">
+                                            EM {new Date(incident.cancelledAt).toLocaleDateString('pt-BR')} ÀS {new Date(incident.cancelledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* FOTOS */}
                     {incident.photos && incident.photos.length > 0 && (
                         <div className="mb-8 break-inside-avoid">
@@ -366,11 +384,11 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     )}
 
                     {/* RODAPÉ E ASSINATURAS */}
-                    <div className="mt-auto pt-6 break-inside-avoid w-full border-t-2 border-slate-100">
+                    <div className="mt-auto pt-14 break-inside-avoid w-full border-t-2 border-slate-100">
                         <div className="grid grid-cols-2 gap-6 md:gap-12 items-end">
                             {/* Assinatura Vigilante */}
                             <div className="flex flex-col items-start justify-end h-full py-2">
-                                <div className="mb-3 w-full">
+                                <div className="mb-1 w-full">
                                     <div className="text-[10px] md:text-[13px] font-black text-slate-900 uppercase leading-tight mb-1 text-left flex flex-col">
                                         {incident.vigilants.split(',').map((name, index) => (
                                             <span key={index}>{name.trim()}</span>
@@ -380,11 +398,32 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                                         VIGILANTES
                                     </span>
                                 </div>
-                                <div className="mt-2 pt-2 border-t border-slate-200 w-full max-w-[280px]">
-                                    <span className="text-[6px] md:text-[8px] font-bold uppercase text-slate-400 mr-2 tracking-wide">REGISTRADO POR (USUÁRIO):</span>
-                                    <span className="text-[7px] md:text-[9px] uppercase font-bold text-slate-600">
-                                        {author?.name || '---'}
-                                    </span>
+                                <div className="mt-1 pt-2 border-t border-slate-200 w-full max-w-[280px]">
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="text-[6px] md:text-[8px] font-bold uppercase text-slate-400 mr-2 tracking-wide">REGISTRADO PELO USUÁRIO:</span>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-[7px] md:text-[9px] uppercase font-bold text-slate-600">
+                                                {author?.name || '---'}
+                                            </span>
+                                            <span className="text-[6px] md:text-[7px] uppercase font-medium text-slate-400">
+                                                EM {new Date(incident.created_at || incident.timestamp).toLocaleDateString('pt-BR')} ÀS {new Date(incident.created_at || incident.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {incident.isEdited && (
+                                        <div className="flex flex-col gap-0.5 mt-1 pt-1 border-t border-slate-100">
+                                            <span className="text-[6px] md:text-[8px] font-bold uppercase text-slate-400 mr-2 tracking-wide">EDITADO PELO USUÁRIO:</span>
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-[7px] md:text-[9px] uppercase font-bold text-slate-600">
+                                                    {incident.editedBy || '---'}
+                                                </span>
+                                                <span className="text-[6px] md:text-[7px] uppercase font-medium text-slate-400">
+                                                    EM {new Date(incident.lastEditedAt!).toLocaleDateString('pt-BR')} ÀS {new Date(incident.lastEditedAt!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -415,7 +454,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="border-2 border-dashed border-slate-300 p-6 text-center bg-slate-50/30 rounded-sm">
+                                    <div className="border-2 border-dashed border-slate-300 p-6 text-center bg-slate-50/30 rounded-sm mt-auto">
                                         <span className="text-[8px] md:text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">AGUARDANDO VALIDAÇÃO</span>
                                     </div>
                                 )}

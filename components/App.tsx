@@ -58,12 +58,20 @@ const mapIncident = (db: any): Incident => ({
   buildingId: db.building_id || db.buildingId,
   userId: db.user_id || db.userId,
   operatorName: db.operator_name || db.operatorName,
-  alterationType: db.alteration_type || db.alterationType,
+  vigilants: db.vigilants,
+  date: db.date,
   startTime: db.start_time || db.startTime,
   endTime: db.end_time || db.endTime,
-  lastEditedAt: db.last_edited_at || db.lastEditedAt,
-  approvedAt: db.approved_at || db.approvedAt,
+  alterationType: db.alteration_type || db.alterationType,
   approvedBy: db.approved_by || db.approvedBy,
+  approvedAt: db.approved_at || db.approvedAt,
+  isEdited: db.is_edited || db.isEdited,
+  editedBy: db.edited_by || db.editedBy,
+  lastEditedAt: db.last_edited_at || db.lastEditedAt,
+  cancellationReason: db.cancellation_reason || db.cancellationReason,
+  cancelledBy: db.cancelled_by || db.cancelledBy,
+  cancelledAt: db.cancelled_at || db.cancelledAt,
+
   created_at: db.created_at,
   status: (db.status || 'PENDING').toUpperCase()
 });
@@ -719,7 +727,11 @@ export function App() {
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [editingVest, setEditingVest] = useState<Vest | null>(null);
   const [editingRadio, setEditingRadio] = useState<Radio | null>(null);
+
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
+
+  // Cancellation Modal State
+  const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; incidentId: string; reason: string }>({ isOpen: false, incidentId: '', reason: '' });
 
   const [preSelectedBuildingId, setPreSelectedBuildingId] = useState<string | undefined>(undefined);
   const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; type: 'alert' | 'confirm' | 'error'; title: string; message: string; onConfirm?: () => void; }>({ isOpen: false, type: 'alert', title: '', message: '' });
@@ -1061,7 +1073,8 @@ export function App() {
         photos: inc.photos,
         status: (inc.status || 'PENDING').toUpperCase(),
         is_edited: !isNew,
-        last_edited_at: !isNew ? new Date().toISOString() : null
+        last_edited_at: !isNew ? new Date().toISOString() : null,
+        edited_by: !isNew ? user?.name : null
       };
       let savedLocally = false;
       if (isLocalMode) {
@@ -1221,9 +1234,25 @@ export function App() {
 
   const handleDeleteIncident = (id: string) => {
     if (!can('DELETE_INCIDENT')) return showError('Acesso Negado', 'Você não tem permissão para cancelar registros.');
-    showConfirm("Cancelar Registro", "Deseja invalidar este registro?", async () => {
-      try { await supabase.from('incidents').update({ status: 'CANCELLED' }).eq('id', id); fetchIncidents(); handleNavigate('HISTORY'); } catch (err: any) { showError("Erro", err.message); }
-    });
+    setCancelModal({ isOpen: true, incidentId: id, reason: '' });
+  };
+
+  const handleConfirmCancellation = async () => {
+    if (cancelModal.reason.trim() === "") return showError("Erro", "O motivo do cancelamento é obrigatório.");
+
+    try {
+      await supabase.from('incidents').update({
+        status: 'CANCELLED',
+        cancellation_reason: cancelModal.reason,
+        cancelled_by: user?.name,
+        cancelled_at: new Date().toISOString()
+      }).eq('id', cancelModal.incidentId);
+
+      fetchIncidents();
+      handleNavigate('HISTORY');
+      setCancelModal({ isOpen: false, incidentId: '', reason: '' });
+      createLog('UPDATE_INCIDENT', `Cancelou RA (Motivo: ${cancelModal.reason})`);
+    } catch (err: any) { showError("Erro", err.message); }
   };
 
   const handleDeleteUser = (id: string) => {
@@ -1357,7 +1386,8 @@ export function App() {
       case 'LAYOUT_MANAGER': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} initialTab='ACCESS_CONTROL' menuVisibility={menuVisibility} onUpdateMenuVisibility={handleUpdateMenuVisibility} onLogAction={createLog} permissions={permissions} userMenuOverrides={userMenuOverrides} onUpdateMenuOverrides={handleUpdateMenuOverrides} users={users} onUpdatePermissions={handleUpdatePermissions} userOverrides={userOverrides} onUpdateOverrides={handleUpdateOverrides} />;
       case 'DATABASE_TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} initialTab='DATABASE' onLogAction={createLog} permissions={permissions} onUpdatePermissions={handleUpdatePermissions} />;
       case 'SYSTEM_INFO': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='SYSTEM' />;
-      case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} approverRole={users.find(u => u.name === selectedIncident?.approvedBy)?.role} approverJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.name === selectedIncident?.approvedBy)?.jobTitleId)?.name} onBack={() => handleNavigate('DASHBOARD')} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} />;
+      case 'SYSTEM_INFO': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='SYSTEM' />;
+      case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} approverRole={users.find(u => u.name === selectedIncident?.approvedBy)?.role} approverJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.name === selectedIncident?.approvedBy)?.jobTitleId)?.name} onBack={() => handleNavigate('DASHBOARD')} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} currentUser={user!} />;
       case 'PROFILE': return <ProfileView user={user!} onUpdatePassword={handleUpdatePassword} />;
       default: return <Dashboard incidents={incidents} buildings={buildings} sectors={sectors} onViewIncident={handleViewIncident} onNavigate={handleNavigate} onRefresh={() => fetchIncidents(false)} />;
     }
@@ -1494,7 +1524,52 @@ export function App() {
         <main className="flex-1 overflow-y-auto p-4 md:p-8">{renderContent()}</main>
       </div>
       {showDbSetup && <DatabaseSetup onClose={() => setShowDbSetup(false)} />}
-      <Modal isOpen={modalConfig.isOpen} type={modalConfig.type} title={modalConfig.title} message={modalConfig.message} onConfirm={modalConfig.onConfirm} onClose={closeModal} />
+      <Modal isOpen={modalConfig.isOpen} type={modalConfig.type} title={modalConfig.title} message={modalConfig.message} onConfirm={modalConfig.onConfirm} onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} />
+
+      {/* MODAL DE CANCELAMENTO */}
+      {cancelModal.isOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-md w-full overflow-hidden transform scale-100 transition-all animate-in zoom-in-95 duration-200 border border-red-200 dark:border-red-900">
+            <div className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30">
+                  <Ban className="h-6 w-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="flex-1 pt-1">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Cancelar Registro</h3>
+                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Por favor, informe o motivo do cancelamento deste registro. Esta ação é irreversível.</p>
+
+                  <textarea
+                    value={cancelModal.reason}
+                    onChange={(e) => setCancelModal({ ...cancelModal, reason: e.target.value })}
+                    className="w-full mt-4 p-3 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Descreva o motivo..."
+                    rows={3}
+                    autoFocus
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setCancelModal({ isOpen: false, incidentId: '', reason: '' })}
+                className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 shadow-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancellation}
+                disabled={!cancelModal.reason.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Confirmar Cancelamento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
