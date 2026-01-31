@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { AlterationType } from '../types';
-import { Tag, Plus, Trash2, X, Save, AlertCircle, Pencil, Search } from 'lucide-react';
+import { Tag, Plus, Trash2, X, Save, AlertCircle, Pencil, Search, ChevronRight } from 'lucide-react';
 import { normalizeString } from '../utils/stringUtils';
 
 interface AlterationTypeManagerProps {
@@ -105,29 +105,12 @@ export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ ty
                     filteredTypes.map((t) => (
                         <div
                             key={t.id}
-                            className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group transition-all"
+                            onClick={() => onEdit && onEdit(t)}
+                            className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group transition-all cursor-pointer hover:bg-brand-50/50 dark:hover:bg-brand-900/10"
                         >
                             <div className="flex items-center gap-3 overflow-hidden">
-                                <div className="w-1.5 h-6 bg-blue-500 rounded-full flex-shrink-0"></div>
-                                <span className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate uppercase tracking-tight">{t.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {onEdit && (
-                                    <button
-                                        onClick={() => onEdit(t)}
-                                        className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                                        title="Editar"
-                                    >
-                                        <Pencil size={16} />
-                                    </button>
-                                )}
-                                <button
-                                    onClick={() => onDelete(t.id)}
-                                    className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-                                    title="Excluir"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
+                                <div className="w-1.5 h-6 bg-brand-500 rounded-full flex-shrink-0"></div>
+                                <span className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate uppercase tracking-tight group-hover:text-brand-600">{t.name}</span>
                             </div>
                         </div>
                     ))

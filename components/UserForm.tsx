@@ -105,24 +105,24 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px]">Nome Completo</label>
+                        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase font-bold tracking-wider">Nome Completo</label>
                         <input name="name" value={formData.name} onChange={handleChange} required className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="João da Silva" />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px]">CPF</label>
+                        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase font-bold tracking-wider">CPF</label>
                         <input name="cpf" value={formData.cpf} onChange={handleChange} required className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="000.000.000-00" maxLength={14} />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px]">Matrícula</label>
+                        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase font-bold tracking-wider">Matrícula</label>
                         <input name="matricula" value={formData.matricula} onChange={handleChange} required className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="MAT-1234" />
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex justify-between uppercase text-[10px]">
                             <span>Código de Acesso</span>
-                            <span className="text-[10px] text-slate-400 uppercase font-black">Login Rápido</span>
+                            <span className="text-xs text-slate-400 uppercase font-black">Login Rápido</span>
                         </label>
                         <div className="relative rounded-md shadow-sm">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -135,7 +135,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex justify-between uppercase text-[10px]">
                             <span>E-mail</span>
-                            <span className="text-[10px] text-slate-400 uppercase font-black">Opcional</span>
+                            <span className="text-xs text-slate-400 uppercase font-black">Opcional</span>
                         </label>
                         <div className="mt-1 relative rounded-md shadow-sm">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -146,14 +146,14 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px]">
+                        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase font-bold tracking-wider">
                             {initialData ? 'Nova Senha (opcional)' : 'Senha Inicial'}
                         </label>
                         <input name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required={!initialData} className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px]">Status da Conta</label>
+                        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase font-bold tracking-wider">Status da Conta</label>
                         <div className="relative">
                             <select
                                 name="status"
@@ -172,7 +172,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex justify-between uppercase text-[10px]">
                             <span>Cargo / Função</span>
-                            <span className="text-[10px] text-slate-400 uppercase font-black">Opcional</span>
+                            <span className="text-xs text-slate-400 uppercase font-black">Opcional</span>
                         </label>
                         <div className="relative">
                             <select
@@ -198,7 +198,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                                 className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.OPERATOR ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 ring-1 ring-brand-500' : 'border-slate-200 dark:border-slate-700'}`}
                             >
                                 <UserIcon className={`w-6 h-6 mb-2 ${formData.role === UserRole.OPERATOR ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                                <p className="text-[10px] sm:text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Operador</p>
+                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Operador</p>
                             </div>
 
                             <div
@@ -206,7 +206,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                                 className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.RONDA ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-500' : 'border-slate-200 dark:border-slate-700'}`}
                             >
                                 <Eye className={`w-6 h-6 mb-2 ${formData.role === UserRole.RONDA ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
-                                <p className="text-[10px] sm:text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Ronda</p>
+                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Ronda</p>
                             </div>
 
                             <div
@@ -214,7 +214,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                                 className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.SUPERVISOR ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 ring-1 ring-amber-500' : 'border-slate-200 dark:border-slate-700'}`}
                             >
                                 <UserCheck className={`w-6 h-6 mb-2 ${formData.role === UserRole.SUPERVISOR ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
-                                <p className="text-[10px] sm:text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Supervisor</p>
+                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Supervisor</p>
                             </div>
 
                             <div
@@ -222,7 +222,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                                 className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.ADMIN ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-500' : 'border-slate-200 dark:border-slate-700'}`}
                             >
                                 <Shield className={`w-6 h-6 mb-2 ${formData.role === UserRole.ADMIN ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400'}`} />
-                                <p className="text-[10px] sm:text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Admin</p>
+                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Admin</p>
                             </div>
 
                             <div
@@ -230,7 +230,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                                 className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.OUTROS ? 'border-slate-500 bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-500' : 'border-slate-200 dark:border-slate-700'}`}
                             >
                                 <MoreHorizontal className={`w-6 h-6 mb-2 ${formData.role === UserRole.OUTROS ? 'text-slate-600 dark:text-slate-300' : 'text-slate-400'}`} />
-                                <p className="text-[10px] sm:text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Outros</p>
+                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Outros</p>
                             </div>
                         </div>
                     </div>

@@ -182,7 +182,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase truncate">{b.name}</p>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase truncate">{b.address}</p>
+                                    <p className="text-xs text-slate-400 font-bold uppercase truncate">{b.address}</p>
                                 </div>
                                 <ArrowRight size={16} className="text-slate-300 group-hover:text-brand-500" />
                             </div>
@@ -292,7 +292,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase truncate pr-2">
                                             {building?.name || 'Local'}
                                         </h4>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase">
+                                        <span className="text-xs font-bold text-slate-400 uppercase">
                                             {new Date(incident.date).toLocaleDateString()}
                                         </span>
                                     </div>
@@ -303,7 +303,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase">
                                             RA {incident.raCode}
                                         </span>
-                                        <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${incident.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                        <span className={`px-2 py-0.5 rounded text-xs font-black uppercase ${incident.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
                                             }`}>
                                             {incident.status}
                                         </span>

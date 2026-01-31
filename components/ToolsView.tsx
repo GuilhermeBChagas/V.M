@@ -170,44 +170,6 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
                     {activeTab === 'IMPORT_EXPORT' && <><FileSpreadsheet className="text-emerald-600" /> Dados (Excel)</>}
                     {activeTab === 'SYSTEM' && <><Info className="text-purple-600" /> Sobre o Sistema</>}
                 </h2>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setActiveTab('LOGS')}
-                        className={`px-4 py-3 text-xs font-bold uppercase transition-all flex items-center gap-2 border-b-2 ${activeTab === 'LOGS' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-                    >
-                        <History size={16} /> Logs
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('APPEARANCE')}
-                        className={`px-4 py-3 text-xs font-bold uppercase transition-all flex items-center gap-2 border-b-2 ${activeTab === 'APPEARANCE' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-                    >
-                        <Settings size={16} /> Aparência
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('DATABASE')}
-                        className={`px-4 py-3 text-xs font-bold uppercase transition-all flex items-center gap-2 border-b-2 ${activeTab === 'DATABASE' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-                    >
-                        <Database size={16} /> Banco de Dados
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('ACCESS_CONTROL')}
-                        className={`px-4 py-3 text-xs font-bold uppercase transition-all flex items-center gap-2 border-b-2 ${activeTab === 'ACCESS_CONTROL' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-                    >
-                        <Key size={16} /> Controle de Acessos
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('IMPORT_EXPORT')}
-                        className={`px-4 py-3 text-xs font-bold uppercase transition-all flex items-center gap-2 border-b-2 ${activeTab === 'IMPORT_EXPORT' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-                    >
-                        <FileSpreadsheet size={16} /> Importar/Exportar
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('SYSTEM')}
-                        className={`px-4 py-3 text-xs font-bold uppercase transition-all flex items-center gap-2 border-b-2 ${activeTab === 'SYSTEM' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-                    >
-                        <Info size={16} /> Sistema
-                    </button>
-                </div>
             </div>
 
             {activeTab === 'LOGS' && (

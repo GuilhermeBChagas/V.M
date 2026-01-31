@@ -119,7 +119,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, collaps
       </span>
     )}
     {badge && badge > 0 && (
-      <span className={`absolute ${collapsed ? 'top-1 right-1' : 'right-3'} badge-pulse bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full`}>
+      <span className={`absolute ${collapsed ? 'top-1 right-1' : 'right-9'} bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-brand-900 shadow-lg transform transition-transform group-hover:scale-110`}>
         {badge}
       </span>
     )}
@@ -238,7 +238,7 @@ const IncidentHistory: React.FC<{
               <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
                 {filterStatus === 'PENDING' ? 'Atendimentos Pendentes' : 'Histórico de Atendimentos'}
               </h2>
-              <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
                 {filterStatus === 'PENDING' ? 'Aguardando validação ou recebimento' : 'Gestão de registros de atendimento'}
               </p>
             </div>
@@ -288,7 +288,7 @@ const IncidentHistory: React.FC<{
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-top-2">
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Data Inicial</label>
+                <label className="block text-xs font-black text-slate-500 uppercase mb-1 tracking-wider">Data Inicial</label>
                 <input
                   type="date"
                   value={dateStart}
@@ -297,7 +297,7 @@ const IncidentHistory: React.FC<{
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Data Final</label>
+                <label className="block text-xs font-black text-slate-500 uppercase mb-1 tracking-wider">Data Final</label>
                 <input
                   type="date"
                   value={dateEnd}
@@ -322,24 +322,20 @@ const IncidentHistory: React.FC<{
               <div key={incident.id} onClick={() => onView(incident)} className={`bg-white dark:bg-slate-900 p-4 rounded-r-xl ${borderClass} shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-3 cursor-pointer group relative overflow-hidden ${isCancelled ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}>
                 <div className="flex-1 min-w-0 z-10">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="bg-slate-800 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">RA {incident.raCode}</span>
-                    {isCancelled && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[9px] font-black uppercase flex items-center gap-1"><Ban size={10} /> Cancelado</span>}
-                    {isApproved && <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[9px] font-black uppercase flex items-center gap-1"><CheckCircle size={10} /> Validado</span>}
-                    {isPending && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[9px] font-black uppercase flex items-center gap-1"><Clock size={10} /> Pendente</span>}
-                    <span className="text-[9px] font-bold text-slate-400 ml-auto md:ml-2">{new Date(incident.date).toLocaleDateString('pt-BR')} • {incident.startTime}</span>
+                    <span className="bg-slate-800 text-white text-xs font-black px-2 py-0.5 rounded uppercase tracking-wider">RA {incident.raCode}</span>
+                    {isCancelled && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-black px-2 py-0.5 rounded uppercase flex items-center gap-1"><Ban size={10} /> Cancelado</span>}
+                    {isApproved && <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-black px-2 py-0.5 rounded uppercase flex items-center gap-1"><CheckCircle size={10} /> Validado</span>}
+                    {isPending && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-black px-2 py-0.5 rounded uppercase flex items-center gap-1"><Clock size={10} /> Pendente</span>}
+                    <span className="text-xs font-bold text-slate-400 ml-auto md:ml-2">{new Date(incident.date).toLocaleDateString('pt-BR')} • {incident.startTime}</span>
                   </div>
                   <h3 className={`font-black text-sm uppercase mb-1 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors ${isCancelled ? 'text-slate-500 line-through decoration-red-500 decoration-2' : 'text-slate-800 dark:text-slate-100'}`}>{building?.name || 'Local Desconhecido'}</h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">{incident.description}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">{incident.description}</p>
                 </div>
                 <div className="w-full md:w-auto mt-2 md:mt-0 flex-shrink-0 z-20" onClick={(e) => e.stopPropagation()}>
-                  {isPending && canApprove ? (
-                    <button onClick={() => onApprove?.(incident.id)} className="w-full md:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all">
+                  {isPending && canApprove && (
+                    <button onClick={() => onApprove?.(incident.id)} className="w-full md:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all">
                       <CheckCircle size={14} /> Validar
                     </button>
-                  ) : (
-                    <div className="hidden md:flex items-center justify-center pl-4 border-l border-slate-100 dark:border-slate-800 text-slate-300 dark:text-slate-600 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors h-full">
-                      <ChevronRight size={20} strokeWidth={2.5} />
-                    </div>
                   )}
                 </div>
               </div>
@@ -366,7 +362,7 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
             <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
               Próprios Municipais
             </h2>
-            <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
               Total: {buildings.length} prédios cadastrados
             </p>
           </div>
@@ -395,9 +391,9 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase w-16">Nº</th>
-              <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase">Nome / Endereço</th>
-              <th className="px-6 py-3 text-center text-[10px] font-black text-slate-500 uppercase w-40">Segurança</th>
+              <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider w-16">Nº</th>
+              <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Nome / Endereço</th>
+              <th className="px-6 py-3 text-center text-xs font-black text-slate-500 uppercase tracking-wider w-40">Segurança</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -405,11 +401,11 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
               const hasCoordinates = b.latitude && b.longitude && b.latitude.trim() !== '' && b.longitude.trim() !== '';
               const mapsUrl = hasCoordinates ? `https://www.google.com/maps?q=${b.latitude},${b.longitude}` : '';
               return (
-                <tr key={b.id} onClick={() => canEdit && onEdit(b)} className={`transition-colors ${canEdit ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-slate-800/80' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
+                <tr key={b.id} onClick={() => canEdit && onEdit(b)} className={`transition-colors border-b dark:border-slate-800 ${canEdit ? 'cursor-pointer hover:bg-brand-50/50 dark:hover:bg-brand-900/10' : ''}`}>
                   <td className="px-6 py-4 text-xs font-black text-slate-700 dark:text-slate-300">{b.buildingNumber}</td>
                   <td className="px-6 py-4">
-                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase">{b.name}</p>
-                    <p className="text-[10px] text-slate-500 uppercase mt-0.5">{b.address}</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase">{b.name}</p>
+                    <p className="text-xs text-slate-500 uppercase mt-0.5">{b.address}</p>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center gap-2">
@@ -427,7 +423,6 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
                       )}
                       {b.hasAlarm && <div className="p-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg shadow-sm border border-red-100 dark:border-red-800" title="Alarme Monitorado"><Bell size={14} strokeWidth={2.5} /></div>}
                       {b.hasKey && <div className="p-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg shadow-sm border border-amber-100 dark:border-amber-800" title="Chave na Portaria"><Key size={14} strokeWidth={2.5} /></div>}
-                      {!b.hasAlarm && !b.hasKey && !hasCoordinates && <span className="text-slate-300 dark:text-slate-700 font-bold">---</span>}
                     </div>
                   </td>
                 </tr>
@@ -506,9 +501,9 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
           <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
             <thead className="bg-slate-50/50 dark:bg-slate-800/50">
               <tr>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Colaborador</th>
-                <th className="px-8 py-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest w-32">Cód. Acesso</th>
-                <th className="px-8 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">Função no Sistema</th>
+                <th className="px-8 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Colaborador</th>
+                <th className="px-8 py-4 text-center text-xs font-black text-slate-500 uppercase tracking-widest w-32">Cód. Acesso</th>
+                <th className="px-8 py-4 text-right text-xs font-black text-slate-500 uppercase tracking-widest">Função no Sistema</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -525,8 +520,8 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase leading-none group-hover:text-brand-700 dark:group-hover:text-brand-400 transition-colors">{u.name}</p>
-                        <p className="text-[10px] text-slate-400 uppercase font-bold mt-1 tracking-wider">Matrícula: {u.matricula}</p>
-                        <p className="text-[9px] text-brand-600 dark:text-brand-400 uppercase font-black tracking-wider mt-0.5">
+                        <p className="text-xs text-slate-400 uppercase font-bold mt-1 tracking-wider">Matrícula: {u.matricula}</p>
+                        <p className="text-xs text-brand-600 dark:text-brand-400 uppercase font-black tracking-wider mt-0.5">
                           {jobTitles.find(t => t.id === u.jobTitleId)?.name || ''}
                         </p>
                       </div>
@@ -539,7 +534,7 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
                     </div>
                   </td>
                   <td className="px-8 py-5 text-right">
-                    <span className={`inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm ${getRoleStyles(u.role)}`}>
+                    <span className={`inline-block px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border shadow-sm ${getRoleStyles(u.role)}`}>
                       {u.role}
                     </span>
                   </td>
@@ -576,7 +571,7 @@ const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => v
             <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
               Gestão de Cargos
             </h2>
-            <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
               Total: {jobTitles.length} cargos cadastrados
             </p>
           </div>
@@ -600,13 +595,9 @@ const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => v
         </div>
       </div>
       <div className="grid grid-cols-1 gap-2">
-        {filtered.map(s => (
-          <div key={s.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center">
-            <span className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase">{s.name}</span>
-            <div className="flex gap-2">
-              <button onClick={() => onEdit(s)} className="p-2 text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-lg"><Pencil size={14} /></button>
-              <button onClick={() => onDelete(s.id)} className="p-2 text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
-            </div>
+        {filtered.map(j => (
+          <div key={j.id} onClick={() => onEdit(j)} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center cursor-pointer hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors group">
+            <span className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase group-hover:text-brand-600 dark:group-hover:text-brand-400">{j.name}</span>
           </div>
         ))}
       </div>
@@ -631,7 +622,7 @@ const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onD
             <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
               Setores Operacionais
             </h2>
-            <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
               Total: {sectors.length} setores cadastrados
             </p>
           </div>
@@ -656,12 +647,8 @@ const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onD
       </div>
       <div className="grid grid-cols-1 gap-2">
         {filtered.map(s => (
-          <div key={s.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center">
-            <span className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase">{s.name}</span>
-            <div className="flex gap-2">
-              <button onClick={() => onEdit(s)} className="p-2 text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-lg"><Pencil size={14} /></button>
-              <button onClick={() => onDelete(s.id)} className="p-2 text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg"><Trash2 size={14} /></button>
-            </div>
+          <div key={s.id} onClick={() => onEdit(s)} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center cursor-pointer hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors group">
+            <span className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase group-hover:text-brand-600 dark:group-hover:text-brand-400">{s.name}</span>
           </div>
         ))}
       </div>
@@ -745,7 +732,7 @@ export function App() {
   const gitHash = typeof __GIT_HASH__ !== 'undefined' ? __GIT_HASH__ : 'dev';
   const buildDate = typeof __BUILD_DATE__ !== 'undefined' ? __BUILD_DATE__ : '---';
   const APP_VERSION = `v${appVersion}-${gitHash}`;
-  const DISPLAY_VERSION = `${appVersion}.${gitHash} (${buildDate})`;
+  const DISPLAY_VERSION = `${appVersion}.${gitHash}`; // Simplified for discrete view
 
   // --- FETCH FUNCTIONS INSIDE APP COMPONENT ---
 
@@ -1458,6 +1445,7 @@ export function App() {
             {!isSidebarCollapsed && <div className="text-center leading-none"><h1 className="font-black text-sm tracking-wide text-white">VIGILANTE</h1><h1 className="font-black text-xs tracking-widest text-brand-200 uppercase mt-0.5">Municipal</h1></div>}
           </div>
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            {!isSidebarCollapsed && <p className="px-3 text-xs font-black text-brand-300 mt-4 mb-2 uppercase tracking-widest opacity-60">Principal</p>}
             {can('VIEW_DASHBOARD') && isMenuVisible('dashboard') && <NavItem icon={<LayoutDashboard />} label="Painel de Controle" active={view === 'DASHBOARD'} onClick={() => handleNavigate('DASHBOARD')} collapsed={isSidebarCollapsed} />}
             {isMenuVisible('dashboard') && (
               <NavItem
@@ -1477,11 +1465,10 @@ export function App() {
                 active={view === 'LOANS'}
                 onClick={() => handleNavigate('LOANS')}
                 collapsed={isSidebarCollapsed}
-                badge={pendingLoansCount > 0 ? pendingLoansCount : undefined}
               />
             )}
             <div className="pt-4 pb-2 border-t border-brand-800">
-              {!isSidebarCollapsed && <p className="px-3 text-[10px] font-bold text-brand-300 mb-2 uppercase tracking-widest">Monitoramento</p>}
+              {!isSidebarCollapsed && <p className="px-3 text-xs font-black text-brand-300 mb-2 uppercase tracking-widest">Monitoramento</p>}
               {isMenuVisible('monitoring_group') && (
                 <div className="relative">
                   {(can('VIEW_ALL_INCIDENTS')) && isMenuVisible('history_root') && <NavItem icon={<CheckCircle />} label="Históricos" active={view === 'HISTORY' || view === 'LOAN_HISTORY'} onClick={() => setReportsMenuOpen(!reportsMenuOpen)} collapsed={isSidebarCollapsed} />}
@@ -1497,13 +1484,13 @@ export function App() {
               {isMenuVisible('monitoring_group') && isMenuVisible('pending_root') && (
                 <div className="relative">
                   <NavItem icon={<UserCheck />} label="Pendentes" active={view === 'PENDING_APPROVALS'} onClick={() => setPendentesMenuOpen(!pendentesMenuOpen)} collapsed={isSidebarCollapsed} badge={totalPendingBadge > 0 ? totalPendingBadge : undefined} />
-                  {!isSidebarCollapsed && <div className={`absolute top-3.5 pointer-events-none text-brand-300 ${totalPendingBadge > 0 ? 'right-10' : 'right-3'}`}>{pendentesMenuOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</div>}
+                  {!isSidebarCollapsed && <div className="absolute right-3 top-3.5 pointer-events-none text-brand-300">{pendentesMenuOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</div>}
                 </div>
               )}
               {pendentesMenuOpen && !isSidebarCollapsed && isMenuVisible('monitoring_group') && isMenuVisible('pending_root') && (
                 <div className="space-y-1 mt-1">
                   {isMenuVisible('pending_incidents') && <NavItem label="Atendimentos" icon={<FileText size={14} className="mr-2" />} active={view === 'PENDING_APPROVALS' && pendingSubTab === 'INCIDENTS'} onClick={() => { setPendingSubTab('INCIDENTS'); handleNavigate('PENDING_APPROVALS'); }} collapsed={isSidebarCollapsed} isSubItem badge={pendingIncidentsCount > 0 ? pendingIncidentsCount : undefined} />}
-                  {isMenuVisible('pending_loans') && <NavItem label="Cautelas" icon={<ArrowRightLeft size={14} className="mr-2" />} active={view === 'PENDING_APPROVALS' && pendingSubTab === 'LOANS'} onClick={() => { setPendingSubTab('LOANS'); handleNavigate('PENDING_APPROVALS'); }} collapsed={isSidebarCollapsed} isSubItem badge={pendingLoansCount > 0 ? pendingLoansCount : undefined} />}
+                  {isMenuVisible('pending_loans') && <NavItem label="Cautelas" icon={<ArrowRightLeft size={14} className="mr-2" />} active={view === 'PENDING_APPROVALS' && pendingSubTab === 'LOANS'} onClick={() => { setPendingSubTab('LOANS'); handleNavigate('PENDING_APPROVALS'); }} collapsed={isSidebarCollapsed} isSubItem />}
                 </div>
               )}
 
@@ -1511,7 +1498,7 @@ export function App() {
             </div>
             {(can('MANAGE_ASSETS') || can('MANAGE_USERS') || can('MANAGE_BUILDINGS') || can('MANAGE_SECTORS') || can('MANAGE_ALTERATION_TYPES')) && isMenuVisible('admin_group') && (
               <div className="pt-4 pb-2 border-t border-brand-800">
-                {!isSidebarCollapsed && <p className="px-3 text-[10px] font-bold text-brand-300 mb-2 uppercase tracking-widest">Administração</p>}
+                {!isSidebarCollapsed && <p className="px-3 text-xs font-black text-brand-300 mb-2 uppercase tracking-widest">Administração</p>}
                 {isMenuVisible('registrations_root') && (
                   <div className="relative">
                     <NavItem icon={<FolderOpen />} label="Cadastros" active={view.includes('FORM') || view === 'BUILDINGS' || view === 'USERS' || view === 'VEHICLES' || view === 'VESTS' || view === 'RADIOS' || view === 'EQUIPMENTS' || view === 'ALTERATION_TYPES' || view === 'SECTORS' || view === 'JOB_TITLES'} onClick={() => setRegistrationsMenuOpen(!registrationsMenuOpen)} collapsed={isSidebarCollapsed} />
@@ -1533,7 +1520,6 @@ export function App() {
                     {can('MANAGE_JOB_TITLES') && <NavItem label="Cargos e Funções" icon={<Briefcase size={14} className="mr-2" />} active={view === 'JOB_TITLES' || view === 'JOB_TITLE_FORM'} onClick={() => handleNavigate('JOB_TITLES')} collapsed={isSidebarCollapsed} isSubItem />}
                     {can('MANAGE_ASSETS') && isMenuVisible('reg_assets') && (
                       <>
-                        <div className="border-t border-brand-800 my-1 mx-4"></div>
                         <NavItem label="Veículos" icon={<Car size={14} className="mr-2" />} active={view === 'VEHICLES' || view === 'VEHICLE_FORM'} onClick={() => handleNavigate('VEHICLES')} collapsed={isSidebarCollapsed} isSubItem />
                         <NavItem label="Coletes" icon={<Shield size={14} className="mr-2" />} active={view === 'VESTS' || view === 'VEST_FORM'} onClick={() => handleNavigate('VESTS')} collapsed={isSidebarCollapsed} isSubItem />
                         <NavItem label="Rádios HT" icon={<RadioIcon size={14} className="mr-2" />} active={view === 'RADIOS' || view === 'RADIO_FORM'} onClick={() => handleNavigate('RADIOS')} collapsed={isSidebarCollapsed} isSubItem />
@@ -1563,7 +1549,13 @@ export function App() {
             )}
             <div className="mt-auto border-t border-brand-800">
               <NavItem icon={<LogOut />} label="Sair" onClick={handleLogout} collapsed={isSidebarCollapsed} />
-              {!isSidebarCollapsed && <div className="py-2 text-center"><p className="text-[8px] font-bold text-brand-400 uppercase tracking-widest">Versão {DISPLAY_VERSION}</p></div>}
+              {!isSidebarCollapsed && (
+                <div className="py-2 text-center opacity-30 hover:opacity-100 transition-opacity duration-500">
+                  <p className="text-[9px] font-bold text-brand-300 uppercase tracking-widest cursor-default">
+                    v{DISPLAY_VERSION}
+                  </p>
+                </div>
+              )}
             </div>
           </nav>
         </div>
@@ -1573,14 +1565,14 @@ export function App() {
           <div className="flex items-center gap-4">
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2"><Menu /></button>
             <h2 className="hidden md:block text-xs font-black uppercase text-slate-400 tracking-widest">Gestão Municipal</h2>
-            {isLocalMode && <span className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded text-[9px] font-black uppercase animate-pulse"><CloudOff size={12} /> Offline Ativado</span>}
+            {isLocalMode && <span className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded text-xs font-black uppercase animate-pulse"><CloudOff size={12} /> Offline Ativado</span>}
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
             <button onClick={() => handleNavigate('PROFILE')} className="flex items-center gap-3 border-l pl-3 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg p-1 transition-colors group">
               <div className="hidden sm:block text-right">
-                <p className="text-[10px] font-black uppercase text-slate-900 dark:text-slate-100 leading-tight group-hover:text-brand-600 transition-colors">{user.name.split(' ')[0]}</p>
-                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">{user.role}</p>
+                <p className="text-sm font-black uppercase text-slate-900 dark:text-slate-100 leading-tight group-hover:text-brand-600 transition-colors">{user.name.split(' ')[0]}</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{user.role}</p>
               </div>
               <div className="h-10 w-10 bg-brand-900 rounded-full flex items-center justify-center text-white font-bold uppercase border-2 border-white shadow-sm ring-1 ring-brand-100 transition-all">{user.name.charAt(0)}</div>
             </button>

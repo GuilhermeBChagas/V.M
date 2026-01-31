@@ -107,22 +107,22 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px]">Nº do Prédio</label>
+                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-wider">Nº do Prédio</label>
                         <input name="buildingNumber" value={formData.buildingNumber} onChange={handleChange} required className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: 101" />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px]">Nome da Unidade</label>
+                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-wider">Nome da Unidade</label>
                         <input name="name" value={formData.name} onChange={handleChange} required className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
 
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px]">Endereço Completo</label>
+                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-wider">Endereço Completo</label>
                         <input name="address" value={formData.address} onChange={handleChange} required className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px]">Setor</label>
+                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-wider">Setor</label>
                         <select name="sectorId" value={formData.sectorId} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-blue-500">
                             {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                         </select>
@@ -137,7 +137,7 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
                                 type="button"
                                 onClick={handleCaptureLocation}
                                 disabled={isLoadingLocation}
-                                className="text-[10px] font-black uppercase text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
+                                className="text-xs font-black uppercase text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
                             >
                                 {isLoadingLocation ? <Loader2 size={12} className="animate-spin" /> : <MapPin size={12} />}
                                 Capturar Minha Posição
@@ -145,11 +145,11 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Latitude</label>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Latitude</label>
                                 <input name="latitude" value={formData.latitude || ''} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 border p-2 bg-slate-50 dark:bg-slate-800/50 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 text-xs font-mono" placeholder="-23.000000" />
                             </div>
                             <div>
-                                <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Longitude</label>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Longitude</label>
                                 <input name="longitude" value={formData.longitude || ''} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 border p-2 bg-slate-50 dark:bg-slate-800/50 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 text-xs font-mono" placeholder="-51.000000" />
                             </div>
                         </div>
@@ -173,17 +173,17 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
                     </div>
 
                     <div className="md:col-span-2">
-                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1">Nome</label>
+                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1">Nome</label>
                         <input name="managerName" value={formData.managerName} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 border p-3 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
 
                     <div>
-                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1">Telefone</label>
+                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1">Telefone</label>
                         <input name="managerPhone" value={formData.managerPhone} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 border p-3 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="(00) 00000-0000" />
                     </div>
 
                     <div>
-                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1">E-mail</label>
+                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1">E-mail</label>
                         <input name="managerEmail" type="email" value={formData.managerEmail} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 border p-3 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                 </div>

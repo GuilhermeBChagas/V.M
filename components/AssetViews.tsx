@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
 import { Vehicle, Vest, Radio, Equipment } from '../types';
-import { Plus, Pencil, Trash2, Search, Save, X, Car, Shield, Radio as RadioIcon, Package, Fuel, AlertCircle, Gauge } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Save, X, Car, Shield, Radio as RadioIcon, Package, Fuel, AlertCircle, Gauge, ChevronRight } from 'lucide-react';
 import { normalizeString } from '../utils/stringUtils';
 
 // --- STYLES & UTILS (MATCHING BUILDING FORM) ---
 const inputClass = "block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm";
-const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase text-[10px] tracking-wide";
+const labelClass = "block text-xs font-black text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider";
 const selectClass = "block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none";
 
 
@@ -139,37 +139,32 @@ export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit
                 <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                     <thead className="bg-slate-50 dark:bg-slate-800">
                         <tr>
-                            <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Identificação</th>
-                            <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Modelo</th>
-                            <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Detalhes</th>
-                            <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">KM Atual</th>
-                            <th className="px-6 py-3 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">Ações</th>
+                            <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Identificação</th>
+                            <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Modelo</th>
+                            <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Detalhes</th>
+                            <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest">KM Atual</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                         {filtered.map(i => (
-                            <tr key={i.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                <td className="px-6 py-3 whitespace-nowrap">
+                            <tr key={i.id} onClick={() => onEdit(i)} className="hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors cursor-pointer group border-b dark:border-slate-800">
+                                <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center gap-2">
-                                        <span className="bg-blue-900 text-white px-2 py-1 rounded text-[10px] font-bold">{i.prefix || '---'}</span>
-                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded">{i.plate}</span>
+                                        <span className="bg-blue-900 text-white px-2 py-1 rounded text-[10px] font-black uppercase">{i.prefix || '---'}</span>
+                                        <span className="text-xs font-black text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded uppercase">{i.plate}</span>
                                     </div>
                                 </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-xs font-bold uppercase text-slate-700 dark:text-slate-300">{i.model}</td>
-                                <td className="px-6 py-3 whitespace-nowrap">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold uppercase text-slate-800 dark:text-slate-200">{i.model}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex flex-col">
                                         <span className="text-[10px] text-slate-500 font-bold uppercase">Frota: {i.fleetNumber}</span>
-                                        <span className="text-[10px] text-slate-400 uppercase flex items-center gap-1"><Fuel size={10} /> {i.fuelType}</span>
+                                        <span className="text-[10px] text-slate-400 uppercase font-bold flex items-center gap-1"><Fuel size={10} /> {i.fuelType}</span>
                                     </div>
                                 </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-xs font-mono font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                                    <Gauge size={14} className="text-slate-400" />
-                                    {i.currentKm ? i.currentKm.toLocaleString('pt-BR') : '---'}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
-                                    <div className="flex justify-end gap-2">
-                                        <button onClick={() => onEdit(i)} className="text-blue-600 hover:text-blue-900 dark:hover:text-blue-400"><Pencil size={14} /></button>
-                                        <button onClick={() => onDelete(i.id)} className="text-red-600 hover:text-red-900 dark:hover:text-red-400"><Trash2 size={14} /></button>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-bold text-slate-600 dark:text-slate-400">
+                                    <div className="flex items-center gap-1">
+                                        <Gauge size={14} className="text-slate-400" />
+                                        {i.currentKm ? i.currentKm.toLocaleString('pt-BR') : '---'}
                                     </div>
                                 </td>
                             </tr>
@@ -180,27 +175,23 @@ export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit
 
             <div className="grid gap-2 md:hidden">
                 {filtered.map(i => (
-                    <div key={i.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group">
-                        <div>
+                    <div key={i.id} onClick={() => onEdit(i)} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group cursor-pointer hover:bg-brand-50/50 transition-all">
+                        <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1.5">
-                                <span className="bg-blue-900 text-white px-1.5 py-0.5 rounded text-[10px] font-black">{i.prefix || 'S/P'}</span>
-                                <span className="text-[10px] font-black text-slate-500 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded">{i.plate}</span>
+                                <span className="bg-blue-900 text-white px-1.5 py-0.5 rounded text-[10px] font-black uppercase">{i.prefix || 'S/P'}</span>
+                                <span className="text-[10px] font-black text-slate-500 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded uppercase">{i.plate}</span>
                             </div>
-                            <h3 className="font-bold text-slate-800 dark:text-slate-100 uppercase text-xs">{i.model}</h3>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[10px] text-slate-500 uppercase">{i.fuelType}</span>
-                                <span className="text-[10px] text-slate-400 flex items-center gap-1 font-mono"><Gauge size={10} /> {i.currentKm ? i.currentKm.toLocaleString('pt-BR') : '---'} KM</span>
+                            <h3 className="font-bold text-slate-800 dark:text-slate-100 uppercase text-sm group-hover:text-brand-600">{i.model}</h3>
+                            <div className="flex items-center gap-3 mt-1">
+                                <span className="text-[10px] text-slate-500 uppercase font-bold">{i.fuelType}</span>
+                                <span className="text-[10px] text-slate-400 flex items-center gap-1 font-mono font-bold"><Gauge size={10} /> {i.currentKm ? i.currentKm.toLocaleString('pt-BR') : '---'} KM</span>
                             </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => onEdit(i)} className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg"><Pencil size={14} /></button>
-                            <button onClick={() => onDelete(i.id)} className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-lg"><Trash2 size={14} /></button>
                         </div>
                     </div>
                 ))}
             </div>
             {filtered.length === 0 && <EmptyState message="Nenhum veículo encontrado" />}
-        </div>
+        </div >
     );
 };
 
@@ -304,22 +295,15 @@ export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: 
                     <thead className="bg-slate-50 dark:bg-slate-800">
                         <tr>
                             <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Número de Série</th>
-                            <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Tamanho</th>
-                            <th className="px-6 py-3 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">Ações</th>
+                            <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Tamanho</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                         {filtered.map(i => (
-                            <tr key={i.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                <td className="px-6 py-3 whitespace-nowrap font-bold text-xs text-slate-700 dark:text-slate-200">{i.number}</td>
-                                <td className="px-6 py-3 whitespace-nowrap">
-                                    <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded text-[10px] font-black">{i.size}</span>
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
-                                    <div className="flex justify-end gap-2">
-                                        <button onClick={() => onEdit(i)} className="text-blue-600 hover:text-blue-900 dark:hover:text-blue-400"><Pencil size={14} /></button>
-                                        <button onClick={() => onDelete(i.id)} className="text-red-600 hover:text-red-900 dark:hover:text-red-400"><Trash2 size={14} /></button>
-                                    </div>
+                            <tr key={i.id} onClick={() => onEdit(i)} className="hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors cursor-pointer group border-b dark:border-slate-800">
+                                <td className="px-6 py-4 whitespace-nowrap font-bold text-sm text-slate-800 dark:text-slate-100 uppercase">{i.number}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded text-xs font-black uppercase">{i.size}</span>
                                 </td>
                             </tr>
                         ))}
@@ -329,23 +313,19 @@ export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: 
 
             <div className="grid gap-2 md:hidden">
                 {filtered.map(i => (
-                    <div key={i.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center">
+                    <div key={i.id} onClick={() => onEdit(i)} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group cursor-pointer hover:bg-brand-50/50 transition-all">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-500"><Shield size={20} /></div>
+                            <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-500 group-hover:bg-brand-600 group-hover:text-white transition-colors"><Shield size={20} /></div>
                             <div>
-                                <h3 className="font-bold text-slate-800 dark:text-slate-100 uppercase text-xs">{i.number}</h3>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">Tamanho: {i.size}</p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-100 uppercase text-sm group-hover:text-brand-600">{i.number}</h3>
+                                <p className="text-xs text-slate-500 font-bold uppercase mt-0.5">Tamanho: {i.size}</p>
                             </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => onEdit(i)} className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg"><Pencil size={14} /></button>
-                            <button onClick={() => onDelete(i.id)} className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-lg"><Trash2 size={14} /></button>
                         </div>
                     </div>
                 ))}
             </div>
             {filtered.length === 0 && <EmptyState message="Nenhum colete cadastrado" />}
-        </div>
+        </div >
     );
 };
 
@@ -397,26 +377,19 @@ export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r
                 <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                     <thead className="bg-slate-50 dark:bg-slate-800">
                         <tr>
-                            <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Identificador</th>
-                            <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Marca</th>
-                            <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Serial</th>
-                            <th className="px-6 py-3 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">Ações</th>
+                            <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Identificador</th>
+                            <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Marca</th>
+                            <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Serial</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                         {filtered.map(i => (
-                            <tr key={i.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                <td className="px-6 py-3 whitespace-nowrap">
-                                    <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded text-[10px] font-black uppercase">HT-{i.number}</span>
+                            <tr key={i.id} onClick={() => onEdit(i)} className="hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors cursor-pointer group border-b dark:border-slate-800">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded text-xs font-black uppercase">HT-{i.number}</span>
                                 </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-xs font-bold uppercase text-slate-700 dark:text-slate-300">{i.brand}</td>
-                                <td className="px-6 py-3 whitespace-nowrap text-[10px] text-slate-500 font-mono uppercase">{i.serialNumber}</td>
-                                <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
-                                    <div className="flex justify-end gap-2">
-                                        <button onClick={() => onEdit(i)} className="text-blue-600 hover:text-blue-900 dark:hover:text-blue-400"><Pencil size={14} /></button>
-                                        <button onClick={() => onDelete(i.id)} className="text-red-600 hover:text-red-900 dark:hover:text-red-400"><Trash2 size={14} /></button>
-                                    </div>
-                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold uppercase text-slate-800 dark:text-slate-200">{i.brand}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500 font-mono uppercase font-bold">{i.serialNumber}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -425,17 +398,13 @@ export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r
 
             <div className="grid gap-2 md:hidden">
                 {filtered.map(i => (
-                    <div key={i.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center">
+                    <div key={i.id} onClick={() => onEdit(i)} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group cursor-pointer hover:bg-brand-50/50 transition-all">
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2 mb-1">
-                                <span className="bg-blue-900 text-white px-1.5 py-0.5 rounded text-[10px] font-black">HT {i.number}</span>
+                                <span className="bg-blue-900 text-white px-1.5 py-0.5 rounded text-[10px] font-black uppercase">HT {i.number}</span>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">{i.brand}</span>
                             </div>
-                            <span className="text-[9px] text-slate-400 font-mono uppercase">SN: {i.serialNumber}</span>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => onEdit(i)} className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg"><Pencil size={14} /></button>
-                            <button onClick={() => onDelete(i.id)} className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-lg"><Trash2 size={14} /></button>
+                            <span className="text-[9px] text-slate-400 font-mono uppercase font-bold">SN: {i.serialNumber}</span>
                         </div>
                     </div>
                 ))}
@@ -490,26 +459,19 @@ export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, on
                 <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                     <thead className="bg-slate-50 dark:bg-slate-800">
                         <tr>
-                            <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Item</th>
-                            <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Quantidade</th>
-                            <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Descrição</th>
-                            <th className="px-6 py-3 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">Ações</th>
+                            <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Item</th>
+                            <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Quantidade</th>
+                            <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Descrição</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                         {filtered.map(i => (
-                            <tr key={i.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                <td className="px-6 py-3 whitespace-nowrap text-xs font-bold uppercase text-slate-700 dark:text-slate-300">{i.name}</td>
-                                <td className="px-6 py-3 whitespace-nowrap">
-                                    <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded text-[10px] font-black">{i.quantity} UN</span>
+                            <tr key={i.id} onClick={() => onEdit(i)} className="hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors cursor-pointer group border-b dark:border-slate-800">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold uppercase text-slate-800 dark:text-slate-100">{i.name}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded text-xs font-black uppercase">{i.quantity} UN</span>
                                 </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-[10px] text-slate-500 uppercase max-w-xs truncate">{i.description}</td>
-                                <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
-                                    <div className="flex justify-end gap-2">
-                                        <button onClick={() => onEdit(i)} className="text-blue-600 hover:text-blue-900 dark:hover:text-blue-400"><Pencil size={14} /></button>
-                                        <button onClick={() => onDelete(i.id)} className="text-red-600 hover:text-red-900 dark:hover:text-red-400"><Trash2 size={14} /></button>
-                                    </div>
-                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 uppercase max-w-xs truncate font-medium">{i.description}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -518,17 +480,13 @@ export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, on
 
             <div className="grid gap-2 md:hidden">
                 {filtered.map(i => (
-                    <div key={i.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center">
+                    <div key={i.id} onClick={() => onEdit(i)} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group cursor-pointer hover:bg-brand-50/50 transition-all">
                         <div className="flex-1 min-w-0 pr-2">
-                            <h3 className="font-bold text-slate-800 dark:text-slate-100 uppercase text-xs truncate">{i.name}</h3>
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-black">Qtd: {i.quantity}</span>
-                                <span className="text-[9px] text-slate-400 truncate">{i.description}</span>
+                            <h3 className="font-bold text-slate-800 dark:text-slate-100 uppercase text-sm truncate group-hover:text-brand-600">{i.name}</h3>
+                            <div className="flex items-center gap-3 mt-1">
+                                <span className="text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-black uppercase text-slate-600 dark:text-slate-300">Qtd: {i.quantity}</span>
+                                <span className="text-[9px] text-slate-400 truncate uppercase font-medium">{i.description}</span>
                             </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => onEdit(i)} className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg"><Pencil size={14} /></button>
-                            <button onClick={() => onDelete(i.id)} className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-lg"><Trash2 size={14} /></button>
                         </div>
                     </div>
                 ))}

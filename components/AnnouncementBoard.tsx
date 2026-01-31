@@ -42,11 +42,11 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ currentUser, onVi
 
     if (loading) {
         return (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 animate-pulse">
-                <div className="h-6 w-48 bg-slate-200 rounded mb-6" />
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 animate-pulse">
+                <div className="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded mb-6" />
                 <div className="space-y-4">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="h-24 bg-slate-100 rounded-xl" />
+                        <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800/50 rounded-xl" />
                     ))}
                 </div>
             </div>
@@ -54,18 +54,18 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ currentUser, onVi
     }
 
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2">
-                    <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
                         <Megaphone className="w-5 h-5" />
                     </div>
-                    <h3 className="font-bold text-slate-800 text-lg">Mural de Avisos</h3>
+                    <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">Mural de Avisos</h3>
                 </div>
                 {onViewAll && (
                     <button
                         onClick={onViewAll}
-                        className="text-indigo-600 text-sm font-semibold flex items-center gap-1 hover:underline"
+                        className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold flex items-center gap-1 hover:underline"
                     >
                         Ver todos <ChevronRight className="w-4 h-4" />
                     </button>
@@ -92,7 +92,7 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ currentUser, onVi
             {/* Modal de Detalhe do Recado */}
             {selectedAnnouncement && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-transparent dark:border-slate-800">
                         <div className={`h-2 ${selectedAnnouncement.priority === 'URGENT' ? 'bg-red-500' :
                             selectedAnnouncement.priority === 'IMPORTANT' ? 'bg-amber-500' : 'bg-blue-500'
                             }`} />
@@ -100,54 +100,54 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ currentUser, onVi
                         <div className="p-8">
                             <div className="flex justify-between items-start mb-6">
                                 <div>
-                                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded ${selectedAnnouncement.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
-                                        selectedAnnouncement.priority === 'IMPORTANT' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                                    <span className={`text-xs font-bold uppercase tracking-widest px-2 py-1 rounded ${selectedAnnouncement.priority === 'URGENT' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                                        selectedAnnouncement.priority === 'IMPORTANT' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
                                         }`}>
                                         {selectedAnnouncement.priority}
                                     </span>
-                                    <h2 className="text-2xl font-black text-slate-800 mt-2">{selectedAnnouncement.title}</h2>
+                                    <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-2">{selectedAnnouncement.title}</h2>
                                 </div>
                                 <button
                                     onClick={() => setSelectedAnnouncement(null)}
-                                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
                                 >
                                     <X className="w-6 h-6 text-slate-400" />
                                 </button>
                             </div>
 
-                            <div className="prose prose-slate max-w-none mb-8">
-                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                            <div className="prose prose-slate dark:prose-invert max-w-none mb-8">
+                                <p className="text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-wrap font-medium">
                                     {selectedAnnouncement.content}
                                 </p>
                             </div>
 
-                            <div className="flex items-center justify-between pt-6 border-t border-slate-100 text-sm text-slate-500">
+                            <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800 text-sm text-slate-500">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600">
+                                    <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-400 border dark:border-slate-700">
                                         {selectedAnnouncement.senderName?.[0]}
                                     </div>
                                     <div>
-                                        <p className="font-bold text-slate-700 leading-none">{selectedAnnouncement.senderName}</p>
-                                        <p className="text-xs mt-1">Remetente</p>
+                                        <p className="font-bold text-slate-700 dark:text-slate-300 leading-none">{selectedAnnouncement.senderName}</p>
+                                        <p className="text-xs mt-1 dark:text-slate-500">Remetente</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-medium text-slate-700">
+                                    <p className="font-black text-slate-700 dark:text-slate-300">
                                         {new Date(selectedAnnouncement.createdAt).toLocaleDateString('pt-BR', {
                                             day: '2-digit',
                                             month: 'long',
                                             year: 'numeric'
                                         })}
                                     </p>
-                                    <p className="text-xs mt-1">Data da publicação</p>
+                                    <p className="text-xs mt-1 dark:text-slate-500">Data da publicação</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-slate-50 p-4 flex justify-end">
+                        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t dark:border-slate-800 flex justify-end">
                             <button
                                 onClick={() => setSelectedAnnouncement(null)}
-                                className="px-6 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition-colors shadow-sm"
+                                className="px-6 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm"
                             >
                                 Fechar
                             </button>

@@ -298,12 +298,12 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                         <h2 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
                             {initialData ? 'EDITAR R.A' : 'NOVO R.A'}
                         </h2>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">PREENCHA TODOS OS CAMPOS (EXCETO FOTOS)</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1.5">PREENCHA TODOS OS CAMPOS (EXCETO FOTOS)</p>
                     </div>
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 border-2 border-blue-600 px-4 py-2 rounded-xl flex flex-col items-center justify-center min-w-[120px] shadow-sm">
-                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">CÓDIGO R.A</span>
+                    <span className="text-xs font-black text-blue-600 uppercase tracking-widest leading-none mb-1">CÓDIGO R.A</span>
                     <span className="text-lg font-black text-slate-800 dark:text-white leading-none">{currentRa}</span>
                 </div>
             </div>
@@ -364,7 +364,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* PRÓPRIO */}
                     <div className="space-y-2" ref={buildingContainerRef}>
-                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">PRÓPRIO</label>
+                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">PRÓPRIO</label>
                         <div className="relative flex gap-2">
                             <div className="relative flex-1 group">
                                 <Search className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} />
@@ -408,7 +408,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase truncate">{b.name}</p>
-                                                <p className="text-[10px] text-slate-500 uppercase truncate">{b.address}</p>
+                                                <p className="text-xs text-slate-500 uppercase truncate">{b.address}</p>
                                             </div>
                                         </button>
                                     ))}
@@ -419,7 +419,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
 
                     {/* VIGILANTES */}
                     <div className="space-y-2" ref={vigilantContainerRef}>
-                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">VIGILANTES</label>
+                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">VIGILANTES</label>
                         <div className="relative">
                             <div className="relative group">
                                 <Search className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} />
@@ -451,7 +451,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className={`text-xs font-black uppercase truncate leading-none ${isAlreadyAdded ? 'text-emerald-600' : 'text-slate-800 dark:text-slate-100'}`}>{u.name}</p>
-                                                    <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Matrícula: {u.matricula}</p>
+                                                    <p className="text-xs font-bold text-slate-400 uppercase mt-1">Matrícula: {u.matricula}</p>
                                                 </div>
                                             </button>
                                         );
@@ -463,7 +463,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                             {vigilantsList.map(v => (
                                 <div key={v} className="inline-flex items-center gap-2 pl-1 pr-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full shadow-sm">
                                     <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-[10px] font-black uppercase">{v.charAt(0)}</div>
-                                    <span className="text-[10px] font-black text-slate-700 dark:text-slate-200 uppercase">{v}</span>
+                                    <span className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase">{v}</span>
                                     <button type="button" onClick={() => handleRemoveVigilant(v)} className="p-1 hover:text-red-500 text-slate-400"><X size={12} /></button>
                                 </div>
                             ))}
@@ -474,7 +474,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                 {/* NATUREZA E REGISTRO DE TEMPO */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                     <div className="md:col-span-4 space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 whitespace-nowrap">TIPO DE ALTERAÇÃO</label>
+                        <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 whitespace-nowrap">TIPO DE ALTERAÇÃO</label>
                         <div className="relative">
                             <select
                                 value={alterationType}
@@ -491,14 +491,14 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
 
                     <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="space-y-1.5">
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">DATA</label>
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">DATA</label>
                             <div className="relative">
                                 <Calendar className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
                                 <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full pl-11 p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 rounded-2xl text-sm font-semibold outline-none focus:border-blue-500 transition-all" />
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">HORA INICIAL</label>
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">HORA INICIAL</label>
                             <div className="relative">
                                 <Clock className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
                                 <input
@@ -534,7 +534,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
 
                 {/* RELATO DA ALTERAÇÃO */}
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">RELATO DA ALTERAÇÃO</label>
+                    <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">RELATO DA ALTERAÇÃO</label>
                     <textarea
                         required
                         value={description}
@@ -549,7 +549,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                 <div className="space-y-4">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div className="flex flex-col">
-                            <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">EVIDÊNCIAS FOTOGRÁFICAS</label>
+                            <label className="text-xs font-bold text-slate-400 uppercase ml-1">EVIDÊNCIAS FOTOGRÁFICAS</label>
                             <span className="text-[9px] font-bold text-slate-400 uppercase ml-1">Máximo de 5 imagens ({photos.length}/5) - Opcional</span>
                         </div>
                         <div className="flex gap-2 w-full sm:w-auto">
@@ -557,7 +557,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                 type="button"
                                 disabled={photos.length >= 5}
                                 onClick={() => document.getElementById('file-upload')?.click()}
-                                className="flex-1 sm:flex-none px-4 py-3 bg-white dark:bg-slate-800 border-2 border-blue-100 dark:border-slate-700 text-blue-600 dark:text-blue-400 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:bg-blue-50 transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 sm:flex-none px-4 py-3 bg-white dark:bg-slate-800 border-2 border-blue-100 dark:border-slate-700 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 hover:bg-blue-50 transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <ImagePlus size={16} /> Adicionar Foto
                             </button>
@@ -588,7 +588,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                         <Trash2 size={14} />
                                     </button>
                                     <div className="absolute bottom-0 left-0 right-0 bg-black/40 py-1 text-center">
-                                        <span className="text-[8px] font-black text-white uppercase tracking-widest">FOTO {index + 1}</span>
+                                        <span className="text-xs font-black text-white uppercase tracking-widest">FOTO {index + 1}</span>
                                     </div>
                                 </div>
                             ))}
