@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Incident, Building, User, AlterationType } from '../types';
-import { Save, X, Clock, MapPin, FileText, Loader2, Search, Users, Navigation, Check, AlertTriangle, Plus, UserPlus, UserMinus, Calendar, ChevronDown, Send, Camera, ImagePlus, Trash2, Zap, RefreshCw } from 'lucide-react';
+import { Save, X, Clock, MapPin, FileText, Loader2, Search, Users, Navigation, Check, AlertTriangle, Plus, UserPlus, UserMinus, Calendar, ChevronDown, Send, Camera, ImagePlus, Trash2, Zap } from 'lucide-react';
 import { normalizeString } from '../utils/stringUtils';
 
 interface IncidentFormProps {
@@ -53,21 +53,9 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
     const [isVigilantDropdownOpen, setIsVigilantDropdownOpen] = useState(false);
     const vigilantContainerRef = useRef<HTMLDivElement>(null);
 
-    // Camera State
-    const [isCameraOpen, setIsCameraOpen] = useState(false);
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [stream, setStream] = useState<MediaStream | null>(null);
-    const [cameraFacingMode, setCameraFacingMode] = useState<'environment' | 'user'>('environment');
 
-    // Cleanup camera on unmount
-    useEffect(() => {
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-        };
-    }, [stream]);
+
+
 
     useEffect(() => {
         if (initialData) {
@@ -203,71 +191,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
         });
     };
 
-    const startCamera = async (modeOverride?: 'environment' | 'user') => {
-        if (photos.length >= 5) {
-            alert("Você já atingiu o limite de 5 fotos.");
-            return;
-        }
 
-        const mode = modeOverride || cameraFacingMode;
-
-        try {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: mode,
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 }
-                }
-            });
-            setStream(mediaStream);
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
-            }
-            setIsCameraOpen(true);
-        } catch (err) {
-            console.error("Erro ao acessar câmera:", err);
-            alert("Não foi possível acessar a câmera. Verifique as permissões.");
-        }
-    };
-
-    const handleSwitchCamera = () => {
-        const newMode = cameraFacingMode === 'environment' ? 'user' : 'environment';
-        setCameraFacingMode(newMode);
-        startCamera(newMode);
-    };
-
-    const stopCamera = () => {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            setStream(null);
-        }
-        setIsCameraOpen(false);
-    };
-
-    const capturePhoto = () => {
-        if (photos.length >= 5) {
-            alert("Limite de 5 fotos atingido.");
-            stopCamera();
-            return;
-        }
-        if (videoRef.current && canvasRef.current) {
-            const video = videoRef.current;
-            const canvas = canvasRef.current;
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-                setPhotos(prev => [...prev, dataUrl]);
-                stopCamera();
-            }
-        }
-    };
 
     const removePhoto = (index: number) => {
         setPhotos(prev => prev.filter((_, i) => i !== index));
@@ -611,12 +535,13 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                             <button
                                 type="button"
                                 disabled={photos.length >= 5}
-                                onClick={startCamera}
+                                onClick={() => document.getElementById('camera-input')?.click()}
                                 className="flex-1 sm:flex-none px-4 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Camera size={16} /> Abrir Câmera
                             </button>
                             <input id="file-upload" type="file" accept="image/*" multiple onChange={handleFileSelect} className="hidden" disabled={photos.length >= 5} />
+                            <input id="camera-input" type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" disabled={photos.length >= 5} />
                         </div>
                     </div>
 
@@ -652,49 +577,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                 </div>
             </form>
 
-            {/* Camera Modal Overlay */}
-            {isCameraOpen && (
-                <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-4">
-                    <div className="relative w-full max-w-2xl bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10">
-                        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
-                        <canvas ref={canvasRef} className="hidden" />
 
-                        {/* Camera Controls Overlay */}
-                        <div className="absolute inset-0 flex flex-col justify-between p-6 pointer-events-none">
-                            <div className="flex justify-between items-start">
-                                <div className="bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/20">
-                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Câmera HD Ativa ({photos.length}/5)</span>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button type="button" onClick={handleSwitchCamera} className="p-3 bg-black/50 backdrop-blur-md text-white rounded-2xl border border-white/20 pointer-events-auto active:scale-90 transition-transform">
-                                        <RefreshCw size={24} />
-                                    </button>
-                                    <button type="button" onClick={stopCamera} className="p-3 bg-black/50 backdrop-blur-md text-white rounded-2xl border border-white/20 pointer-events-auto active:scale-90 transition-transform"><X size={24} /></button>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col items-center gap-6 pb-4">
-                                <div className="flex items-center gap-8">
-                                    <button
-                                        type="button"
-                                        onClick={capturePhoto}
-                                        disabled={photos.length >= 5}
-                                        className="p-8 bg-white text-slate-900 rounded-full shadow-2xl border-8 border-white/20 pointer-events-auto active:scale-90 transition-transform group disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <div className="bg-slate-100 rounded-full p-2 group-hover:scale-110 transition-transform">
-                                            <Camera size={32} />
-                                        </div>
-                                    </button>
-                                </div>
-                                <p className="text-[10px] font-black text-white/60 uppercase tracking-widest bg-black/40 px-4 py-1 rounded-full">
-                                    {photos.length >= 5 ? 'Limite atingido' : 'Toque no botão para capturar a evidência'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
