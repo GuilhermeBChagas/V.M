@@ -361,7 +361,7 @@ const IncidentHistory: React.FC<{
                   <span className="text-xs font-bold text-slate-400 ml-auto md:ml-2">{new Date(incident.date).toLocaleDateString('pt-BR')} • {incident.startTime}</span>
                 </div>
                 <h3 className={`font-black text-sm uppercase mb-1 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors ${isCancelled ? 'text-slate-500 line-through decoration-red-500 decoration-2' : 'text-slate-800 dark:text-slate-100'}`}>{building?.name || 'Local Desconhecido'}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">{incident.description}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate font-medium">{incident.description}</p>
               </div>
               <div className="w-full md:w-auto mt-2 md:mt-0 flex-shrink-0 z-20" onClick={(e) => e.stopPropagation()}>
                 {isPending && canApprove && (
