@@ -19,12 +19,13 @@ interface IncidentDetailProps {
     onEdit?: () => void;
     customLogo?: string | null; // Logo Direita (GCM)
     customLogoLeft?: string | null; // Logo Esquerda (Muni)
+    approverRole?: string;
 }
 
 export const IncidentDetail: React.FC<IncidentDetailProps> = ({
     incident, building, author, onBack, onDelete,
     canEdit = false, canDelete = false, canApprove = false,
-    onApprove, onEdit, customLogo, customLogoLeft
+    onApprove, onEdit, customLogo, customLogoLeft, approverRole
 }) => {
     const contentRef = useRef<HTMLDivElement>(null);
     const [isExporting, setIsExporting] = useState(false);
@@ -368,7 +369,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                         <div className="grid grid-cols-2 gap-6 md:gap-12 items-end">
                             {/* Assinatura Vigilante */}
                             <div className="min-w-0">
-                                <div className="text-[7px] md:text-[9px] font-black uppercase text-slate-800 mb-2 tracking-wider">AGENTE(S) RESPONSÁVEL(IS):</div>
+                                <div className="text-[7px] md:text-[9px] font-black uppercase text-slate-800 mb-2 tracking-wider">VIGILANTES:</div>
                                 <div className="border-b-2 border-slate-400 text-[10px] md:text-[12px] uppercase px-1 py-2 bg-slate-50/50 min-h-[40px] leading-tight font-bold italic">
                                     {incident.vigilants}
                                 </div>
@@ -379,7 +380,11 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                                 {incident.approvedBy ? (
                                     <div className="border-2 border-slate-900 p-3 relative bg-slate-50 min-w-full rounded-sm shadow-sm">
                                         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white px-3 py-0.5 text-[6px] md:text-[8px] font-black uppercase text-slate-900 tracking-widest border border-slate-900 leading-none whitespace-nowrap">
-                                            AUTORIDADE VALIDANTE
+                                            {approverRole === 'ADMIN' ? 'ADMINISTRADOR' :
+                                                approverRole === 'SUPERVISOR' ? 'SUPERVISOR' :
+                                                    approverRole === 'OPERATOR' ? 'OPERADOR' :
+                                                        approverRole === 'RONDA' ? 'RONDA' :
+                                                            'AUTORIDADE VALIDANTE'}
                                         </div>
                                         <div className="flex flex-col items-center justify-center gap-1 pt-2">
                                             <div className="text-center">
