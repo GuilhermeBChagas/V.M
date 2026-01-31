@@ -91,6 +91,15 @@
           color-adjust: exact !important;
         }
       }
+      
+      @keyframes badge-pulse {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+      }
+      .badge-pulse {
+        animation: badge-pulse 2s infinite;
+      }
     </style>
   <script type="importmap">
 {

@@ -186,6 +186,28 @@ export interface SystemLog {
   timestamp: string;
 }
 
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  senderId: string;
+  senderName?: string;
+  targetType: 'USER' | 'GROUP' | 'BROADCAST';
+  targetId?: string; // Para USER: userId, Para GROUP: string da Role (ADMIN, OPERATOR, etc)
+  priority: 'INFO' | 'IMPORTANT' | 'URGENT';
+  expiresAt?: string;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+  isRead?: boolean;
+}
+
+export interface AnnouncementRead {
+  announcementId: string;
+  userId: string;
+  readAt: string;
+}
+
 export type ViewState =
   | 'DASHBOARD'
   | 'BUILDINGS' | 'BUILDING_FORM'
@@ -201,4 +223,5 @@ export type ViewState =
   | 'EQUIPMENTS' | 'EQUIPMENT_FORM'
   | 'LOANS'
   | 'LOAN_HISTORY'
+  | 'ANNOUNCEMENTS'
   | 'IMPORT_EXPORT';

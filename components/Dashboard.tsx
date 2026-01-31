@@ -5,6 +5,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { CheckCircle, Clock, Activity, Zap, Plus, ArrowRight, CalendarClock, FileText, Search, MapPin, Loader2, Navigation, AlertTriangle } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
+import AnnouncementBoard from './AnnouncementBoard';
+import { User } from '../types';
 
 interface DashboardProps {
     incidents: Incident[];
@@ -14,9 +16,11 @@ interface DashboardProps {
     onNavigate: (view: ViewState) => void;
     onRefresh?: () => void;
     onNewIncidentWithBuilding?: (buildingId: string) => void;
+    onUnreadChange?: () => void;
+    currentUser: User;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ incidents, buildings, sectors, onViewIncident, onNavigate, onRefresh, onNewIncidentWithBuilding }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ incidents, buildings, sectors, onViewIncident, onNavigate, onRefresh, onNewIncidentWithBuilding, onUnreadChange, currentUser }) => {
     // Estado para métricas globais reais do banco
     const [globalMetrics, setGlobalMetrics] = useState({ pending: 0, today: 0, approved: 0 });
 
@@ -320,6 +324,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ incidents, buildings, sect
                 </div>
             </div>
 
+            {/* NOVO: MURAL DE AVISOS */}
+            <div className="w-full">
+                <AnnouncementBoard
+                    currentUser={currentUser}
+                    onViewAll={() => onNavigate('ANNOUNCEMENTS')}
+                    onUnreadChange={onUnreadChange}
+                />
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                 {/* Gráfico de Setores */}
@@ -418,6 +431,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ incidents, buildings, sect
                 </div>
 
             </div>
-        </div>
+        </div >
     );
 };

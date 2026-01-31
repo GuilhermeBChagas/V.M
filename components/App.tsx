@@ -18,8 +18,10 @@ import { AlterationTypeManager } from './AlterationTypeManager';
 import { ProfileView } from './ProfileView';
 import { VehicleList, VehicleForm, VestList, VestForm, RadioList, RadioForm, EquipmentList, EquipmentForm } from './AssetViews';
 import { LoanViews } from './LoanViews';
+import AnnouncementManager from './AnnouncementManager';
+import { announcementService } from '../services/announcementService';
 import { User, Building, Incident, ViewState, UserRole, Sector, JobTitle, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides, MenuVisibilityMap, UserMenuVisibilityOverrides } from '../types';
-import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase } from 'lucide-react';
+import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
 
@@ -701,6 +703,7 @@ export function App() {
   const [radios, setRadios] = useState<Radio[]>([]);
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [loans, setLoans] = useState<LoanRecord[]>([]);
+  const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0);
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -1026,14 +1029,28 @@ export function App() {
     else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
   }, [darkMode]);
 
+  const fetchAnnouncementsCount = useCallback(async () => {
+    if (!user) return;
+    const count = await announcementService.getUnreadCount(user.id, user.role);
+    setUnreadAnnouncementsCount(count);
+  }, [user]);
+
   const loadEssentialData = useCallback(async () => {
     setDbError(null);
     try {
-      await Promise.all([fetchStaticData(), fetchIncidents(), fetchAssets(), fetchLoans(), fetchLogs()]);
+      await Promise.all([fetchStaticData(), fetchIncidents(), fetchAssets(), fetchLoans(), fetchLogs(), fetchAnnouncementsCount()]);
       setInitialDataLoaded(true);
     }
     catch (error: any) { setDbError(error.message || "Falha na conexão."); setInitialDataLoaded(true); }
   }, [fetchStaticData, fetchIncidents, fetchAssets, fetchLoans, fetchLogs]);
+
+  useEffect(() => {
+    if (user) {
+      fetchAnnouncementsCount();
+      const interval = setInterval(fetchAnnouncementsCount, 30000); // Polling a cada 30s
+      return () => clearInterval(interval);
+    }
+  }, [user, fetchAnnouncementsCount]);
 
   useEffect(() => { if (user && !initialDataLoaded) { loadEssentialData(); } }, [user, initialDataLoaded, loadEssentialData]);
 
@@ -1311,7 +1328,7 @@ export function App() {
   const renderContent = () => {
     switch (view) {
       case 'DASHBOARD':
-        return <Dashboard incidents={incidents} buildings={buildings} sectors={sectors} onViewIncident={handleViewIncident} onNavigate={handleNavigate} onRefresh={() => fetchIncidents(false)} onNewIncidentWithBuilding={(bId) => { setPreSelectedBuildingId(bId); setEditingIncident(null); handleNavigate('NEW_RECORD'); }} />;
+        return <Dashboard incidents={incidents} buildings={buildings} sectors={sectors} onViewIncident={handleViewIncident} onNavigate={handleNavigate} onRefresh={() => fetchIncidents(false)} onNewIncidentWithBuilding={(bId) => { setPreSelectedBuildingId(bId); setEditingIncident(null); handleNavigate('NEW_RECORD'); }} currentUser={user!} onUnreadChange={fetchAnnouncementsCount} />;
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
         return <IncidentForm user={user!} users={users} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleNavigate('DASHBOARD'); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} />;
@@ -1388,8 +1405,9 @@ export function App() {
       case 'SYSTEM_INFO': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='SYSTEM' />;
 
       case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} approverRole={users.find(u => u.name === selectedIncident?.approvedBy)?.role} approverJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.name === selectedIncident?.approvedBy)?.jobTitleId)?.name} onBack={() => handleNavigate('DASHBOARD')} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} currentUser={user!} />;
+      case 'ANNOUNCEMENTS': return <AnnouncementManager currentUser={user!} users={users} onAnnouncementCreated={fetchAnnouncementsCount} />;
       case 'PROFILE': return <ProfileView user={user!} onUpdatePassword={handleUpdatePassword} />;
-      default: return <Dashboard incidents={incidents} buildings={buildings} sectors={sectors} onViewIncident={handleViewIncident} onNavigate={handleNavigate} onRefresh={() => fetchIncidents(false)} />;
+      default: return <Dashboard incidents={incidents} buildings={buildings} sectors={sectors} onViewIncident={handleViewIncident} onNavigate={handleNavigate} onRefresh={() => fetchIncidents(false)} currentUser={user!} />;
     }
   };
 
@@ -1419,6 +1437,16 @@ export function App() {
           </div>
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             {can('VIEW_DASHBOARD') && isMenuVisible('dashboard') && <NavItem icon={<LayoutDashboard />} label="Painel de Controle" active={view === 'DASHBOARD'} onClick={() => handleNavigate('DASHBOARD')} collapsed={isSidebarCollapsed} />}
+            {isMenuVisible('dashboard') && (
+              <NavItem
+                icon={<Megaphone />}
+                label="Mural de Avisos"
+                active={view === 'ANNOUNCEMENTS'}
+                onClick={() => handleNavigate('ANNOUNCEMENTS')}
+                collapsed={isSidebarCollapsed}
+                badge={unreadAnnouncementsCount > 0 ? unreadAnnouncementsCount : undefined}
+              />
+            )}
             {can('VIEW_DASHBOARD') && isMenuVisible('new_record') && <NavItem icon={<FileText />} label="Registar R.A" active={view === 'NEW_RECORD'} onClick={() => { setEditingIncident(null); handleNavigate('NEW_RECORD'); }} collapsed={isSidebarCollapsed} />}
             {(can('MANAGE_LOANS') || can('RETURN_LOANS') || loans.some(l => l.receiverId === user.id && l.status === 'ACTIVE')) && isMenuVisible('loans_root') && (
               <NavItem
