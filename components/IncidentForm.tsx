@@ -378,8 +378,24 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                         if (buildingId) setBuildingId('');
                                     }}
                                     onFocus={() => setIsBuildingDropdownOpen(true)}
-                                    className={`w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 rounded-2xl text-sm font-semibold outline-none transition-all ${buildingId ? 'border-emerald-500 focus:border-emerald-600 bg-emerald-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500'}`}
+                                    className={`w-full pl-10 pr-10 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 rounded-2xl text-sm font-semibold outline-none transition-all ${buildingId ? 'border-emerald-500 focus:border-emerald-600 bg-emerald-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500'}`}
                                 />
+                                {buildingSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setBuildingSearch('');
+                                            setBuildingId('');
+                                            if (buildingContainerRef.current) {
+                                                const input = buildingContainerRef.current.querySelector('input');
+                                                input?.focus();
+                                            }
+                                        }}
+                                        className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                )}
                             </div>
                             <button
                                 type="button"

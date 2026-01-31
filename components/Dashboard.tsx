@@ -2,7 +2,7 @@
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { Incident, Building, Sector, ViewState } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { CheckCircle, Clock, Activity, Zap, Plus, ArrowRight, CalendarClock, FileText, Search, MapPin, Loader2, Navigation, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Clock, Activity, Zap, Plus, ArrowRight, CalendarClock, FileText, Search, MapPin, Loader2, Navigation, AlertTriangle, X } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
 import AnnouncementBoard from './AnnouncementBoard';
@@ -154,8 +154,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 setIsBuildingListOpen(true);
                                 if (selectedBuilding) setSelectedBuilding(null);
                             }}
-                            className="w-full pl-12 pr-4 py-3 rounded-xl bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none uppercase tracking-wide"
+                            className="w-full pl-12 pr-10 py-3 rounded-xl bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none uppercase tracking-wide"
                         />
+                        {buildingSearchTerm && (
+                            <button
+                                onClick={() => {
+                                    setBuildingSearchTerm('');
+                                    setSelectedBuilding(null);
+                                    setIsBuildingListOpen(false);
+                                }}
+                                className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+                            >
+                                <X size={18} />
+                            </button>
+                        )}
                     </div>
                     <button
                         onClick={handleLocateNearest}
@@ -198,8 +210,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div className="bg-brand-900 dark:bg-slate-800 rounded-3xl p-6 text-white shadow-2xl animate-in slide-in-from-top-4 fade-in">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div className="flex items-center gap-4">
-                            <div className="p-4 bg-white/10 rounded-2xl">
-                                <MapPin size={32} />
+                            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
+                                <span className="text-3xl font-black">{selectedBuilding.buildingNumber}</span>
                             </div>
                             <div>
                                 <h3 className="text-xl font-black uppercase leading-none">{selectedBuilding.name}</h3>

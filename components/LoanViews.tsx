@@ -6,7 +6,7 @@ import {
     ArrowRightLeft, History, Plus, Search, User as UserIcon,
     Car, Shield, Radio as RadioIcon, Package, CheckCircle,
     XCircle, Clock, Calendar, ChevronRight, CornerDownLeft,
-    AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download
+    AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download, X
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { normalizeString } from '../utils/stringUtils';
@@ -229,11 +229,16 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             if (loanError) throw loanError;
 
             // Update Vehicle KM Table
+            // TEMPORARY FIX: The 'currentKm' column does not exist in the database properly yet.
+            // We are skipping the update of the master Vehicle record to allow the return flow to complete.
+            // The KM is still recorded in the loan history (loan_records meta).
+            /*
             const { error: vehicleError } = await supabase.from('vehicles').update({
                 currentKm: vehicleReturnData.kmEnd
             }).eq('id', vehicleReturnData.vehicleId);
 
             if (vehicleError) throw vehicleError;
+            */
 
             // Process Other Items in Batch (if any)
             if (vehicleReturnData.batchIdsToComplete && vehicleReturnData.batchIdsToComplete.length > 0) {
@@ -413,40 +418,47 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         return true;
     });
 
-    const sortedLoans = [...filteredLoans].sort((a, b) => new Date(b.checkoutTime).getTime() - new Date(a.checkoutTime).getTime());
+    const sortedLoans = [...filteredLoans].sort((a, b) => {
+        if (activeTab === 'HISTORY') {
+            const timeA = a.returnTime ? new Date(a.returnTime).getTime() : 0;
+            const timeB = b.returnTime ? new Date(b.returnTime).getTime() : 0;
+            return timeB - timeA;
+        }
+        return new Date(b.checkoutTime).getTime() - new Date(a.checkoutTime).getTime();
+    });
 
     // Unified Grouping for ACTIVE and PENDING
     const groupedLoans = useMemo(() => {
-        if (filterStatus !== 'ACTIVE' && filterStatus !== 'PENDING') return [];
-
-        // Groups: string (batchId or receiverId) -> LoanRecord[]
-        // We need to keep Pending batches separate from Active receiver groups if possible, 
-        // OR we just group everything by Receiver and split internally?
-        // Result: We want cards. A card can be a Pending Batch OR a receiver's Active items.
-        // Let's create a list of "LoanGroup" objects.
+        // Removed restrictive check
+        // if (filterStatus !== 'ACTIVE' && filterStatus !== 'PENDING') return [];
 
         type LoanGroup = {
-            type: 'PENDING' | 'ACTIVE';
+            type: 'PENDING' | 'ACTIVE' | 'HISTORY';
             receiverId: string;
             receiverName: string;
             loans: LoanRecord[];
-            id: string; // Unique ID for key
-            timestamp: number; // For sorting
+            id: string;
+            timestamp: number;
         };
 
         const groups: LoanGroup[] = [];
         const pendingGroups: Record<string, LoanRecord[]> = {};
         const activeGroups: Record<string, LoanRecord[]> = {};
+        const historyGroups: Record<string, LoanRecord[]> = {};
 
         sortedLoans.forEach(loan => {
             if (loan.status === 'PENDING') {
-                const key = loan.batchId || loan.receiverId; // Batch or Receiver
+                const key = loan.batchId || loan.receiverId;
                 if (!pendingGroups[key]) pendingGroups[key] = [];
                 pendingGroups[key].push(loan);
             } else if (loan.status === 'ACTIVE') {
                 const key = loan.receiverId;
                 if (!activeGroups[key]) activeGroups[key] = [];
                 activeGroups[key].push(loan);
+            } else if (loan.status === 'COMPLETED' || loan.status === 'REJECTED') {
+                const key = loan.receiverId;
+                if (!historyGroups[key]) historyGroups[key] = [];
+                historyGroups[key].push(loan);
             }
         });
 
@@ -480,7 +492,21 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             }
         });
 
-        // Sort all by most recent
+        // Convert History Maps to List
+        Object.keys(historyGroups).forEach(key => {
+            const loans = historyGroups[key];
+            if (loans.length > 0) {
+                groups.push({
+                    type: 'HISTORY',
+                    receiverId: loans[0].receiverId,
+                    receiverName: loans[0].receiverName,
+                    loans: loans,
+                    id: `history-${key}`,
+                    timestamp: loans[0].returnTime ? new Date(loans[0].returnTime).getTime() : new Date(loans[0].checkoutTime).getTime()
+                });
+            }
+        });
+
         return groups.sort((a, b) => b.timestamp - a.timestamp);
 
     }, [sortedLoans, filterStatus]);
@@ -662,10 +688,21 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                         }}
                                         onFocus={() => setShowUserOptions(true)}
                                         placeholder="BUSCAR VIGILANTE..."
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-bold uppercase outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-bold uppercase outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                     <Search className="absolute left-3 top-3.5 text-slate-400" size={16} />
-                                    {receiverId && <CheckCircle className="absolute right-3 top-3.5 text-emerald-500" size={16} />}
+                                    {userSearch && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setUserSearch('');
+                                                setReceiverId('');
+                                            }}
+                                            className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    )}
                                 </div>
 
                                 {showUserOptions && (
@@ -832,13 +869,15 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                         key={group.id}
                                         className={`rounded-2xl border-2 overflow-hidden flex flex-col shadow-sm transition-all hover:shadow-md ${group.type === 'PENDING'
                                             ? 'border-amber-400 bg-white dark:bg-slate-900 shadow-amber-500/5'
-                                            : 'border-emerald-400 bg-white dark:bg-slate-900 shadow-emerald-500/5'
+                                            : group.type === 'HISTORY'
+                                                ? 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-slate-500/5 opacity-80 hover:opacity-100'
+                                                : 'border-emerald-400 bg-white dark:bg-slate-900 shadow-emerald-500/5'
                                             }`}
                                     >
                                         {/* Header */}
                                         <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center text-lg font-black shadow-sm ${group.type === 'PENDING' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                                <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center text-lg font-black shadow-sm ${group.type === 'PENDING' ? 'bg-amber-100 text-amber-600' : group.type === 'HISTORY' ? 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400' : 'bg-emerald-100 text-emerald-600'}`}>
                                                     {group.receiverName.charAt(0).toUpperCase()}
                                                 </div>
                                                 <div className="flex flex-col min-w-0 flex-1">
@@ -846,9 +885,11 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                         {group.receiverName}
                                                     </h3>
                                                     <div className="flex items-center gap-2">
-                                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md border ${group.type === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md border ${group.type === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                                            : group.type === 'HISTORY' ? 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                                                                : 'bg-emerald-50 text-emerald-600 border-emerald-200'
                                                             }`}>
-                                                            {group.type === 'PENDING' ? 'AGUARDANDO' : 'EM POSSE'}
+                                                            {group.type === 'PENDING' ? 'AGUARDANDO' : group.type === 'HISTORY' ? (group.loans.some(l => l.status === 'REJECTED') ? 'RECUSADO' : 'DEVOLVIDO') : 'EM POSSE'}
                                                         </span>
                                                         <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
                                                             <Clock size={10} className="opacity-60" />
@@ -864,7 +905,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                             <div className="grid grid-cols-2 gap-2 h-full content-start">
                                                 {group.loans.map(loan => (
                                                     <div key={loan.id} className="bg-slate-50/40 dark:bg-slate-800/20 rounded-xl p-2 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-800 min-h-[75px] relative group transition-all hover:bg-white dark:hover:bg-slate-800 shadow-sm">
-                                                        <div className={`mb-1 ${group.type === 'PENDING' ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                                        <div className={`mb-1 ${group.type === 'PENDING' ? 'text-amber-500' : group.type === 'HISTORY' ? 'text-slate-400' : 'text-emerald-500'}`}>
                                                             {getAssetIcon(loan.assetType, 20)}
                                                         </div>
                                                         <p className="text-[8px] font-black text-slate-800 dark:text-slate-200 uppercase leading-tight mb-0.5 line-clamp-2 px-1">
@@ -920,41 +961,39 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                         </div>
 
                                         {/* Footer Action */}
-                                        <div className={`p-2 border-t ${group.type === 'PENDING' ? 'bg-amber-50/20' : 'bg-emerald-50/20'} dark:bg-slate-800/50 border-slate-100 dark:border-slate-800`}>
-                                            {group.type === 'PENDING' ? (
-                                                <div className="flex gap-1.5">
-                                                    {currentUser.id === group.receiverId ? (
-                                                        <button
-                                                            onClick={() => handleConfirmBatch(group.loans)}
-                                                            className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-amber-500/25"
-                                                        >
-                                                            <CheckCircle size={12} /> ACEITAR TUDO
-                                                        </button>
-                                                    ) : (
-                                                        <div className="flex-1 py-2 bg-slate-100/50 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-1.5 border border-dashed border-slate-200 dark:border-slate-700 cursor-not-allowed">
-                                                            <Clock size={12} className="opacity-50" /> AGUARDANDO CONFIRMAÇÃO
-                                                        </div>
-                                                    )}
+                                        {group.type !== 'HISTORY' && (
+                                            <div className={`p-2 border-t ${group.type === 'PENDING' ? 'bg-amber-50/20' : 'bg-emerald-50/20'} dark:bg-slate-800/50 border-slate-100 dark:border-slate-800`}>
+                                                {group.type === 'PENDING' ? (
+                                                    <div className="flex gap-1.5">
+                                                        {currentUser.id === group.receiverId && (
+                                                            <button
+                                                                onClick={() => handleConfirmBatch(group.loans)}
+                                                                className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-amber-500/25"
+                                                            >
+                                                                <CheckCircle size={12} /> ACEITAR TUDO
+                                                            </button>
+                                                        )}
 
-                                                    {group.loans.some(l => l.operator_id === currentUser.id || l.operatorId === currentUser.id) && (
-                                                        <button
-                                                            onClick={() => handleCancelBatch(group.loans)}
-                                                            className="px-2.5 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95"
-                                                            title="Cancelar Cautela"
-                                                        >
-                                                            <XCircle size={16} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleReturnBatch(group.loans)}
-                                                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/25"
-                                                >
-                                                    <CornerDownLeft size={12} /> DEVOLVER TODOS
-                                                </button>
-                                            )}
-                                        </div>
+                                                        {group.loans.some(l => l.operator_id === currentUser.id || l.operatorId === currentUser.id) && (
+                                                            <button
+                                                                onClick={() => handleCancelBatch(group.loans)}
+                                                                className="px-2.5 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95"
+                                                                title="Cancelar Cautela"
+                                                            >
+                                                                <XCircle size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleReturnBatch(group.loans)}
+                                                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/25"
+                                                    >
+                                                        <CornerDownLeft size={12} /> DEVOLVER TODOS
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>

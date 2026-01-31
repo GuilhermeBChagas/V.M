@@ -938,7 +938,7 @@ export function App() {
       if (!isLoadMore) {
         const [activeRes, completedRes] = await Promise.all([
           supabase.from('loan_records').select('*').in('status', ['PENDING', 'ACTIVE']),
-          supabase.from('loan_records').select('*').in('status', ['COMPLETED', 'REJECTED']).order('checkout_time', { ascending: false }).range(0, PAGE_SIZE - 1)
+          supabase.from('loan_records').select('*').in('status', ['COMPLETED', 'REJECTED']).order('return_time', { ascending: false }).range(0, PAGE_SIZE - 1)
         ]);
         if (activeRes.error) throw activeRes.error;
         if (completedRes.error) throw completedRes.error;
@@ -947,7 +947,7 @@ export function App() {
         finalData = [...mappedActive, ...mappedCompleted];
         if ((completedRes.data?.length || 0) < PAGE_SIZE) setHasMoreLoans(false);
       } else {
-        const { data, error } = await supabase.from('loan_records').select('*').in('status', ['COMPLETED', 'REJECTED']).order('checkout_time', { ascending: false }).range(from, to);
+        const { data, error } = await supabase.from('loan_records').select('*').in('status', ['COMPLETED', 'REJECTED']).order('return_time', { ascending: false }).range(from, to);
         if (error) throw error;
         finalData = (data || []).map(mapLoan);
         if (finalData.length < PAGE_SIZE) setHasMoreLoans(false);
