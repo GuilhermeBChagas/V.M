@@ -316,7 +316,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                             {new Date(incident.date).toLocaleDateString()}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mb-2 italic">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate mb-2 italic">
                                         "{incident.description}"
                                     </p>
                                     <div className="flex items-center gap-2">
