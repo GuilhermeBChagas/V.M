@@ -21,6 +21,7 @@ interface DashboardProps {
     pendingIncidentsCount: number;
     pendingLoansCount: number;
     unreadAnnouncementsCount: number;
+    isAnnouncementsVisible?: boolean;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -35,7 +36,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     currentUser,
     pendingIncidentsCount,
     pendingLoansCount,
-    unreadAnnouncementsCount
+    unreadAnnouncementsCount,
+    isAnnouncementsVisible = true
 }) => {
     // Estados da Pesquisa de Prédios
     const [buildingSearchTerm, setBuildingSearchTerm] = useState('');
@@ -274,13 +276,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {/* MURAL E ATIVIDADES */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* MURAL DE AVISOS */}
-                <div>
-                    <AnnouncementBoard
-                        currentUser={currentUser}
-                        onViewAll={() => onNavigate('ANNOUNCEMENTS')}
-                        onUnreadChange={onUnreadChange}
-                    />
-                </div>
+                {isAnnouncementsVisible && (
+                    <div>
+                        <AnnouncementBoard
+                            currentUser={currentUser}
+                            onViewAll={() => onNavigate('ANNOUNCEMENTS')}
+                            onUnreadChange={onUnreadChange}
+                        />
+                    </div>
+                )}
 
                 {/* ÚLTIMOS REGISTROS */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">

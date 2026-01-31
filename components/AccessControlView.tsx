@@ -47,6 +47,7 @@ const PERMISSION_GROUPS = [
             { key: 'MANAGE_BUILDINGS', label: 'Gerenciar Prédios/Locais' },
             { key: 'MANAGE_SECTORS', label: 'Gerenciar Setores' },
             { key: 'MANAGE_ALTERATION_TYPES', label: 'Gerenciar Tipos de Alteração' },
+            { key: 'MANAGE_ANNOUNCEMENTS', label: 'Gerenciar Mural de Avisos' },
             { key: 'ACCESS_TOOLS', label: 'Acesso a Ferramentas Avançadas' },
             { key: 'EXPORT_REPORTS', label: 'Exportar Relatórios PDF/Excel' },
         ]

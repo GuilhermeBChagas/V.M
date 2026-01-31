@@ -9,9 +9,10 @@ interface AnnouncementManagerProps {
     users: User[];
     onAnnouncementCreated?: () => void;
     onDelete?: (id: string) => void;
+    canManage?: boolean;
 }
 
-const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, users, onAnnouncementCreated }) => {
+const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, users, onAnnouncementCreated, canManage }) => {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -82,17 +83,21 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">
-                        Gestão do Mural
+                        {canManage ? 'Gestão do Mural' : 'Mural de Avisos'}
                     </h1>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Envie avisos para toda a equipe ou indivíduos</p>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                        {canManage ? 'Envie avisos para toda a equipe ou indivíduos' : 'Fique por dentro das últimas atualizações'}
+                    </p>
                 </div>
-                <button
-                    onClick={() => setShowForm(!showForm)}
-                    className="w-full md:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/25 transition-all active:scale-95"
-                >
-                    {showForm ? <X size={20} /> : <Plus size={20} />}
-                    <span>{showForm ? 'Fechar Mural' : 'Novo Aviso'}</span>
-                </button>
+                {canManage && (
+                    <button
+                        onClick={() => setShowForm(!showForm)}
+                        className="w-full md:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/25 transition-all active:scale-95"
+                    >
+                        {showForm ? <X size={20} /> : <Plus size={20} />}
+                        <span>{showForm ? 'Fechar Mural' : 'Novo Aviso'}</span>
+                    </button>
+                )}
             </div>
 
             {showForm && (
@@ -234,13 +239,15 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
                         <div className="flex-1 min-w-0 pt-1">
                             <div className="flex justify-between items-start mb-1">
                                 <h4 className="font-black text-slate-800 dark:text-slate-100 uppercase text-lg leading-tight truncate pr-8">{ann.title}</h4>
-                                <button
-                                    onClick={(e) => handleDelete(ann.id, e)}
-                                    className="absolute top-8 right-8 p-2 text-slate-300 hover:text-red-500 dark:hover:text-red-400 transition-all hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
-                                    title="Excluir"
-                                >
-                                    <Trash2 size={20} />
-                                </button>
+                                {canManage && (
+                                    <button
+                                        onClick={(e) => handleDelete(ann.id, e)}
+                                        className="absolute top-8 right-8 p-2 text-slate-300 hover:text-red-500 dark:hover:text-red-400 transition-all hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
+                                        title="Excluir"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
+                                )}
                             </div>
                             <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-6 font-medium leading-relaxed">
                                 {ann.content}

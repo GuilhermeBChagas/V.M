@@ -12,6 +12,7 @@ interface MenuItemDef {
 // Mapeamento: ID do Menu -> Chaves de Permissão Necessárias (Pelo menos uma deve ser verdadeira)
 const MENU_PERMISSION_REQ: Record<string, PermissionKey[]> = {
   'dashboard': ['VIEW_DASHBOARD'],
+  'announcements': ['VIEW_DASHBOARD'],
   'new_record': ['CREATE_INCIDENT'],
   'loans_root': ['MANAGE_LOANS', 'RETURN_LOANS'],
   'history_root': ['VIEW_ALL_INCIDENTS'],
@@ -36,6 +37,7 @@ const MENU_PERMISSION_REQ: Record<string, PermissionKey[]> = {
 // Deve refletir a estrutura visual da Sidebar no App.tsx
 export const MENU_STRUCTURE: MenuItemDef[] = [
   { id: 'dashboard', label: 'Painel de Controle' },
+  { id: 'announcements', label: 'Mural de Avisos' },
   { id: 'new_record', label: 'Registar R.A' },
   { id: 'loans_root', label: 'Cautelas (Menu Principal)' },
   {

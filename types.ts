@@ -25,6 +25,7 @@ export type PermissionKey =
   | 'MANAGE_JOB_TITLES'  // Gerenciar Cargos/Funções
   | 'MANAGE_ALTERATION_TYPES' // Gerenciar Tipos de Alteração
   | 'ACCESS_TOOLS'       // Logs, Backup, Config Visual, Permissões
+  | 'MANAGE_ANNOUNCEMENTS' // Mural de Avisos
   | 'EXPORT_REPORTS';
 
 export interface SystemPermissionMap {

@@ -49,6 +49,7 @@ const DEFAULT_PERMISSIONS: SystemPermissionMap = {
   MANAGE_BUILDINGS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   MANAGE_SECTORS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   MANAGE_ALTERATION_TYPES: [UserRole.ADMIN, UserRole.SUPERVISOR],
+  MANAGE_ANNOUNCEMENTS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   ACCESS_TOOLS: [UserRole.ADMIN],
   EXPORT_REPORTS: [UserRole.ADMIN, UserRole.SUPERVISOR]
 };
@@ -1520,6 +1521,7 @@ export function App() {
           pendingIncidentsCount={pendingIncidentsCount}
           pendingLoansCount={pendingLoansCount}
           unreadAnnouncementsCount={unreadAnnouncementsCount}
+          isAnnouncementsVisible={isMenuVisible('announcements')}
         />;
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
@@ -1596,8 +1598,8 @@ export function App() {
       case 'DATABASE_TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} initialTab='DATABASE' onLogAction={createLog} permissions={permissions} onUpdatePermissions={handleUpdatePermissions} />;
       case 'SYSTEM_INFO': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='SYSTEM' />;
 
-      case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} approverRole={users.find(u => u.name === selectedIncident?.approvedBy)?.role} approverJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.name === selectedIncident?.approvedBy)?.jobTitleId)?.name} onBack={() => handleNavigate('DASHBOARD')} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} currentUser={user!} />;
-      case 'ANNOUNCEMENTS': return <AnnouncementManager currentUser={user!} users={users} onAnnouncementCreated={fetchAnnouncementsCount} />;
+      case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} authorRole={users.find(u => u.id === selectedIncident?.userId)?.role} authorJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.id === selectedIncident?.userId)?.jobTitleId)?.name} approverRole={users.find(u => u.name === selectedIncident?.approvedBy)?.role} approverJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.name === selectedIncident?.approvedBy)?.jobTitleId)?.name} onBack={() => handleNavigate('DASHBOARD')} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} currentUser={user!} />;
+      case 'ANNOUNCEMENTS': return <AnnouncementManager currentUser={user!} users={users} onAnnouncementCreated={fetchAnnouncementsCount} canManage={can('MANAGE_ANNOUNCEMENTS')} />;
       case 'PROFILE': return <ProfileView user={user!} onUpdatePassword={handleUpdatePassword} />;
       default: return <Dashboard
         incidents={incidents}
@@ -1610,6 +1612,7 @@ export function App() {
         pendingIncidentsCount={pendingIncidentsCount}
         pendingLoansCount={pendingLoansCount}
         unreadAnnouncementsCount={unreadAnnouncementsCount}
+        isAnnouncementsVisible={isMenuVisible('announcements')}
       />;
     }
   };
@@ -1650,7 +1653,7 @@ export function App() {
           <nav className={`flex-1 overflow-y-auto no-scrollbar pt-4 ${isSidebarCollapsed ? 'px-0' : 'px-4 space-y-1'}`}>
             {!isSidebarCollapsed && <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 mb-4 mt-2">Principal</h3>}
             {can('VIEW_DASHBOARD') && isMenuVisible('dashboard') && <NavItem icon={<LayoutDashboard />} label="Painel de Controle" active={view === 'DASHBOARD'} onClick={() => handleNavigate('DASHBOARD')} collapsed={isSidebarCollapsed} />}
-            {isMenuVisible('dashboard') && (
+            {isMenuVisible('announcements') && (
               <NavItem
                 icon={<Megaphone />}
                 label="Mural de Avisos"
