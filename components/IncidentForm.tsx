@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Incident, Building, User, AlterationType } from '../types';
-import { Save, X, Clock, MapPin, FileText, Loader2, Search, Users, Navigation, Check, AlertTriangle, Plus, UserPlus, UserMinus, Calendar, ChevronDown, Send, Camera, ImagePlus, Trash2, Zap } from 'lucide-react';
+import { Save, X, Clock, MapPin, FileText, Loader2, Search, Users, Navigation, Check, AlertTriangle, Plus, UserPlus, UserMinus, Calendar, ChevronDown, Send, Camera, ImagePlus, Trash2, Zap, RefreshCw } from 'lucide-react';
 import { normalizeString } from '../utils/stringUtils';
 
 interface IncidentFormProps {
@@ -58,6 +58,16 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
+    const [cameraFacingMode, setCameraFacingMode] = useState<'environment' | 'user'>('environment');
+
+    // Cleanup camera on unmount
+    useEffect(() => {
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [stream]);
 
     useEffect(() => {
         if (initialData) {
@@ -193,15 +203,22 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
         });
     };
 
-    const startCamera = async () => {
+    const startCamera = async (modeOverride?: 'environment' | 'user') => {
         if (photos.length >= 5) {
             alert("Você já atingiu o limite de 5 fotos.");
             return;
         }
+
+        const mode = modeOverride || cameraFacingMode;
+
         try {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+
             const mediaStream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    facingMode: 'environment',
+                    facingMode: mode,
                     width: { ideal: 1920 },
                     height: { ideal: 1080 }
                 }
@@ -215,6 +232,12 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
             console.error("Erro ao acessar câmera:", err);
             alert("Não foi possível acessar a câmera. Verifique as permissões.");
         }
+    };
+
+    const handleSwitchCamera = () => {
+        const newMode = cameraFacingMode === 'environment' ? 'user' : 'environment';
+        setCameraFacingMode(newMode);
+        startCamera(newMode);
     };
 
     const stopCamera = () => {
@@ -643,7 +666,12 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                                     <span className="text-[10px] font-black text-white uppercase tracking-widest">Câmera HD Ativa ({photos.length}/5)</span>
                                 </div>
-                                <button type="button" onClick={stopCamera} className="p-3 bg-black/50 backdrop-blur-md text-white rounded-2xl border border-white/20 pointer-events-auto active:scale-90 transition-transform"><X size={24} /></button>
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={handleSwitchCamera} className="p-3 bg-black/50 backdrop-blur-md text-white rounded-2xl border border-white/20 pointer-events-auto active:scale-90 transition-transform">
+                                        <RefreshCw size={24} />
+                                    </button>
+                                    <button type="button" onClick={stopCamera} className="p-3 bg-black/50 backdrop-blur-md text-white rounded-2xl border border-white/20 pointer-events-auto active:scale-90 transition-transform"><X size={24} /></button>
+                                </div>
                             </div>
 
                             <div className="flex flex-col items-center gap-6 pb-4">
