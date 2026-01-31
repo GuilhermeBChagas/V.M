@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { SystemPermissionMap, UserPermissionOverrides, User, MenuVisibilityMap, UserMenuVisibilityOverrides, PermissionKey, UserRole } from '../types';
 import { Save, Loader2, RefreshCw, Shield, Info, AlertTriangle, Users, Layout, Key, UserCheck, Lock, Check, X, Search, ChevronDown, ChevronRight, Activity, Ban } from 'lucide-react';
 import { MENU_STRUCTURE } from './DashboardLayoutManager';
+import { normalizeString } from '../utils/stringUtils';
 
 interface AccessControlViewProps {
     permissions: SystemPermissionMap;
@@ -59,6 +60,7 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
     const [mode, setMode] = useState<'ROLES' | 'USERS'>('ROLES');
     const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.OPERADOR);
     const [selectedUserId, setSelectedUserId] = useState<string>('');
+    const [userSearch, setUserSearch] = useState('');
     const [saving, setSaving] = useState(false);
 
     // Estados locais para edição
@@ -403,10 +405,16 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Pesquisar Usuário</p>
                             <div className="relative">
                                 <Search className="absolute left-3 top-2.5 text-slate-400" size={12} />
-                                <input type="text" placeholder="Nome ou CPF..." className="w-full pl-9 p-2 text-[10px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-purple-500 uppercase font-bold" />
+                                <input
+                                    type="text"
+                                    placeholder="Nome ou Matrícula..."
+                                    value={userSearch}
+                                    onChange={e => setUserSearch(e.target.value)}
+                                    className="w-full pl-9 p-2 text-[10px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-purple-500 uppercase font-bold"
+                                />
                             </div>
-                            <div className="space-y-1.5 pr-1">
-                                {users.map(user => (
+                            <div className="space-y-1.5 pr-1 overflow-y-auto custom-scrollbar max-h-[500px]">
+                                {users.filter(u => normalizeString(u.name).includes(normalizeString(userSearch)) || normalizeString(u.matricula || '').includes(normalizeString(userSearch))).map(user => (
                                     <button
                                         key={user.id}
                                         onClick={() => setSelectedUserId(user.id)}
