@@ -1193,11 +1193,11 @@ export function App() {
   const loadEssentialData = useCallback(async () => {
     setDbError(null);
     try {
-      await Promise.all([fetchStaticData(), fetchIncidents(), fetchAssets(), fetchLoans(), fetchLogs(), fetchAnnouncementsCount()]);
+      await Promise.all([fetchStaticData(), fetchIncidents(), fetchAssets(), fetchLoans(), fetchLogs(), fetchAnnouncementsCount(), fetchUsers()]);
       setInitialDataLoaded(true);
     }
     catch (error: any) { setDbError(error.message || "Falha na conexão."); setInitialDataLoaded(true); }
-  }, [fetchStaticData, fetchIncidents, fetchAssets, fetchLoans, fetchLogs]);
+  }, [fetchStaticData, fetchIncidents, fetchAssets, fetchLoans, fetchLogs, fetchUsers]);
 
   useEffect(() => {
     if (user) {
