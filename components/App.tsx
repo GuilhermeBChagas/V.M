@@ -20,7 +20,8 @@ import { VehicleList, VehicleForm, VestList, VestForm, RadioList, RadioForm, Equ
 import { LoanViews } from './LoanViews';
 import AnnouncementManager from './AnnouncementManager';
 import { announcementService } from '../services/announcementService';
-import { User, Building, Incident, ViewState, UserRole, Sector, JobTitle, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides, MenuVisibilityMap, UserMenuVisibilityOverrides } from '../types';
+import { User, Building, Incident, ViewState, UserRole, Sector, JobTitle, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides } from '../types';
+import { MENU_STRUCTURE, MenuItemDef } from '../constants/menuStructure';
 import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
@@ -828,8 +829,6 @@ export function App() {
   const [user, setUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<SystemPermissionMap>(DEFAULT_PERMISSIONS);
   const [userOverrides, setUserOverrides] = useState<UserPermissionOverrides>({});
-  const [userMenuOverrides, setUserMenuOverrides] = useState<UserMenuVisibilityOverrides>({});
-  const [menuVisibility, setMenuVisibility] = useState<MenuVisibilityMap>({});
   const [view, setView] = useState<ViewState>('DASHBOARD');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -1052,8 +1051,6 @@ export function App() {
 
       setPermissions(config['system_permissions'] || DEFAULT_PERMISSIONS);
       setUserOverrides(config['user_permission_overrides'] || {});
-      setMenuVisibility(config['menu_visibility'] || {});
-      setUserMenuOverrides(config['user_menu_visibility_overrides'] || {});
 
     } catch (e) { setPermissions(DEFAULT_PERMISSIONS); }
   }, []);
@@ -1076,29 +1073,7 @@ export function App() {
     } catch (e: any) { showError('Erro', e.message); }
   };
 
-  const handleUpdateMenuVisibility = async (newConfig: MenuVisibilityMap) => {
-    try {
-      await supabase.from('app_config').upsert({ key: 'menu_visibility', value: JSON.stringify(newConfig) });
-      setMenuVisibility(newConfig);
-      createLog('MANAGE_SETTINGS', 'Atualizou layout de menus por cargo');
-      showAlert('Sucesso', 'Layout atualizado com sucesso.');
-    } catch (e: any) {
-      console.error(e);
-      alert('Erro ao salvar visibilidade do menu.');
-    }
-  };
-
-  const handleUpdateMenuOverrides = async (newConfig: UserMenuVisibilityOverrides) => {
-    try {
-      await supabase.from('app_config').upsert({ key: 'user_menu_visibility_overrides', value: JSON.stringify(newConfig) });
-      setUserMenuOverrides(newConfig);
-      await createLog('MANAGE_SETTINGS', 'Atualizou permissões de menu (overrides por usuário)');
-      showAlert('Sucesso', 'Exceções de menu salvas com sucesso.');
-    } catch (e: any) {
-      console.error(e);
-      alert('Erro ao salvar overrides de menu.');
-    }
-  };
+  // Menu management methods removed as visibility is now dynamic based on permissions.
 
   // --- PERMISSION CHECKER ---
   const can = (action: PermissionKey): boolean => {
@@ -1114,19 +1089,41 @@ export function App() {
     return allowedRoles.includes(user.role);
   };
 
-  const isMenuVisible = (menuId: string): boolean => {
+  const isMenuVisible = (menuIdOrItem: string | MenuItemDef): boolean => {
     if (!user) return false;
-    if (user.role === UserRole.ADMIN) return true; // ADMIN always sees everything
+    if (user.role === UserRole.ADMIN) return true;
 
-    // Check specific user override first
-    if (userMenuOverrides[user.id]) {
-      return userMenuOverrides[user.id].includes(menuId);
+    let item: MenuItemDef | undefined;
+    if (typeof menuIdOrItem === 'string') {
+      const findItem = (items: MenuItemDef[]): MenuItemDef | undefined => {
+        for (const i of items) {
+          if (i.id === menuIdOrItem) return i;
+          if (i.children) {
+            const found = findItem(i.children);
+            if (found) return found;
+          }
+        }
+        return undefined;
+      };
+      item = findItem(MENU_STRUCTURE);
+    } else {
+      item = menuIdOrItem;
     }
 
-    const roleConfig = menuVisibility[user.role];
-    // If no config exists for the role, default to showing everything (permissive by default for easy start)
-    if (!roleConfig) return true;
-    return roleConfig.includes(menuId);
+    if (!item) return false;
+
+    // A menu item is visible if:
+    // 1. The user has at least one of its required permissions OR
+    // 2. If it has children, at least one child is visible.
+
+    const hasRequiredPerm = item.requiredPermissions.some(perm => can(perm));
+
+    if (item.children && item.children.length > 0) {
+      const hasVisibleChild = item.children.some(child => isMenuVisible(child));
+      return hasRequiredPerm || hasVisibleChild;
+    }
+
+    return hasRequiredPerm;
   };
 
   const fetchGlobalConfig = useCallback(async () => {
@@ -1594,7 +1591,7 @@ export function App() {
       case 'LOGS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} onLogAction={createLog} initialTab='LOGS' />;
       case 'TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='APPEARANCE' />;
       case 'IMPORT_EXPORT': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='IMPORT_EXPORT' />;
-      case 'PERMISSIONS_TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} initialTab='ACCESS_CONTROL' onLogAction={createLog} permissions={permissions} onUpdatePermissions={handleUpdatePermissions} userOverrides={userOverrides} onUpdateOverrides={handleUpdateOverrides} users={users} menuVisibility={menuVisibility} onUpdateMenuVisibility={handleUpdateMenuVisibility} userMenuOverrides={userMenuOverrides} onUpdateMenuOverrides={handleUpdateMenuOverrides} />;
+      case 'PERMISSIONS_TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} initialTab='ACCESS_CONTROL' onLogAction={createLog} permissions={permissions} onUpdatePermissions={handleUpdatePermissions} userOverrides={userOverrides} onUpdateOverrides={handleUpdateOverrides} users={users} />;
       case 'DATABASE_TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} initialTab='DATABASE' onLogAction={createLog} permissions={permissions} onUpdatePermissions={handleUpdatePermissions} />;
       case 'SYSTEM_INFO': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='SYSTEM' />;
 
@@ -1630,6 +1627,145 @@ export function App() {
   // Badge total é a soma
   const totalPendingBadge = pendingIncidentsCount + pendingLoansCount;
 
+  // --- DYNAMIC SIDEBAR HELPERS ---
+  const [openMenus, setOpenMenus] = useState<string[]>(['history_root', 'pending_root', 'registrations_root', 'tools_root']);
+
+  const getIcon = (name?: string) => {
+    switch (name) {
+      case 'LayoutDashboard': return <LayoutDashboard size={20} />;
+      case 'Megaphone': return <Megaphone size={20} />;
+      case 'FileText': return <FileText size={20} />;
+      case 'ArrowRightLeft': return <ArrowRightLeft size={20} />;
+      case 'History': return <History size={20} />;
+      case 'UserCheck': return <UserCheck size={20} />;
+      case 'PieChartIcon': return <PieChartIcon size={20} />;
+      case 'FolderOpen': return <FolderOpen size={20} />;
+      case 'BuildingIcon': return <BuildingIcon size={16} />;
+      case 'Tag': return <Tag size={16} />;
+      case 'Map': return <Map size={16} />;
+      case 'Users': return <Users size={16} />;
+      case 'Briefcase': return <Briefcase size={16} />;
+      case 'Car': return <Car size={16} />;
+      case 'Shield': return <Shield size={16} />;
+      case 'RadioIcon': return <RadioIcon size={16} />;
+      case 'Package': return <Package size={16} />;
+      case 'Wrench': return <Wrench size={20} />;
+      default: return null;
+    }
+  };
+
+  const getBadge = (id: string) => {
+    if (id === 'announcements') return unreadAnnouncementsCount > 0 ? unreadAnnouncementsCount : undefined;
+    if (id === 'pending_root' || id === 'pending_incidents') return pendingIncidentsCount > 0 ? pendingIncidentsCount : undefined;
+    if (id === 'pending_loans') return pendingLoansCount > 0 ? pendingLoansCount : undefined;
+    if (id === 'pending_root' && totalPendingBadge > 0) return totalPendingBadge;
+    return undefined;
+  };
+
+  const isSelected = (id: string): boolean => {
+    switch (id) {
+      case 'dashboard': return view === 'DASHBOARD';
+      case 'announcements': return view === 'ANNOUNCEMENTS';
+      case 'new_record': return view === 'NEW_RECORD';
+      case 'loans': return view === 'LOANS';
+      case 'history_incidents': return view === 'HISTORY';
+      case 'history_loans': return view === 'LOAN_HISTORY';
+      case 'pending_incidents': return view === 'PENDING_APPROVALS' && pendingSubTab === 'INCIDENTS';
+      case 'pending_loans': return view === 'PENDING_APPROVALS' && pendingSubTab === 'LOANS';
+      case 'charts': return view === 'CHARTS';
+      case 'reg_buildings': return view === 'BUILDINGS' || view === 'BUILDING_FORM';
+      case 'reg_types': return view === 'ALTERATION_TYPES' || view === 'ALTERATION_TYPE_FORM';
+      case 'reg_sectors': return view === 'SECTORS' || view === 'SECTOR_FORM';
+      case 'reg_users': return view === 'USERS' || view === 'USER_FORM';
+      case 'reg_job_titles': return view === 'JOB_TITLES' || view === 'JOB_TITLE_FORM';
+      case 'reg_vehicles': return view === 'VEHICLES' || view === 'VEHICLE_FORM';
+      case 'reg_vests': return view === 'VESTS' || view === 'VEST_FORM';
+      case 'reg_radios': return view === 'RADIOS' || view === 'RADIO_FORM';
+      case 'reg_equipments': return view === 'EQUIPMENTS' || view === 'EQUIPMENT_FORM';
+      case 'tool_appearance': return view === 'TOOLS';
+      case 'tool_import': return view === 'IMPORT_EXPORT';
+      case 'tool_permissions': return view === 'PERMISSIONS_TOOLS';
+      case 'tool_logs': return view === 'LOGS';
+      case 'tool_database': return view === 'DATABASE_TOOLS';
+      case 'tool_system': return view === 'SYSTEM_INFO';
+      default: return false;
+    }
+  };
+
+  const menuActions: Record<string, () => void> = {
+    'dashboard': () => handleNavigate('DASHBOARD'),
+    'announcements': () => handleNavigate('ANNOUNCEMENTS'),
+    'new_record': () => { setEditingIncident(null); handleNavigate('NEW_RECORD'); },
+    'loans': () => handleNavigate('LOANS'),
+    'history_incidents': () => handleNavigate('HISTORY'),
+    'history_loans': () => handleNavigate('LOAN_HISTORY'),
+    'pending_incidents': () => { setPendingSubTab('INCIDENTS'); handleNavigate('PENDING_APPROVALS'); },
+    'pending_loans': () => { setPendingSubTab('LOANS'); handleNavigate('PENDING_APPROVALS'); },
+    'charts': () => handleNavigate('CHARTS'),
+    'reg_buildings': () => handleNavigate('BUILDINGS'),
+    'reg_types': () => handleNavigate('ALTERATION_TYPES'),
+    'reg_sectors': () => handleNavigate('SECTORS'),
+    'reg_users': () => handleNavigate('USERS'),
+    'reg_job_titles': () => handleNavigate('JOB_TITLES'),
+    'reg_vehicles': () => handleNavigate('VEHICLES'),
+    'reg_vests': () => handleNavigate('VESTS'),
+    'reg_radios': () => handleNavigate('RADIOS'),
+    'reg_equipments': () => handleNavigate('EQUIPMENTS'),
+    'tool_appearance': () => handleNavigate('TOOLS'),
+    'tool_import': () => handleNavigate('IMPORT_EXPORT'),
+    'tool_permissions': () => handleNavigate('PERMISSIONS_TOOLS'),
+    'tool_logs': () => handleNavigate('LOGS'),
+    'tool_database': () => handleNavigate('DATABASE_TOOLS'),
+    'tool_system': () => handleNavigate('SYSTEM_INFO'),
+  };
+
+  const handleMenuClick = (item: MenuItemDef) => {
+    if (item.children) {
+      setOpenMenus(prev => prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id]);
+    } else if (menuActions[item.id]) {
+      menuActions[item.id]();
+    }
+  };
+
+  const renderMenuItems = (items: MenuItemDef[], depth = 0) => {
+    return items.map(item => {
+      if (!isMenuVisible(item)) return null;
+
+      if (item.isSection) {
+        if (isSidebarCollapsed) return null;
+        return (
+          <div key={item.id} className="pt-6 first:pt-2">
+            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 mb-4">{item.label}</h3>
+            {item.children && renderMenuItems(item.children, depth + 1)}
+          </div>
+        );
+      }
+
+      const isOpen = openMenus.includes(item.id);
+      const isAct = isSelected(item.id);
+
+      return (
+        <React.Fragment key={item.id}>
+          <NavItem
+            icon={getIcon(item.iconName)}
+            label={item.label}
+            active={isAct}
+            onClick={() => handleMenuClick(item)}
+            collapsed={isSidebarCollapsed}
+            badge={getBadge(item.id)}
+            isSubItem={depth > 1}
+            hasChevron={item.children && item.children.length > 0 && !isSidebarCollapsed}
+          />
+          {item.children && isOpen && !isSidebarCollapsed && (
+            <div className="space-y-1 mt-1">
+              {renderMenuItems(item.children, depth + 1)}
+            </div>
+          )}
+        </React.Fragment>
+      );
+    });
+  };
+
   return (
     <div className="min-h-screen flex transition-colors duration-200">
       {sidebarOpen && <div className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />}
@@ -1651,103 +1787,7 @@ export function App() {
             )}
           </div>
           <nav className={`flex-1 overflow-y-auto no-scrollbar pt-4 ${isSidebarCollapsed ? 'px-0' : 'px-4 space-y-1'}`}>
-            {!isSidebarCollapsed && <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 mb-4 mt-2">Principal</h3>}
-            {can('VIEW_DASHBOARD') && isMenuVisible('dashboard') && <NavItem icon={<LayoutDashboard />} label="Painel de Controle" active={view === 'DASHBOARD'} onClick={() => handleNavigate('DASHBOARD')} collapsed={isSidebarCollapsed} />}
-            {isMenuVisible('announcements') && (
-              <NavItem
-                icon={<Megaphone />}
-                label="Mural de Avisos"
-                active={view === 'ANNOUNCEMENTS'}
-                onClick={() => handleNavigate('ANNOUNCEMENTS')}
-                collapsed={isSidebarCollapsed}
-                badge={unreadAnnouncementsCount > 0 ? unreadAnnouncementsCount : undefined}
-                hasChevron={true}
-              />
-            )}
-            {can('VIEW_DASHBOARD') && isMenuVisible('new_record') && <NavItem icon={<FileText />} label="Registar R.A" active={view === 'NEW_RECORD'} onClick={() => { setEditingIncident(null); handleNavigate('NEW_RECORD'); }} collapsed={isSidebarCollapsed} />}
-            {(can('MANAGE_LOANS') || can('RETURN_LOANS') || loans.some(l => l.receiverId === user.id && l.status === 'ACTIVE')) && isMenuVisible('loans_root') && (
-              <NavItem icon={<ArrowRightLeft />} label="Cautelas" active={view === 'LOANS'} onClick={() => handleNavigate('LOANS')} collapsed={isSidebarCollapsed} />
-            )}
-
-            <div className="pt-6">
-              {!isSidebarCollapsed && <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 mb-4">Monitoramento</h3>}
-              {isMenuVisible('monitoring_group') && (
-                <div className="relative">
-                  {(can('VIEW_ALL_INCIDENTS')) && isMenuVisible('history_root') && <NavItem icon={<CheckCircle />} label="Históricos" active={view === 'HISTORY' || view === 'LOAN_HISTORY'} onClick={() => setReportsMenuOpen(!reportsMenuOpen)} collapsed={isSidebarCollapsed} hasChevron={!isSidebarCollapsed} />}
-                  {!isSidebarCollapsed && (can('VIEW_ALL_INCIDENTS')) && isMenuVisible('history_root') && <div className="absolute right-3 top-3.5 pointer-events-none text-brand-300">{reportsMenuOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</div>}
-                </div>
-              )}
-              {reportsMenuOpen && !isSidebarCollapsed && (can('VIEW_ALL_INCIDENTS')) && isMenuVisible('history_root') && (
-                <div className="space-y-1 mt-1">
-                  {isMenuVisible('history_incidents') && <NavItem label="Atendimentos" icon={<FileText size={14} className="mr-2" />} active={view === 'HISTORY'} onClick={() => handleNavigate('HISTORY')} collapsed={isSidebarCollapsed} isSubItem />}
-                  {isMenuVisible('history_loans') && <NavItem label="Cautelas" icon={<ArrowRightLeft size={14} className="mr-2" />} active={view === 'LOAN_HISTORY'} onClick={() => handleNavigate('LOAN_HISTORY')} collapsed={isSidebarCollapsed} isSubItem />}
-                </div>
-              )}
-              {isMenuVisible('monitoring_group') && isMenuVisible('pending_root') && (
-                <div className="relative">
-                  <NavItem icon={<UserCheck />} label="Pendentes" active={view === 'PENDING_APPROVALS'} onClick={() => setPendentesMenuOpen(!pendentesMenuOpen)} collapsed={isSidebarCollapsed} badge={totalPendingBadge > 0 ? totalPendingBadge : undefined} hasChevron={!isSidebarCollapsed} />
-                  {!isSidebarCollapsed && <div className="absolute right-3 top-3.5 pointer-events-none text-brand-300">{pendentesMenuOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</div>}
-                </div>
-              )}
-              {pendentesMenuOpen && !isSidebarCollapsed && isMenuVisible('monitoring_group') && isMenuVisible('pending_root') && (
-                <div className="space-y-1 mt-1">
-                  {isMenuVisible('pending_incidents') && <NavItem label="Atendimentos" icon={<FileText size={14} className="mr-2" />} active={view === 'PENDING_APPROVALS' && pendingSubTab === 'INCIDENTS'} onClick={() => { setPendingSubTab('INCIDENTS'); handleNavigate('PENDING_APPROVALS'); }} collapsed={isSidebarCollapsed} isSubItem badge={pendingIncidentsCount > 0 ? pendingIncidentsCount : undefined} />}
-                  {isMenuVisible('pending_loans') && <NavItem label="Cautelas" icon={<ArrowRightLeft size={14} className="mr-2" />} active={view === 'PENDING_APPROVALS' && pendingSubTab === 'LOANS'} onClick={() => { setPendingSubTab('LOANS'); handleNavigate('PENDING_APPROVALS'); }} collapsed={isSidebarCollapsed} isSubItem badge={pendingLoansCount > 0 ? pendingLoansCount : undefined} />}
-                </div>
-              )}
-
-              {isMenuVisible('monitoring_group') && isMenuVisible('charts') && <NavItem icon={<PieChartIcon />} label="Estatísticas" active={view === 'CHARTS'} onClick={() => handleNavigate('CHARTS')} collapsed={isSidebarCollapsed} />}
-            </div>
-            {(can('MANAGE_ASSETS') || can('MANAGE_USERS') || can('MANAGE_BUILDINGS') || can('MANAGE_SECTORS') || can('MANAGE_ALTERATION_TYPES')) && isMenuVisible('admin_group') && (
-              <div className="pt-6">
-                {!isSidebarCollapsed && <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 mb-4">Administração</h3>}
-                {isMenuVisible('registrations_root') && (
-                  <div className="relative">
-                    <NavItem icon={<FolderOpen />} label="Cadastros" active={view.includes('FORM') || view === 'BUILDINGS' || view === 'USERS' || view === 'VEHICLES' || view === 'VESTS' || view === 'RADIOS' || view === 'EQUIPMENTS' || view === 'ALTERATION_TYPES' || view === 'SECTORS' || view === 'JOB_TITLES'} onClick={() => setRegistrationsMenuOpen(!registrationsMenuOpen)} collapsed={isSidebarCollapsed} hasChevron={!isSidebarCollapsed} />
-                    {!isSidebarCollapsed && <div className="absolute right-3 top-3.5 pointer-events-none text-brand-300">{registrationsMenuOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</div>}
-                  </div>
-                )}
-                {registrationsMenuOpen && !isSidebarCollapsed && isMenuVisible('registrations_root') && (
-                  <div className="space-y-1 mt-1">
-                    {can('MANAGE_BUILDINGS') && isMenuVisible('reg_buildings') && (
-                      <NavItem label="Próprios" icon={<BuildingIcon size={14} className="mr-2" />} active={view === 'BUILDINGS' || view === 'BUILDING_FORM'} onClick={() => handleNavigate('BUILDINGS')} collapsed={isSidebarCollapsed} isSubItem />
-                    )}
-                    {can('MANAGE_ALTERATION_TYPES') && isMenuVisible('reg_types') && (
-                      <NavItem label="Tipos de Alteração" icon={<Tag size={14} className="mr-2" />} active={view === 'ALTERATION_TYPES' || view === 'ALTERATION_TYPE_FORM'} onClick={() => handleNavigate('ALTERATION_TYPES')} collapsed={isSidebarCollapsed} isSubItem />
-                    )}
-                    {can('MANAGE_SECTORS') && isMenuVisible('reg_sectors') && (
-                      <NavItem label="Setores" icon={<Map size={14} className="mr-2" />} active={view === 'SECTORS' || view === 'SECTOR_FORM'} onClick={() => handleNavigate('SECTORS')} collapsed={isSidebarCollapsed} isSubItem />
-                    )}
-                    {can('MANAGE_USERS') && isMenuVisible('reg_users') && <NavItem label="Usuários" icon={<Users size={14} className="mr-2" />} active={view === 'USERS' || view === 'USER_FORM'} onClick={() => handleNavigate('USERS')} collapsed={isSidebarCollapsed} isSubItem />}
-                    {can('MANAGE_JOB_TITLES') && <NavItem label="Cargos e Funções" icon={<Briefcase size={14} className="mr-2" />} active={view === 'JOB_TITLES' || view === 'JOB_TITLE_FORM'} onClick={() => handleNavigate('JOB_TITLES')} collapsed={isSidebarCollapsed} isSubItem />}
-                    {can('MANAGE_ASSETS') && isMenuVisible('reg_assets') && (
-                      <>
-                        <NavItem label="Veículos" icon={<Car size={14} className="mr-2" />} active={view === 'VEHICLES' || view === 'VEHICLE_FORM'} onClick={() => handleNavigate('VEHICLES')} collapsed={isSidebarCollapsed} isSubItem />
-                        <NavItem label="Coletes" icon={<Shield size={14} className="mr-2" />} active={view === 'VESTS' || view === 'VEST_FORM'} onClick={() => handleNavigate('VESTS')} collapsed={isSidebarCollapsed} isSubItem />
-                        <NavItem label="Rádios HT" icon={<RadioIcon size={14} className="mr-2" />} active={view === 'RADIOS' || view === 'RADIO_FORM'} onClick={() => handleNavigate('RADIOS')} collapsed={isSidebarCollapsed} isSubItem />
-                        <NavItem label="Outros" icon={<Package size={14} className="mr-2" />} active={view === 'EQUIPMENTS' || view === 'EQUIPMENT_FORM'} onClick={() => handleNavigate('EQUIPMENTS')} collapsed={isSidebarCollapsed} isSubItem />
-                      </>
-                    )}
-                  </div>
-                )}
-                {can('ACCESS_TOOLS') && isMenuVisible('tools_root') && (
-                  <div className="relative">
-                    <NavItem icon={<Wrench />} label="Ferramentas" active={view === 'TOOLS' || view === 'LOGS' || view === 'DATABASE_TOOLS' || view === 'PERMISSIONS_TOOLS' || view === 'IMPORT_EXPORT' || view === 'SYSTEM_INFO'} onClick={() => setToolsMenuOpen(!toolsMenuOpen)} collapsed={isSidebarCollapsed} />
-                    {!isSidebarCollapsed && <div className="absolute right-3 top-3.5 pointer-events-none text-brand-300">{toolsMenuOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</div>}
-                    {toolsMenuOpen && !isSidebarCollapsed && (
-                      <div className="space-y-1 mt-1">
-                        {isMenuVisible('tool_appearance') && <NavItem label="Aparência" active={view === 'TOOLS'} onClick={() => handleNavigate('TOOLS')} collapsed={isSidebarCollapsed} isSubItem />}
-                        {isMenuVisible('tool_import') && <NavItem label="Importação / Exportação" active={view === 'IMPORT_EXPORT'} onClick={() => handleNavigate('IMPORT_EXPORT')} collapsed={isSidebarCollapsed} isSubItem />}
-                        {isMenuVisible('tool_permissions') && <NavItem label="Permissões" active={view === 'PERMISSIONS_TOOLS'} onClick={() => handleNavigate('PERMISSIONS_TOOLS')} collapsed={isSidebarCollapsed} isSubItem />}
-                        {isMenuVisible('tool_logs') && <NavItem label="Log do sistema" active={view === 'LOGS'} onClick={() => handleNavigate('LOGS')} collapsed={isSidebarCollapsed} isSubItem />}
-                        {isMenuVisible('tool_database') && <NavItem label="Banco de Dados" active={view === 'DATABASE_TOOLS'} onClick={() => handleNavigate('DATABASE_TOOLS')} collapsed={isSidebarCollapsed} isSubItem />}
-                        <NavItem label="Sobre o Sistema" active={view === 'SYSTEM_INFO'} onClick={() => handleNavigate('SYSTEM_INFO')} collapsed={isSidebarCollapsed} isSubItem />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+            {renderMenuItems(MENU_STRUCTURE)}
             <div className="mt-8 pt-4 border-t border-white/5">
 
               <NavItem icon={<LogOut className="rotate-180" />} label="Sair do Sistema" onClick={handleLogout} collapsed={isSidebarCollapsed} />

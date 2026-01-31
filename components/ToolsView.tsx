@@ -5,7 +5,7 @@ import { LogsView } from './LogsView';
 import { DatabaseSetup } from './DatabaseSetup';
 import { AccessControlView } from './AccessControlView';
 import { ImportExportView } from './ImportExportView';
-import { SystemLog, SystemPermissionMap, UserPermissionOverrides, User, MenuVisibilityMap, UserMenuVisibilityOverrides } from '../types';
+import { SystemLog, SystemPermissionMap, UserPermissionOverrides, User } from '../types';
 import { Settings, Shield, Save, Image as ImageIcon, Loader2, Link as LinkIcon, Database, History, RefreshCw, Key, FileSpreadsheet, Info, Github, GitCommit, Calendar, Tag, FileText, CheckCircle, AlertTriangle, Cloud, ArrowRight, Layout } from 'lucide-react';
 
 // Declaração das variáveis globais injetadas pelo Vite (vite.config.ts)
@@ -29,10 +29,6 @@ interface ToolsViewProps {
     onUpdatePermissions?: (perms: SystemPermissionMap) => Promise<void>;
     userOverrides?: UserPermissionOverrides;
     onUpdateOverrides?: (overrides: UserPermissionOverrides) => Promise<void>;
-    menuVisibility?: MenuVisibilityMap;
-    onUpdateMenuVisibility?: (config: MenuVisibilityMap) => Promise<void>;
-    userMenuOverrides?: UserMenuVisibilityOverrides;
-    onUpdateMenuOverrides?: (config: UserMenuVisibilityOverrides) => Promise<void>;
     users?: User[];
     onLogAction: (action: any, details: string) => void;
 }
@@ -42,8 +38,7 @@ type Tab = 'LOGS' | 'APPEARANCE' | 'DATABASE' | 'ACCESS_CONTROL' | 'IMPORT_EXPOR
 export const ToolsView: React.FC<ToolsViewProps> = ({
     logs, onTestLog, currentLogo, onUpdateLogo, currentLogoLeft, onUpdateLogoLeft, initialTab,
     isLocalMode, onToggleLocalMode, unsyncedCount, onSync, permissions, onUpdatePermissions,
-    userOverrides = {}, onUpdateOverrides, menuVisibility, onUpdateMenuVisibility,
-    userMenuOverrides = {}, onUpdateMenuOverrides, users = [], onLogAction
+    userOverrides = {}, onUpdateOverrides, users = [], onLogAction
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>(initialTab || 'APPEARANCE');
 
@@ -194,13 +189,9 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
                 <AccessControlView
                     permissions={permissions || {}}
                     userOverrides={userOverrides || {}}
-                    menuVisibility={menuVisibility || {}}
-                    userMenuOverrides={userMenuOverrides || {}}
                     users={users || []}
                     onUpdatePermissions={async (p) => { if (onUpdatePermissions) await onUpdatePermissions(p); }}
                     onUpdateOverrides={async (o) => { if (onUpdateOverrides) await onUpdateOverrides(o); }}
-                    onUpdateMenuVisibility={async (c) => { if (onUpdateMenuVisibility) await onUpdateMenuVisibility(c); }}
-                    onUpdateMenuOverrides={async (c) => { if (onUpdateMenuOverrides) await onUpdateMenuOverrides(c); }}
                 />
             )}
 

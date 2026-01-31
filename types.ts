@@ -38,14 +38,8 @@ export interface UserPermissionOverrides {
   };
 }
 
-// Novo Tipo para Visibilidade do Menu
-export interface MenuVisibilityMap {
-  [role: string]: string[]; // Array de MenuIDs visíveis
-}
-
-export interface UserMenuVisibilityOverrides {
-  [userId: string]: string[]; // Array de MenuIDs visíveis específicos para o usuário
-}
+// Menu visibility is now derived directly from action permissions.
+// The previous MenuVisibilityMap and UserMenuVisibilityOverrides are deprecated.
 
 export interface Sector {
   id: string;
