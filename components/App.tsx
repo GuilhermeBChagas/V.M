@@ -101,25 +101,39 @@ interface NavItemProps {
   collapsed: boolean;
   badge?: number;
   isSubItem?: boolean;
+  hasChevron?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, collapsed, badge, isSubItem }) => (
+const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, collapsed, badge, isSubItem, hasChevron }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center p-3 transition-colors duration-200 relative group ${active
-      ? 'bg-brand-600 text-white shadow-md'
-      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
-      } ${collapsed ? 'justify-center' : ''} ${isSubItem ? 'pl-11' : ''}`}
+    className={`w-full flex items-center transition-all duration-300 relative group
+      ${collapsed ? 'justify-center py-4 px-0' : 'px-4 py-3 mx-0 rounded-2xl'} 
+      ${active
+        ? 'bg-blue-600/10 text-blue-400 ring-1 ring-blue-500/20'
+        : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'} 
+      ${isSubItem ? 'pl-11' : ''}`}
     title={collapsed ? label : ''}
   >
-    {icon && <div className="flex-shrink-0">{icon}</div>}
+    {/* Active indicator pill (only if not collapsed and not subitem) */}
+    {active && !collapsed && !isSubItem && (
+      <div className="absolute left-[-16px] h-6 w-1 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
+    )}
+
+    {icon && (
+      <div className={`flex-shrink-0 transition-transform duration-300 ${active ? 'scale-110 drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]' : 'group-hover:scale-110'}`}>
+        {icon}
+      </div>
+    )}
+
     {!collapsed && (
-      <span className={`text-sm font-bold tracking-wide truncate ${isSubItem ? 'text-xs' : 'ml-3'}`}>
+      <span className={`text-sm font-semibold tracking-wide truncate ${isSubItem ? 'text-[13px]' : 'ml-3'}`}>
         {label}
       </span>
     )}
+
     {badge && badge > 0 && (
-      <span className={`absolute ${collapsed ? 'top-1 right-1' : 'right-9'} bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-brand-900 shadow-lg transform transition-transform group-hover:scale-110`}>
+      <span className={`absolute ${collapsed ? 'top-2 right-1' : 'right-10'} bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full ring-2 ring-[#0b101d] shadow-lg transform transition-transform group-hover:scale-110 top-1/2 -translate-y-1/2`}>
         {badge}
       </span>
     )}
@@ -137,6 +151,7 @@ const IncidentHistory: React.FC<{
   filterStatus: 'PENDING' | 'COMPLETED';
   currentUser: User | null;
   customLogo: string | null;
+  customLogoLeft?: string | null;
   loans?: LoanRecord[];
   onConfirmLoanBatch?: (batchId: string) => void;
   onLoadMore?: () => void;
@@ -146,205 +161,299 @@ const IncidentHistory: React.FC<{
   canDelete: boolean;
   canApprove: boolean;
   canExport: boolean;
-}> = ({
-  incidents, buildings, onView, onApprove,
-  filterStatus, currentUser, customLogo, loans = [], onConfirmLoanBatch,
-  onLoadMore, hasMore, isLoadingMore, canApprove, canExport
-}) => {
-    const [search, setSearch] = useState('');
-    const [showFilters, setShowFilters] = useState(false);
-    const [dateStart, setDateStart] = useState('');
-    const [dateEnd, setDateEnd] = useState('');
-    const [timeStart, setTimeStart] = useState('');
-    const [timeEnd, setTimeEnd] = useState('');
+}> = (props) => {
+  const { incidents, buildings, onView, onApprove,
+    filterStatus, currentUser, customLogo, customLogoLeft, loans = [], onConfirmLoanBatch,
+    onLoadMore, hasMore, isLoadingMore, canApprove, canExport } = props;
+  const [search, setSearch] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [dateStart, setDateStart] = useState('');
+  const [dateEnd, setDateEnd] = useState('');
+  const [timeStart, setTimeStart] = useState('');
+  const [timeEnd, setTimeEnd] = useState('');
 
-    const [statusFilter, setStatusFilter] = useState<'APPROVED' | 'CANCELLED' | 'PENDING'>(
-      filterStatus === 'PENDING' ? 'PENDING' : 'APPROVED'
-    );
+  const [statusFilter, setStatusFilter] = useState<'APPROVED' | 'CANCELLED' | 'PENDING'>(
+    filterStatus === 'PENDING' ? 'PENDING' : 'APPROVED'
+  );
 
-    useEffect(() => {
-      setStatusFilter(filterStatus === 'PENDING' ? 'PENDING' : 'APPROVED');
-    }, [filterStatus]);
+  useEffect(() => {
+    setStatusFilter(filterStatus === 'PENDING' ? 'PENDING' : 'APPROVED');
+  }, [filterStatus]);
 
-    const printRef = useRef<HTMLDivElement>(null);
-    const [isExporting, setIsExporting] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
-    let filtered = incidents.filter(i => {
-      const status = (i.status || '').toUpperCase();
-      if (filterStatus === 'PENDING') return status === 'PENDING';
-      return status === 'APPROVED' || status === 'CANCELLED';
-    });
+  let filtered = incidents.filter(i => {
+    const status = (i.status || '').toUpperCase();
+    if (filterStatus === 'PENDING') return status === 'PENDING';
+    return status === 'APPROVED' || status === 'CANCELLED';
+  });
 
-    const startFilter = dateStart ? new Date(`${dateStart}T${timeStart || '00:00'}`) : null;
-    const endFilter = dateEnd ? new Date(`${dateEnd}T${timeEnd || '23:59'}`) : null;
+  const startFilter = dateStart ? new Date(`${dateStart}T${timeStart || '00:00'}`) : null;
+  const endFilter = dateEnd ? new Date(`${dateEnd}T${timeEnd || '23:59'}`) : null;
 
-    filtered = filtered.filter(i => {
-      if (!startFilter && !endFilter) return true;
-      const incidentTime = new Date(`${i.date}T${i.startTime}`);
-      if (startFilter && incidentTime < startFilter) return false;
-      if (endFilter && incidentTime > endFilter) return false;
-      return true;
-    });
+  filtered = filtered.filter(i => {
+    if (!startFilter && !endFilter) return true;
+    const incidentTime = new Date(`${i.date}T${i.startTime}`);
+    if (startFilter && incidentTime < startFilter) return false;
+    if (endFilter && incidentTime > endFilter) return false;
+    return true;
+  });
 
-    const sortedIncidents = [...filtered].sort((a, b) => {
-      const splitRa = (ra: string) => {
-        const parts = (ra || "").split('/');
-        return { num: parseInt(parts[0]) || 0, year: parseInt(parts[1]) || 0 };
-      };
-      const raA = splitRa(a.raCode);
-      const raB = splitRa(b.raCode);
-      if (raB.year !== raA.year) return raB.year - raA.year;
-      return raB.num - raA.num;
-    });
-
-    const displayIncidents = sortedIncidents.filter(i => {
-      const searchNorm = normalizeString(search);
-      const building = buildings.find(b => b.id === i.buildingId);
-      const buildingName = normalizeString(building?.name || '');
-      const buildingNumber = normalizeString(building?.buildingNumber || '');
-
-      return (
-        normalizeString(i.raCode || '').includes(searchNorm) ||
-        normalizeString(i.description).includes(searchNorm) ||
-        buildingName.includes(searchNorm) ||
-        buildingNumber.includes(searchNorm)
-      );
-    });
-
-    const handleExportPDF = () => {
-      if (!printRef.current || typeof html2pdf === 'undefined') return;
-      setIsExporting(true);
-      const element = printRef.current;
-      const opt = {
-        margin: [10, 10, 10, 10],
-        filename: `Relatorio_RA_${statusFilter}_${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-      };
-      html2pdf().set(opt).from(element).save().then(() => setIsExporting(false));
+  const sortedIncidents = [...filtered].sort((a, b) => {
+    const splitRa = (ra: string) => {
+      const parts = (ra || "").split('/');
+      return { num: parseInt(parts[0]) || 0, year: parseInt(parts[1]) || 0 };
     };
+    const raA = splitRa(a.raCode);
+    const raB = splitRa(b.raCode);
+    if (raB.year !== raA.year) return raB.year - raA.year;
+    return raB.num - raA.num;
+  });
+
+  const displayIncidents = sortedIncidents.filter(i => {
+    const searchNorm = normalizeString(search);
+    const building = buildings.find(b => b.id === i.buildingId);
+    const buildingName = normalizeString(building?.name || '');
+    const buildingNumber = normalizeString(building?.buildingNumber || '');
 
     return (
-      <div className="space-y-4">
-        {/* Header Section */}
-        <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm no-print">
-          {/* Title Row */}
-          <div className="flex items-center gap-3 mb-5">
-            <div className={`p-2.5 rounded-xl ${filterStatus === 'PENDING' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
-              {filterStatus === 'PENDING' ? <Clock size={22} strokeWidth={2} /> : <History size={22} strokeWidth={2} />}
-            </div>
-            <div className="flex-1">
-              <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
-                {filterStatus === 'PENDING' ? 'Atendimentos Pendentes' : 'Histórico de Atendimentos'}
-              </h2>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
-                {filterStatus === 'PENDING' ? 'Aguardando validação ou recebimento' : 'Gestão de registros de atendimento'}
-              </p>
-            </div>
+      normalizeString(i.raCode || '').includes(searchNorm) ||
+      normalizeString(i.description).includes(searchNorm) ||
+      buildingName.includes(searchNorm) ||
+      buildingNumber.includes(searchNorm)
+    );
+  });
+
+  const handleExportPDF = () => {
+    if (!printRef.current || typeof html2pdf === 'undefined') return;
+    setIsExporting(true);
+    const element = printRef.current;
+    const opt = {
+      margin: [5, 5, 5, 5],
+      filename: `Relatorio_Atendimentos_${new Date().toISOString().split('T')[0]}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+    html2pdf().set(opt).from(element).save().then(() => setIsExporting(false));
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header Section */}
+      <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm no-print">
+        {/* Title Row */}
+        <div className="flex items-center gap-3 mb-5">
+          <div className={`p-2.5 rounded-xl ${filterStatus === 'PENDING' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+            {filterStatus === 'PENDING' ? <Clock size={22} strokeWidth={2} /> : <History size={22} strokeWidth={2} />}
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+              {filterStatus === 'PENDING' ? 'Atendimentos Pendentes' : 'Histórico de Atendimentos'}
+            </h2>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
+              {filterStatus === 'PENDING' ? 'Aguardando validação ou recebimento' : 'Gestão de registros de atendimento'}
+            </p>
+          </div>
+        </div>
+
+        {/* Search and Actions Row */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search Input - Full Width */}
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Buscar por RA, local ou descrição..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+            />
           </div>
 
-          {/* Search and Actions Row */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search Input - Full Width */}
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          {/* Action Buttons */}
+          <div className="flex gap-2 sm:flex-shrink-0">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex-1 sm:flex-none px-4 sm:px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all duration-200 flex items-center justify-center gap-2 ${showFilters
+                ? 'bg-brand-600 border-brand-600 text-white shadow-lg shadow-brand-500/25'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand-300 hover:text-brand-600 dark:hover:border-brand-600 dark:hover:text-brand-400'
+                }`}
+            >
+              <Filter size={16} />
+              <span className="hidden sm:inline">Filtros</span>
+            </button>
+            {canExport && filterStatus === 'COMPLETED' && (
+              <button
+                onClick={handleExportPDF}
+                disabled={isExporting}
+                className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 dark:from-slate-700 dark:to-slate-800 dark:hover:from-slate-600 dark:hover:to-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 transition-all duration-200 disabled:opacity-50"
+              >
+                {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                <span className="hidden sm:inline">Exportar</span>
+                <span className="sm:hidden">PDF</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Filter Panel */}
+        {showFilters && (
+          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-top-2">
+            <div>
+              <label className="block text-xs font-black text-slate-500 uppercase mb-1 tracking-wider">Data Inicial</label>
               <input
-                type="text"
-                placeholder="Buscar por RA, local ou descrição..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+                type="date"
+                value={dateStart}
+                onChange={e => setDateStart(e.target.value)}
+                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
+            <div>
+              <label className="block text-xs font-black text-slate-500 uppercase mb-1 tracking-wider">Hora Inicial</label>
+              <input
+                type="time"
+                value={timeStart}
+                onChange={e => setTimeStart(e.target.value)}
+                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-black text-slate-500 uppercase mb-1 tracking-wider">Data Final</label>
+              <input
+                type="date"
+                value={dateEnd}
+                onChange={e => setDateEnd(e.target.value)}
+                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-black text-slate-500 uppercase mb-1 tracking-wider">Hora Final</label>
+              <input
+                type="time"
+                value={timeEnd}
+                onChange={e => setTimeEnd(e.target.value)}
+                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="grid gap-3">
+        {displayIncidents.map(incident => {
+          const building = buildings.find(b => b.id === incident.buildingId);
+          const isCancelled = incident.status === 'CANCELLED';
+          const isPending = incident.status === 'PENDING';
+          const isApproved = incident.status === 'APPROVED';
+          let borderClass = 'border-l-4 border-slate-300';
+          if (isApproved) borderClass = 'border-l-4 border-emerald-500';
+          else if (isCancelled) borderClass = 'border-l-4 border-red-500';
+          else if (isPending) borderClass = 'border-l-4 border-amber-500';
+          return (
+            <div key={incident.id} onClick={() => onView(incident)} className={`bg-white dark:bg-slate-900 p-4 rounded-r-xl ${borderClass} shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-3 cursor-pointer group relative overflow-hidden ${isCancelled ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}>
+              <div className="flex-1 min-w-0 z-10">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="bg-slate-800 text-white text-xs font-black px-2 py-0.5 rounded uppercase tracking-wider">RA {incident.raCode}</span>
+                  {isCancelled && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-black px-2 py-0.5 rounded uppercase flex items-center gap-1"><Ban size={10} /> Cancelado</span>}
+                  {isApproved && <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-black px-2 py-0.5 rounded uppercase flex items-center gap-1"><CheckCircle size={10} /> Validado</span>}
+                  {isPending && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-black px-2 py-0.5 rounded uppercase flex items-center gap-1"><Clock size={10} /> Pendente</span>}
+                  <span className="text-xs font-bold text-slate-400 ml-auto md:ml-2">{new Date(incident.date).toLocaleDateString('pt-BR')} • {incident.startTime}</span>
+                </div>
+                <h3 className={`font-black text-sm uppercase mb-1 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors ${isCancelled ? 'text-slate-500 line-through decoration-red-500 decoration-2' : 'text-slate-800 dark:text-slate-100'}`}>{building?.name || 'Local Desconhecido'}</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">{incident.description}</p>
+              </div>
+              <div className="w-full md:w-auto mt-2 md:mt-0 flex-shrink-0 z-20" onClick={(e) => e.stopPropagation()}>
+                {isPending && canApprove && (
+                  <button onClick={() => onApprove?.(incident.id)} className="w-full md:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all">
+                    <CheckCircle size={14} /> Validar
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2 sm:flex-shrink-0">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex-1 sm:flex-none px-4 sm:px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all duration-200 flex items-center justify-center gap-2 ${showFilters
-                  ? 'bg-brand-600 border-brand-600 text-white shadow-lg shadow-brand-500/25'
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand-300 hover:text-brand-600 dark:hover:border-brand-600 dark:hover:text-brand-400'
-                  }`}
-              >
-                <Filter size={16} />
-                <span className="hidden sm:inline">Filtros</span>
-              </button>
-              {canExport && filterStatus === 'COMPLETED' && (
-                <button
-                  onClick={handleExportPDF}
-                  disabled={isExporting}
-                  className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 dark:from-slate-700 dark:to-slate-800 dark:hover:from-slate-600 dark:hover:to-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 transition-all duration-200 disabled:opacity-50"
-                >
-                  {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                  <span className="hidden sm:inline">Exportar</span>
-                  <span className="sm:hidden">PDF</span>
-                </button>
+      {/* Hidden Export Area */}
+      <div className="hidden">
+        <div ref={printRef} className="p-10 bg-white text-black" style={{ width: '287mm', minHeight: '200mm', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+          {/* Cabecalho Institucional conforme imagem */}
+          <div className="flex justify-center items-center mb-8 gap-12">
+            <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center">
+              {customLogoLeft ? (
+                <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Esquerda" />
+              ) : (
+                <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50">
+                  <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
+                </div>
+              )}
+            </div>
+
+            <div className="text-center">
+              <h1 className="text-[18px] font-black uppercase text-slate-900 leading-tight">
+                PREFEITURA MUNICIPAL DE ARAPONGAS
+              </h1>
+              <h2 className="text-[14px] font-black uppercase text-slate-900 mt-1">
+                SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
+              </h2>
+              <h3 className="text-[12px] font-bold uppercase text-blue-600 mt-1 tracking-wider">
+                CENTRO DE MONITORAMENTO MUNICIPAL
+              </h3>
+              <div className="mt-8 inline-block px-8 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-[13px] font-black uppercase tracking-[0.15em] text-slate-700 shadow-sm">
+                Relatório Geral de Atendimentos
+              </div>
+            </div>
+
+            <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center">
+              {customLogo ? (
+                <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão Direita" />
+              ) : (
+                <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50">
+                  <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Filter Panel */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-top-2">
-              <div>
-                <label className="block text-xs font-black text-slate-500 uppercase mb-1 tracking-wider">Data Inicial</label>
-                <input
-                  type="date"
-                  value={dateStart}
-                  onChange={e => setDateStart(e.target.value)}
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-black text-slate-500 uppercase mb-1 tracking-wider">Data Final</label>
-                <input
-                  type="date"
-                  value={dateEnd}
-                  onChange={e => setDateEnd(e.target.value)}
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="grid gap-3">
-          {displayIncidents.map(incident => {
-            const building = buildings.find(b => b.id === incident.buildingId);
-            const isCancelled = incident.status === 'CANCELLED';
-            const isPending = incident.status === 'PENDING';
-            const isApproved = incident.status === 'APPROVED';
-            let borderClass = 'border-l-4 border-slate-300';
-            if (isApproved) borderClass = 'border-l-4 border-emerald-500';
-            else if (isCancelled) borderClass = 'border-l-4 border-red-500';
-            else if (isPending) borderClass = 'border-l-4 border-amber-500';
-            return (
-              <div key={incident.id} onClick={() => onView(incident)} className={`bg-white dark:bg-slate-900 p-4 rounded-r-xl ${borderClass} shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-3 cursor-pointer group relative overflow-hidden ${isCancelled ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}>
-                <div className="flex-1 min-w-0 z-10">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="bg-slate-800 text-white text-xs font-black px-2 py-0.5 rounded uppercase tracking-wider">RA {incident.raCode}</span>
-                    {isCancelled && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-black px-2 py-0.5 rounded uppercase flex items-center gap-1"><Ban size={10} /> Cancelado</span>}
-                    {isApproved && <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-black px-2 py-0.5 rounded uppercase flex items-center gap-1"><CheckCircle size={10} /> Validado</span>}
-                    {isPending && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-black px-2 py-0.5 rounded uppercase flex items-center gap-1"><Clock size={10} /> Pendente</span>}
-                    <span className="text-xs font-bold text-slate-400 ml-auto md:ml-2">{new Date(incident.date).toLocaleDateString('pt-BR')} • {incident.startTime}</span>
-                  </div>
-                  <h3 className={`font-black text-sm uppercase mb-1 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors ${isCancelled ? 'text-slate-500 line-through decoration-red-500 decoration-2' : 'text-slate-800 dark:text-slate-100'}`}>{building?.name || 'Local Desconhecido'}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">{incident.description}</p>
-                </div>
-                <div className="w-full md:w-auto mt-2 md:mt-0 flex-shrink-0 z-20" onClick={(e) => e.stopPropagation()}>
-                  {isPending && canApprove && (
-                    <button onClick={() => onApprove?.(incident.id)} className="w-full md:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all">
-                      <CheckCircle size={14} /> Validar
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {/* Tabela de Dados */}
+          <table className="w-full border-collapse border border-slate-900">
+            <thead>
+              <tr className="bg-slate-100">
+                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[80px]">Número R.A</th>
+                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[150px]">Local</th>
+                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[80px]">Data</th>
+                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[60px]">H. Inicial</th>
+                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[60px]">H. Final</th>
+                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase">Relato</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayIncidents.map(i => {
+                const building = buildings.find(b => b.id === i.buildingId);
+                return (
+                  <tr key={i.id}>
+                    <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.raCode}</td>
+                    <td className="border border-slate-900 p-2 text-[10px] font-bold uppercase align-middle">{building?.name || '---'}</td>
+                    <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{new Date(i.date).toLocaleDateString('pt-BR')}</td>
+                    <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.startTime}</td>
+                    <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.endTime || '--:--'}</td>
+                    <td className="border border-slate-900 p-2 text-[9px] font-medium leading-tight align-top whitespace-pre-wrap">{i.description}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          <div className="mt-6 flex justify-between text-[8px] font-black uppercase text-slate-400">
+            <span>Relatório gerado em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</span>
+            <span>Página 1 de 1</span>
+          </div>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
 const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit: (b: Building) => void, onDelete: (id: string) => void, onAdd: () => void, onRefresh: () => void, canEdit: boolean, canDelete: boolean }> = ({ buildings, onEdit, onAdd, canEdit }) => {
   const [search, setSearch] = useState('');
@@ -381,19 +490,21 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
             />
           </div>
           {canEdit && (
-            <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
-              <Plus size={16} /> <span className="hidden sm:inline">Novo Prédio</span><span className="sm:hidden">+</span>
+            <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
+              <Plus size={16} strokeWidth={3} />
+              <span className="hidden sm:inline">Novo Próprio</span>
             </button>
           )}
         </div>
       </div>
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      {/* Desktop Table */}
+      <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider w-16">Nº</th>
-              <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Nome / Endereço</th>
-              <th className="px-6 py-3 text-center text-xs font-black text-slate-500 uppercase tracking-wider w-40">Segurança</th>
+              <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest w-16">Nº</th>
+              <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Nome / Endereço</th>
+              <th className="px-6 py-3 text-center text-xs font-black text-slate-500 uppercase tracking-widest w-40">Segurança</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -404,8 +515,8 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
                 <tr key={b.id} onClick={() => canEdit && onEdit(b)} className={`transition-colors border-b dark:border-slate-800 ${canEdit ? 'cursor-pointer hover:bg-brand-50/50 dark:hover:bg-brand-900/10' : ''}`}>
                   <td className="px-6 py-4 text-xs font-black text-slate-700 dark:text-slate-300">{b.buildingNumber}</td>
                   <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase">{b.name}</p>
-                    <p className="text-xs text-slate-500 uppercase mt-0.5">{b.address}</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-tight">{b.name}</p>
+                    <p className="text-[10px] text-slate-500 uppercase mt-0.5 font-bold">{b.address}</p>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center gap-2">
@@ -430,6 +541,42 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card Layout */}
+      <div className="md:hidden space-y-3">
+        {filtered.map(b => {
+          const hasCoordinates = b.latitude && b.longitude && b.latitude.trim() !== '' && b.longitude.trim() !== '';
+          const mapsUrl = hasCoordinates ? `https://www.google.com/maps?q=${b.latitude},${b.longitude}` : '';
+          return (
+            <div key={b.id} onClick={() => canEdit && onEdit(b)} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between active:scale-[0.98] transition-all">
+              <div className="flex-1 min-w-0 pr-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">{b.buildingNumber}</span>
+                  <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase truncate tracking-tight">{b.name}</p>
+                </div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase truncate tracking-tight mb-2">{b.address}</p>
+                <div className="flex items-center gap-1.5">
+                  {b.hasAlarm && <span className="text-[9px] font-black bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full border border-red-100 dark:border-red-800 uppercase flex items-center gap-1"><Bell size={10} /> Alarme</span>}
+                  {b.hasKey && <span className="text-[9px] font-black bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-100 dark:border-amber-800 uppercase flex items-center gap-1"><Key size={10} /> Chave</span>}
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                {hasCoordinates && (
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl border border-blue-100 dark:border-blue-800 flex items-center justify-center"
+                  >
+                    <MapPin size={18} strokeWidth={2.5} />
+                  </a>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -489,8 +636,9 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
             />
           </div>
           {canEdit && (
-            <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
-              <Plus size={16} /> <span className="hidden sm:inline">Novo Usuário</span><span className="sm:hidden">+</span>
+            <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
+              <Plus size={16} strokeWidth={3} />
+              <span className="hidden sm:inline">Novo Usuário</span>
             </button>
           )}
         </div>
@@ -589,8 +737,9 @@ const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => v
               className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
             />
           </div>
-          <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
-            <Plus size={16} /> <span className="hidden sm:inline">Novo Cargo</span><span className="sm:hidden">+</span>
+          <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
+            <Plus size={16} strokeWidth={3} />
+            <span className="hidden sm:inline">Novo Cargo</span>
           </button>
         </div>
       </div>
@@ -640,8 +789,9 @@ const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onD
               className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
             />
           </div>
-          <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
-            <Plus size={16} /> <span className="hidden sm:inline">Novo Setor</span><span className="sm:hidden">+</span>
+          <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
+            <Plus size={16} strokeWidth={3} />
+            <span className="hidden sm:inline">Novo Setor</span>
           </button>
         </div>
       </div>
@@ -1327,11 +1477,12 @@ export function App() {
           onUnreadChange={fetchAnnouncementsCount}
           pendingIncidentsCount={pendingIncidentsCount}
           pendingLoansCount={pendingLoansCount}
+          unreadAnnouncementsCount={unreadAnnouncementsCount}
         />;
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
         return <IncidentForm user={user!} users={users} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleNavigate('DASHBOARD'); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} />;
-      case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} />;
+      case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} />;
       case 'PENDING_APPROVALS':
         return (
           <div className="space-y-4 animate-fade-in">
@@ -1348,6 +1499,7 @@ export function App() {
                   filterStatus="PENDING"
                   currentUser={user}
                   customLogo={customLogoRight}
+                  customLogoLeft={customLogoLeft}
                   loans={loans}
                   onConfirmLoanBatch={handleConfirmLoanBatch}
                   canEdit={can('EDIT_INCIDENT')}
@@ -1416,6 +1568,7 @@ export function App() {
         currentUser={user!}
         pendingIncidentsCount={pendingIncidentsCount}
         pendingLoansCount={pendingLoansCount}
+        unreadAnnouncementsCount={unreadAnnouncementsCount}
       />;
     }
   };
@@ -1436,16 +1589,25 @@ export function App() {
   return (
     <div className="min-h-screen flex transition-colors duration-200">
       {sidebarOpen && <div className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />}
-      <aside className={`fixed inset-y-0 left-0 z-50 bg-brand-900 transform transition-all duration-300 lg:relative ${sidebarOpen ? 'translate-x-0 w-64 shadow-2xl' : '-translate-x-full lg:translate-x-0'} ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 bg-[#0b101d] transform transition-all duration-500 lg:relative border-r border-white/5 shadow-[10px_0_30px_-15px_rgba(0,0,0,0.5)] ${sidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'} ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'}`}>
         <div className="h-full flex flex-col text-white">
-          <div className={`flex flex-col items-center justify-center border-b border-brand-800 transition-all duration-300 ${isSidebarCollapsed ? 'h-20 px-2' : 'h-32 px-4'}`}>
-            <div className={`transition-all duration-300 flex items-center justify-center ${isSidebarCollapsed ? 'h-10 w-10' : 'h-16 w-16 mb-2'}`}>
-              {customLogoRight ? <img src={customLogoRight} className="w-full h-full object-contain" alt="Logo" /> : <Shield className="text-white/80 w-3/5 h-3/5" />}
+          <div className={`transition-all duration-500 flex items-center ${isSidebarCollapsed ? 'h-20 justify-center px-2' : 'h-24 px-8 justify-start gap-3'}`}>
+            <div className={`transition-all duration-500 flex items-center justify-center group hover:scale-110 ${isSidebarCollapsed ? 'h-12 w-12' : 'h-16 w-16'}`}>
+              {customLogoRight ? (
+                <img src={customLogoRight} className="w-full h-full object-contain drop-shadow-2xl" alt="Logo" />
+              ) : (
+                <Shield className="text-white drop-shadow-md" size={isSidebarCollapsed ? 28 : 36} strokeWidth={1.5} />
+              )}
             </div>
-            {!isSidebarCollapsed && <div className="text-center leading-none"><h1 className="font-black text-sm tracking-wide text-white">VIGILANTE</h1><h1 className="font-black text-xs tracking-widest text-brand-200 uppercase mt-0.5">Municipal</h1></div>}
+            {!isSidebarCollapsed && (
+              <div className="flex flex-col animate-in fade-in duration-500 slide-in-from-left-2">
+                <span className="text-white font-black text-lg tracking-tighter uppercase leading-none">Vigilante</span>
+                <span className="text-blue-500 text-[10px] font-black tracking-[0.3em] uppercase mt-0.5">Municipal</span>
+              </div>
+            )}
           </div>
-          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            {!isSidebarCollapsed && <p className="px-3 text-xs font-black text-brand-300 mt-4 mb-2 uppercase tracking-widest opacity-60">Principal</p>}
+          <nav className={`flex-1 overflow-y-auto no-scrollbar pt-4 ${isSidebarCollapsed ? 'px-0' : 'px-4 space-y-1'}`}>
+            {!isSidebarCollapsed && <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 mb-4 mt-2">Principal</h3>}
             {can('VIEW_DASHBOARD') && isMenuVisible('dashboard') && <NavItem icon={<LayoutDashboard />} label="Painel de Controle" active={view === 'DASHBOARD'} onClick={() => handleNavigate('DASHBOARD')} collapsed={isSidebarCollapsed} />}
             {isMenuVisible('dashboard') && (
               <NavItem
@@ -1455,23 +1617,19 @@ export function App() {
                 onClick={() => handleNavigate('ANNOUNCEMENTS')}
                 collapsed={isSidebarCollapsed}
                 badge={unreadAnnouncementsCount > 0 ? unreadAnnouncementsCount : undefined}
+                hasChevron={true}
               />
             )}
             {can('VIEW_DASHBOARD') && isMenuVisible('new_record') && <NavItem icon={<FileText />} label="Registar R.A" active={view === 'NEW_RECORD'} onClick={() => { setEditingIncident(null); handleNavigate('NEW_RECORD'); }} collapsed={isSidebarCollapsed} />}
             {(can('MANAGE_LOANS') || can('RETURN_LOANS') || loans.some(l => l.receiverId === user.id && l.status === 'ACTIVE')) && isMenuVisible('loans_root') && (
-              <NavItem
-                icon={<ArrowRightLeft />}
-                label="Cautelas"
-                active={view === 'LOANS'}
-                onClick={() => handleNavigate('LOANS')}
-                collapsed={isSidebarCollapsed}
-              />
+              <NavItem icon={<ArrowRightLeft />} label="Cautelas" active={view === 'LOANS'} onClick={() => handleNavigate('LOANS')} collapsed={isSidebarCollapsed} />
             )}
-            <div className="pt-4 pb-2 border-t border-brand-800">
-              {!isSidebarCollapsed && <p className="px-3 text-xs font-black text-brand-300 mb-2 uppercase tracking-widest">Monitoramento</p>}
+
+            <div className="pt-6">
+              {!isSidebarCollapsed && <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 mb-4">Monitoramento</h3>}
               {isMenuVisible('monitoring_group') && (
                 <div className="relative">
-                  {(can('VIEW_ALL_INCIDENTS')) && isMenuVisible('history_root') && <NavItem icon={<CheckCircle />} label="Históricos" active={view === 'HISTORY' || view === 'LOAN_HISTORY'} onClick={() => setReportsMenuOpen(!reportsMenuOpen)} collapsed={isSidebarCollapsed} />}
+                  {(can('VIEW_ALL_INCIDENTS')) && isMenuVisible('history_root') && <NavItem icon={<CheckCircle />} label="Históricos" active={view === 'HISTORY' || view === 'LOAN_HISTORY'} onClick={() => setReportsMenuOpen(!reportsMenuOpen)} collapsed={isSidebarCollapsed} hasChevron={!isSidebarCollapsed} />}
                   {!isSidebarCollapsed && (can('VIEW_ALL_INCIDENTS')) && isMenuVisible('history_root') && <div className="absolute right-3 top-3.5 pointer-events-none text-brand-300">{reportsMenuOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</div>}
                 </div>
               )}
@@ -1483,25 +1641,25 @@ export function App() {
               )}
               {isMenuVisible('monitoring_group') && isMenuVisible('pending_root') && (
                 <div className="relative">
-                  <NavItem icon={<UserCheck />} label="Pendentes" active={view === 'PENDING_APPROVALS'} onClick={() => setPendentesMenuOpen(!pendentesMenuOpen)} collapsed={isSidebarCollapsed} badge={totalPendingBadge > 0 ? totalPendingBadge : undefined} />
+                  <NavItem icon={<UserCheck />} label="Pendentes" active={view === 'PENDING_APPROVALS'} onClick={() => setPendentesMenuOpen(!pendentesMenuOpen)} collapsed={isSidebarCollapsed} badge={totalPendingBadge > 0 ? totalPendingBadge : undefined} hasChevron={!isSidebarCollapsed} />
                   {!isSidebarCollapsed && <div className="absolute right-3 top-3.5 pointer-events-none text-brand-300">{pendentesMenuOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</div>}
                 </div>
               )}
               {pendentesMenuOpen && !isSidebarCollapsed && isMenuVisible('monitoring_group') && isMenuVisible('pending_root') && (
                 <div className="space-y-1 mt-1">
                   {isMenuVisible('pending_incidents') && <NavItem label="Atendimentos" icon={<FileText size={14} className="mr-2" />} active={view === 'PENDING_APPROVALS' && pendingSubTab === 'INCIDENTS'} onClick={() => { setPendingSubTab('INCIDENTS'); handleNavigate('PENDING_APPROVALS'); }} collapsed={isSidebarCollapsed} isSubItem badge={pendingIncidentsCount > 0 ? pendingIncidentsCount : undefined} />}
-                  {isMenuVisible('pending_loans') && <NavItem label="Cautelas" icon={<ArrowRightLeft size={14} className="mr-2" />} active={view === 'PENDING_APPROVALS' && pendingSubTab === 'LOANS'} onClick={() => { setPendingSubTab('LOANS'); handleNavigate('PENDING_APPROVALS'); }} collapsed={isSidebarCollapsed} isSubItem />}
+                  {isMenuVisible('pending_loans') && <NavItem label="Cautelas" icon={<ArrowRightLeft size={14} className="mr-2" />} active={view === 'PENDING_APPROVALS' && pendingSubTab === 'LOANS'} onClick={() => { setPendingSubTab('LOANS'); handleNavigate('PENDING_APPROVALS'); }} collapsed={isSidebarCollapsed} isSubItem badge={pendingLoansCount > 0 ? pendingLoansCount : undefined} />}
                 </div>
               )}
 
               {isMenuVisible('monitoring_group') && isMenuVisible('charts') && <NavItem icon={<PieChartIcon />} label="Estatísticas" active={view === 'CHARTS'} onClick={() => handleNavigate('CHARTS')} collapsed={isSidebarCollapsed} />}
             </div>
             {(can('MANAGE_ASSETS') || can('MANAGE_USERS') || can('MANAGE_BUILDINGS') || can('MANAGE_SECTORS') || can('MANAGE_ALTERATION_TYPES')) && isMenuVisible('admin_group') && (
-              <div className="pt-4 pb-2 border-t border-brand-800">
-                {!isSidebarCollapsed && <p className="px-3 text-xs font-black text-brand-300 mb-2 uppercase tracking-widest">Administração</p>}
+              <div className="pt-6">
+                {!isSidebarCollapsed && <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 mb-4">Administração</h3>}
                 {isMenuVisible('registrations_root') && (
                   <div className="relative">
-                    <NavItem icon={<FolderOpen />} label="Cadastros" active={view.includes('FORM') || view === 'BUILDINGS' || view === 'USERS' || view === 'VEHICLES' || view === 'VESTS' || view === 'RADIOS' || view === 'EQUIPMENTS' || view === 'ALTERATION_TYPES' || view === 'SECTORS' || view === 'JOB_TITLES'} onClick={() => setRegistrationsMenuOpen(!registrationsMenuOpen)} collapsed={isSidebarCollapsed} />
+                    <NavItem icon={<FolderOpen />} label="Cadastros" active={view.includes('FORM') || view === 'BUILDINGS' || view === 'USERS' || view === 'VEHICLES' || view === 'VESTS' || view === 'RADIOS' || view === 'EQUIPMENTS' || view === 'ALTERATION_TYPES' || view === 'SECTORS' || view === 'JOB_TITLES'} onClick={() => setRegistrationsMenuOpen(!registrationsMenuOpen)} collapsed={isSidebarCollapsed} hasChevron={!isSidebarCollapsed} />
                     {!isSidebarCollapsed && <div className="absolute right-3 top-3.5 pointer-events-none text-brand-300">{registrationsMenuOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</div>}
                   </div>
                 )}
@@ -1547,12 +1705,14 @@ export function App() {
                 )}
               </div>
             )}
-            <div className="mt-auto border-t border-brand-800">
-              <NavItem icon={<LogOut />} label="Sair" onClick={handleLogout} collapsed={isSidebarCollapsed} />
+            <div className="mt-8 pt-4 border-t border-white/5">
+
+              <NavItem icon={<LogOut className="rotate-180" />} label="Sair do Sistema" onClick={handleLogout} collapsed={isSidebarCollapsed} />
+
               {!isSidebarCollapsed && (
-                <div className="py-2 text-center opacity-30 hover:opacity-100 transition-opacity duration-500">
-                  <p className="text-[9px] font-bold text-brand-300 uppercase tracking-widest cursor-default">
-                    v{DISPLAY_VERSION}
+                <div className="py-2 text-center opacity-30 group-hover:opacity-100 transition-opacity duration-700">
+                  <p className="text-[8px] font-mono text-slate-500 uppercase tracking-[0.15em] cursor-default">
+                    Internal System v{DISPLAY_VERSION}
                   </p>
                 </div>
               )}

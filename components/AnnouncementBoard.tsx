@@ -57,8 +57,11 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ currentUser, onVi
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2">
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400 relative">
                         <Megaphone className="w-5 h-5" />
+                        {announcements.some(a => !a.isRead) && (
+                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 border-2 border-white dark:border-slate-900 rounded-full shadow-sm animate-pulse" />
+                        )}
                     </div>
                     <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">Mural de Avisos</h3>
                 </div>

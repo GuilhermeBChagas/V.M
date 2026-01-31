@@ -20,6 +20,7 @@ interface DashboardProps {
     currentUser: User;
     pendingIncidentsCount: number;
     pendingLoansCount: number;
+    unreadAnnouncementsCount: number;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -33,7 +34,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     onUnreadChange,
     currentUser,
     pendingIncidentsCount,
-    pendingLoansCount
+    pendingLoansCount,
+    unreadAnnouncementsCount
 }) => {
     // Estados da Pesquisa de Prédios
     const [buildingSearchTerm, setBuildingSearchTerm] = useState('');
@@ -220,8 +222,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     onClick={() => onNavigate('PENDING_APPROVALS')}
                     className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex items-center gap-4"
                 >
-                    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-2xl group-hover:scale-110 transition-transform">
+                    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-2xl group-hover:scale-110 transition-transform relative">
                         <FileText size={28} />
+                        {pendingIncidentsCount > 0 && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-white dark:border-slate-800 rounded-full shadow-sm animate-pulse" />
+                        )}
                     </div>
                     <div>
                         <h4 className="text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none">Registros Pendentes</h4>
@@ -237,8 +242,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     onClick={() => onNavigate('LOANS')}
                     className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex items-center gap-4"
                 >
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl group-hover:scale-110 transition-transform">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl group-hover:scale-110 transition-transform relative">
                         <Zap size={28} />
+                        {pendingLoansCount > 0 && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-white dark:border-slate-800 rounded-full shadow-sm animate-pulse" />
+                        )}
                     </div>
                     <div>
                         <h4 className="text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none">Cautelas Ativas</h4>

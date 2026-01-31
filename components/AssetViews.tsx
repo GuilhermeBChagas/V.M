@@ -59,9 +59,10 @@ const ListHeader: React.FC<ListHeaderProps> = ({
             {onAdd && (
                 <button
                     onClick={onAdd}
-                    className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200"
+                    className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200"
                 >
-                    <Plus size={16} /> <span className="hidden sm:inline">{addLabel || 'Novo'}</span><span className="sm:hidden">+</span>
+                    <Plus size={16} strokeWidth={3} />
+                    <span className="hidden sm:inline">{addLabel || 'Novo'}</span>
                 </button>
             )}
         </div>
