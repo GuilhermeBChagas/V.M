@@ -320,6 +320,45 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         }
     };
 
+    const handleReject = async (loan: LoanRecord) => {
+        onShowConfirm(
+            "Recusar Item",
+            `Deseja recursar o item: ${loan.assetDescription}?`,
+            async () => {
+                try {
+                    const { error } = await supabase.from('loan_records').update({
+                        status: 'REJECTED',
+                        return_time: new Date().toISOString()
+                    }).eq('id', loan.id);
+                    if (error) throw error;
+                    onLogAction('LOAN_RETURN', `Recusou item: ${loan.assetDescription}`);
+                    onRefresh();
+                } catch (err: any) {
+                    alert('Erro ao recusar item: ' + err.message);
+                }
+            }
+        );
+    };
+
+    const handleCancelBatch = async (loansToCancel: LoanRecord[]) => {
+        const receiverName = loansToCancel[0].receiverName;
+        onShowConfirm(
+            "Cancelar Cautela",
+            `Deseja cancelar esta cautela pendente para ${receiverName}? Todos os itens serão liberados.`,
+            async () => {
+                try {
+                    const ids = loansToCancel.map(l => l.id);
+                    const { error } = await supabase.from('loan_records').delete().in('id', ids);
+                    if (error) throw error;
+                    onLogAction('LOAN_RETURN', `Cancelou cautela pendente para ${receiverName} (${loansToCancel.length} itens)`);
+                    onRefresh();
+                } catch (err: any) {
+                    alert('Erro ao cancelar cautela: ' + err.message);
+                }
+            }
+        );
+    };
+
     // --- BATCH CONFIRMATION LOGIC ---
     const handleConfirmBatch = (loansToConfirm: LoanRecord[]) => {
         if (loansToConfirm.length === 0) return;
@@ -773,31 +812,32 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     <>
                         <div ref={printRef} className="space-y-4">
                             {/* UNIFIED GRID VIEW */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                                 {groupedLoans.map((group) => (
                                     <div
                                         key={group.id}
                                         className={`rounded-2xl border-2 overflow-hidden flex flex-col shadow-sm transition-all hover:shadow-md ${group.type === 'PENDING'
-                                            ? 'border-amber-400 bg-white dark:bg-slate-900' // Pending Style
-                                            : 'border-emerald-400 bg-white dark:bg-slate-900' // Active Style
+                                            ? 'border-amber-400 bg-white dark:bg-slate-900 shadow-amber-500/5'
+                                            : 'border-emerald-400 bg-white dark:bg-slate-900 shadow-emerald-500/5'
                                             }`}
                                     >
                                         {/* Header */}
-                                        <div className="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 backdrop-blur-sm bg-opacity-50">
+                                        <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
                                             <div className="flex items-center gap-3">
-                                                <div className={`p-2 rounded-full ${group.type === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                                    <span className="font-black text-xs">{group.receiverName.charAt(0)}</span>
+                                                <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center text-lg font-black shadow-sm ${group.type === 'PENDING' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                                    {group.receiverName.charAt(0).toUpperCase()}
                                                 </div>
-                                                <div>
-                                                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase leading-tight truncate max-w-[150px]">
+                                                <div className="flex flex-col min-w-0 flex-1">
+                                                    <h3 className="text-xs md:text-sm font-black text-slate-800 dark:text-slate-100 uppercase leading-tight mb-1 tracking-tight truncate" title={group.receiverName}>
                                                         {group.receiverName}
                                                     </h3>
                                                     <div className="flex items-center gap-2">
-                                                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${group.type === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md border ${group.type === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'
                                                             }`}>
                                                             {group.type === 'PENDING' ? 'AGUARDANDO' : 'EM POSSE'}
                                                         </span>
-                                                        <span className="text-[10px] font-mono text-slate-400">
+                                                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                                            <Clock size={10} className="opacity-60" />
                                                             {new Date(group.loans[0].checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </span>
                                                     </div>
@@ -806,49 +846,100 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                         </div>
 
                                         {/* Items Grid */}
-                                        <div className="p-4 flex-1">
-                                            <div className="grid grid-cols-2 gap-3 h-full content-start">
+                                        <div className="p-2 flex-1 overflow-y-auto max-h-[350px]">
+                                            <div className="grid grid-cols-2 gap-2 h-full content-start">
                                                 {group.loans.map(loan => (
-                                                    <div key={loan.id} className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-700 h-24 relative group">
-                                                        <div className={`mb-2 ${group.type === 'PENDING' ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                                            {getAssetIcon(loan.assetType, 24)}
+                                                    <div key={loan.id} className="bg-slate-50/40 dark:bg-slate-800/20 rounded-xl p-2 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-800 min-h-[75px] relative group transition-all hover:bg-white dark:hover:bg-slate-800 shadow-sm">
+                                                        <div className={`mb-1 ${group.type === 'PENDING' ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                                            {getAssetIcon(loan.assetType, 20)}
                                                         </div>
-                                                        <p className="text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase leading-none mb-1 line-clamp-2">
+                                                        <p className="text-[8px] font-black text-slate-800 dark:text-slate-200 uppercase leading-tight mb-0.5 line-clamp-2 px-1">
                                                             {loan.assetDescription}
                                                         </p>
                                                         {loan.assetType === 'VEHICLE' && (
-                                                            <span className="text-[9px] font-mono text-slate-400">{loan.meta?.kmStart} Km</span>
+                                                            <span className="text-[7px] font-bold text-slate-400 uppercase">{loan.meta?.kmStart} KM</span>
                                                         )}
-                                                        {loan.assetType === 'VEST' && (
-                                                            <span className="text-[9px] font-mono text-slate-400">Tam: {loan.assetDescription.split(' ').pop()}</span>
+                                                        {(loan.assetType === 'VEST' || loan.assetDescription.includes('(M)') || loan.assetDescription.includes('(G)')) && (
+                                                            <span className="text-[7px] font-bold text-slate-400 uppercase opacity-60">
+                                                                TAM: ({loan.assetDescription.match(/\((.*?)\)/)?.[1] || '---'})
+                                                            </span>
                                                         )}
 
                                                         {/* Individual Action (Overlay) */}
-                                                        <div className="absolute inset-0 bg-slate-900/80 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[1px]">
-                                                            <button
-                                                                onClick={() => group.type === 'PENDING' ? handleConfirm(loan) : handleReturn(loan)}
-                                                                className="px-3 py-1 bg-white text-slate-900 text-[9px] font-bold uppercase rounded-lg hover:scale-105 transition-transform"
-                                                            >
-                                                                {group.type === 'PENDING' ? 'Validar' : 'Devolver'}
-                                                            </button>
-                                                        </div>
+                                                        {((group.type === 'PENDING' && (currentUser.id === group.receiverId || currentUser.id === loan.operatorId)) || group.type === 'ACTIVE') && (
+                                                            <div className="absolute inset-0 bg-slate-900/90 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-[2px] z-10 p-1.5 gap-1 font-black uppercase">
+                                                                {group.type === 'PENDING' ? (
+                                                                    <>
+                                                                        {currentUser.id === group.receiverId && (
+                                                                            <>
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); handleConfirm(loan); }}
+                                                                                    className="flex-1 py-1 bg-emerald-600 text-white text-[7px] rounded-lg shadow-lg active:scale-95 transition-all"
+                                                                                >
+                                                                                    Aceitar
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); handleReject(loan); }}
+                                                                                    className="flex-1 py-1 bg-red-600 text-white text-[7px] rounded-lg shadow-lg active:scale-95 transition-all"
+                                                                                >
+                                                                                    Recusar
+                                                                                </button>
+                                                                            </>
+                                                                        )}
+                                                                        {currentUser.id === loan.operatorId && currentUser.id !== group.receiverId && (
+                                                                            <span className="text-white text-[7px] text-center px-1">Aguardando Confirmação</span>
+                                                                        )}
+                                                                    </>
+                                                                ) : (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleReturn(loan); }}
+                                                                        className="w-full py-1 bg-emerald-600 text-white text-[8px] rounded-lg shadow-lg active:scale-95 transition-all"
+                                                                    >
+                                                                        Devolver
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
 
                                         {/* Footer Action */}
-                                        <div className={`p-3 border-t ${group.type === 'PENDING' ? 'bg-amber-50 border-amber-100' : 'bg-emerald-50 border-emerald-100'} dark:bg-slate-800/50 dark:border-slate-800`}>
-                                            <button
-                                                onClick={() => group.type === 'PENDING' ? handleConfirmBatch(group.loans) : handleReturnBatch(group.loans)}
-                                                className={`w-full py-2.5 rounded-lg text-xs font-black uppercase flex items-center justify-center gap-2 transition-all active:scale-95 ${group.type === 'PENDING'
-                                                    ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20 shadow-lg'
-                                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20 shadow-lg'
-                                                    }`}
-                                            >
-                                                {group.type === 'PENDING' ? <CheckCircle size={14} /> : <CornerDownLeft size={14} />}
-                                                {group.type === 'PENDING' ? 'CONFIRMAR TODOS' : 'DEVOLVER TODOS'}
-                                            </button>
+                                        <div className={`p-2 border-t ${group.type === 'PENDING' ? 'bg-amber-50/20' : 'bg-emerald-50/20'} dark:bg-slate-800/50 border-slate-100 dark:border-slate-800`}>
+                                            {group.type === 'PENDING' ? (
+                                                <div className="flex gap-1.5">
+                                                    {currentUser.id === group.receiverId ? (
+                                                        <button
+                                                            onClick={() => handleConfirmBatch(group.loans)}
+                                                            className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-amber-500/25"
+                                                        >
+                                                            <CheckCircle size={12} /> ACEITAR TUDO
+                                                        </button>
+                                                    ) : (
+                                                        <div className="flex-1 py-2 bg-slate-100/50 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-1.5 border border-dashed border-slate-200 dark:border-slate-700 cursor-not-allowed">
+                                                            <Clock size={12} className="opacity-50" /> AGUARDANDO CONFIRMAÇÃO
+                                                        </div>
+                                                    )}
+
+                                                    {group.loans.some(l => l.operator_id === currentUser.id || l.operatorId === currentUser.id) && (
+                                                        <button
+                                                            onClick={() => handleCancelBatch(group.loans)}
+                                                            className="px-2.5 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95"
+                                                            title="Cancelar Cautela"
+                                                        >
+                                                            <XCircle size={16} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleReturnBatch(group.loans)}
+                                                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/25"
+                                                >
+                                                    <CornerDownLeft size={12} /> DEVOLVER TODOS
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
