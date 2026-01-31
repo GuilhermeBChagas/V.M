@@ -1467,8 +1467,24 @@ export function App() {
         return;
       } else { throw new Error("Senha de contingência incorreta."); }
     }
-    const dbUser = users.find(u => u.email === identifier || u.cpf === identifier || u.matricula === identifier || u.userCode === identifier);
-    if (!dbUser) throw new Error("Usuário não cadastrado.");
+    // Busca direta no banco para garantir login mesmo sem lista carregada
+    const { data: dbData, error } = await supabase.from('users')
+      .select('*')
+      .or(`email.eq.${identifier},cpf.eq.${identifier},matricula.eq.${identifier},user_code.eq.${identifier}`)
+      .single();
+
+    if (error || !dbData) throw new Error("Usuário não cadastrado.");
+
+    // Mapeamento manual para garantir compatibilidade com a interface User
+    const dbUser: User = {
+      ...dbData,
+      userCode: dbData.user_code || dbData.userCode,
+      jobTitleId: dbData.job_title_id || dbData.jobTitleId,
+      // Garantir que campos obrigatórios existam
+      name: dbData.name,
+      role: dbData.role,
+      id: dbData.id
+    };
     if (dbUser.passwordHash && dbUser.passwordHash !== password) throw new Error("Senha incorreta.");
     setUser(dbUser); localStorage.setItem('vigilante_session', JSON.stringify(dbUser)); localStorage.setItem('app_version', APP_VERSION);
     createLog('LOGIN', 'Acesso realizado via credenciais', dbUser);
