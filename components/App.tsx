@@ -1019,13 +1019,13 @@ export function App() {
   const fetchUsers = useCallback(async () => {
     try {
       const { data, error } = await supabase.from('users')
-        .select('id, name, avatar, role, matricula, user_code, job_title_id, email, cpf, passwordHash, status')
+        .select('*')
         .order('name', { ascending: true })
         .limit(200);
       if (error) throw error;
       const mappedUsers = data ? data.map((u: any) => ({ ...u, userCode: u.user_code, jobTitleId: u.job_title_id })) : [];
       setUsers(mappedUsers as User[]);
-    } catch (error: any) { console.error(error); } finally { setLoading(false); }
+    } catch (error: any) { console.error(error); showError("Erro ao buscar usuários", error.message || "Erro desconhecido"); } finally { setLoading(false); }
   }, []);
 
   const createLog = async (action: SystemLog['action'], details: string, logUser?: User | null) => {
