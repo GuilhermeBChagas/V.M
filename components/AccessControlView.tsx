@@ -402,7 +402,10 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
                         </div>
                     ) : (
                         <div className="space-y-3 h-full flex flex-col">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Pesquisar Usuário</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 flex justify-between">
+                                <span>Pesquisar Usuário</span>
+                                <span className="text-slate-300">{users.length}</span>
+                            </p>
                             <div className="relative">
                                 <Search className="absolute left-3 top-2.5 text-slate-400" size={12} />
                                 <input
@@ -414,16 +417,20 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
                                 />
                             </div>
                             <div className="space-y-1.5 pr-1 overflow-y-auto custom-scrollbar max-h-[500px]">
-                                {users.filter(u => normalizeString(u.name).includes(normalizeString(userSearch)) || normalizeString(u.matricula || '').includes(normalizeString(userSearch))).map(user => (
-                                    <button
-                                        key={user.id}
-                                        onClick={() => setSelectedUserId(user.id)}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all flex flex-col ${selectedUserId === user.id ? 'bg-purple-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'}`}
-                                    >
-                                        <span className="truncate">{user.name}</span>
-                                        <span className={`text-[8px] ${selectedUserId === user.id ? 'text-purple-200' : 'text-slate-400'}`}>{user.role === 'OPERADOR' ? 'OPERADOR' : user.role}</span>
-                                    </button>
-                                ))}
+                                {users.filter(u => normalizeString(u.name || '').includes(normalizeString(userSearch)) || normalizeString(u.matricula || '').includes(normalizeString(userSearch))).length === 0 ? (
+                                    <p className="text-[10px] text-slate-400 text-center py-4 italic">Nenhum usuário encontrado.</p>
+                                ) : (
+                                    users.filter(u => normalizeString(u.name || '').includes(normalizeString(userSearch)) || normalizeString(u.matricula || '').includes(normalizeString(userSearch))).map(user => (
+                                        <button
+                                            key={user.id}
+                                            onClick={() => setSelectedUserId(user.id)}
+                                            className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all flex flex-col ${selectedUserId === user.id ? 'bg-purple-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'}`}
+                                        >
+                                            <span className="truncate">{user.name}</span>
+                                            <span className={`text-[8px] ${selectedUserId === user.id ? 'text-purple-200' : 'text-slate-400'}`}>{user.role === 'OPERADOR' ? 'OPERADOR' : user.role} {user.matricula && `• ${user.matricula}`}</span>
+                                        </button>
+                                    ))
+                                )}
                             </div>
                         </div>
                     )}
