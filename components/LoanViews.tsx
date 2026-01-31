@@ -57,6 +57,11 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     const [showVehicleStartModal, setShowVehicleStartModal] = useState(false);
     const [vehicleStartData, setVehicleStartData] = useState<{ id: string, model: string, currentKm: number, manualKm: number } | null>(null);
 
+
+
+    // State for Group Details
+    const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
+
     const [showVehicleReturnModal, setShowVehicleReturnModal] = useState(false);
     const [vehicleReturnData, setVehicleReturnData] = useState<{
         loanId: string,
@@ -448,15 +453,23 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
         sortedLoans.forEach(loan => {
             if (loan.status === 'PENDING') {
+                // Respect filterStatus: If we are in Monitoramento (ACTIVE), don't show pending
+                if (filterStatus === 'ACTIVE') return;
+
                 const key = loan.batchId || loan.receiverId;
                 if (!pendingGroups[key]) pendingGroups[key] = [];
                 pendingGroups[key].push(loan);
             } else if (loan.status === 'ACTIVE') {
+                if (filterStatus === 'PENDING') return; // Don't show active in pending view
+
                 const key = loan.receiverId;
                 if (!activeGroups[key]) activeGroups[key] = [];
                 activeGroups[key].push(loan);
             } else if (loan.status === 'COMPLETED' || loan.status === 'REJECTED') {
-                const key = loan.receiverId;
+                if (activeTab !== 'HISTORY') return;
+
+                // Group by Batch/Transaction (time) for History
+                const key = loan.batchId || `${loan.receiverId}-${new Date(loan.checkoutTime).getTime()}`;
                 if (!historyGroups[key]) historyGroups[key] = [];
                 historyGroups[key].push(loan);
             }
@@ -867,7 +880,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                 {groupedLoans.map((group) => (
                                     <div
                                         key={group.id}
-                                        className={`rounded-2xl border-2 overflow-hidden flex flex-col shadow-sm transition-all hover:shadow-md ${group.type === 'PENDING'
+                                        onClick={() => setSelectedGroup(group)}
+                                        className={`rounded-2xl border-2 overflow-hidden flex flex-col shadow-sm transition-all hover:shadow-md cursor-pointer ${group.type === 'PENDING'
                                             ? 'border-amber-400 bg-white dark:bg-slate-900 shadow-amber-500/5'
                                             : group.type === 'HISTORY'
                                                 ? 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-slate-500/5 opacity-80 hover:opacity-100'
@@ -967,7 +981,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                     <div className="flex gap-1.5">
                                                         {currentUser.id === group.receiverId && (
                                                             <button
-                                                                onClick={() => handleConfirmBatch(group.loans)}
+                                                                onClick={(e) => { e.stopPropagation(); handleConfirmBatch(group.loans); }}
                                                                 className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-amber-500/25"
                                                             >
                                                                 <CheckCircle size={12} /> ACEITAR TUDO
@@ -976,7 +990,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
                                                         {group.loans.some(l => l.operator_id === currentUser.id || l.operatorId === currentUser.id) && (
                                                             <button
-                                                                onClick={() => handleCancelBatch(group.loans)}
+                                                                onClick={(e) => { e.stopPropagation(); handleCancelBatch(group.loans); }}
                                                                 className="px-2.5 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95"
                                                                 title="Cancelar Cautela"
                                                             >
@@ -986,7 +1000,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                     </div>
                                                 ) : (
                                                     <button
-                                                        onClick={() => handleReturnBatch(group.loans)}
+                                                        onClick={(e) => { e.stopPropagation(); handleReturnBatch(group.loans); }}
                                                         className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/25"
                                                     >
                                                         <CornerDownLeft size={12} /> DEVOLVER TODOS
@@ -1245,6 +1259,68 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                         </div>
                     )
                 }
+
+
+                {/* Group Details Modal */}
+                {selectedGroup && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setSelectedGroup(null)}>
+                        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700" onClick={e => e.stopPropagation()}>
+                            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 rounded-t-xl">
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase leading-none">{selectedGroup.receiverName}</h3>
+                                    <p className="text-xs font-bold text-slate-500 uppercase mt-1">
+                                        {selectedGroup.type === 'PENDING' ? 'Aguardando Confirmação' : selectedGroup.type === 'HISTORY' ? 'Devolvido / Histórico' : 'Em Posse'} • {selectedGroup.loans.length} Itens
+                                    </p>
+                                </div>
+                                <button onClick={() => setSelectedGroup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-500">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="p-0 overflow-y-auto custom-scrollbar">
+                                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {selectedGroup.loans.map((loan: any) => (
+                                        <div key={loan.id} className="p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                            <div className={`p-3 rounded-xl ${selectedGroup.type === 'PENDING' ? 'bg-amber-100 text-amber-600' :
+                                                selectedGroup.type === 'HISTORY' ? 'bg-slate-100 text-slate-500' :
+                                                    'bg-emerald-100 text-emerald-600'
+                                                }`}>
+                                                {getAssetIcon(loan.assetType, 24)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase truncate">
+                                                    {loan.assetDescription}
+                                                </p>
+                                                <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-slate-400 uppercase">
+                                                    <span>Retirada: {new Date(loan.checkoutTime).toLocaleTimeString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                                    {loan.returnTime && (
+                                                        <span>• Devolução: {new Date(loan.returnTime).toLocaleTimeString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase ${loan.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                                                    loan.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' :
+                                                        loan.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                            'bg-slate-100 text-slate-600'
+                                                    }`}>
+                                                    {loan.status === 'PENDING' ? 'Pendente' : loan.status === 'ACTIVE' ? 'Ativo' : loan.status === 'REJECTED' ? 'Recusado' : 'Devolvido'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl flex justify-end">
+                                <button
+                                    onClick={() => setSelectedGroup(null)}
+                                    className="px-6 py-2.5 bg-slate-900 dark:bg-slate-700 text-white text-xs font-black uppercase rounded-xl hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+                                >
+                                    Fechar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div >
     );
