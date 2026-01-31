@@ -1002,16 +1002,20 @@ export function App() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const { data, error } = await supabase.from('users').select('*').order('name', { ascending: true });
+      const { data, error } = await supabase.from('users')
+        .select('id, name, avatar, role, matricula, user_code, job_title_id, email, cpf, passwordHash, status')
+        .order('name', { ascending: true })
+        .limit(200);
       if (error) throw error;
       const mappedUsers = data ? data.map((u: any) => ({ ...u, userCode: u.user_code, jobTitleId: u.job_title_id })) : [];
       setUsers(mappedUsers as User[]);
     } catch (error: any) { console.error(error); } finally { setLoading(false); }
   }, []);
 
-  const createLog = async (action: SystemLog['action'], details: string) => {
-    if (!user) return;
-    try { await supabase.from('system_logs').insert({ userId: user.id, userName: user.name, action, details, timestamp: new Date().toISOString() }); } catch (e) { }
+  const createLog = async (action: SystemLog['action'], details: string, logUser?: User | null) => {
+    const targetUser = logUser || user;
+    if (!targetUser) return;
+    try { await supabase.from('system_logs').insert({ userId: targetUser.id, userName: targetUser.name, action, details, timestamp: new Date().toISOString() }); } catch (e) { }
   };
 
   const showAlert = (title: string, message: string) => { setModalConfig({ isOpen: true, type: 'alert', title, message }); };
@@ -1020,21 +1024,19 @@ export function App() {
 
   const fetchPermissions = useCallback(async () => {
     try {
-      const { data } = await supabase.from('app_config').select('value').eq('key', 'system_permissions').single();
-      if (data && data.value) { setPermissions(JSON.parse(data.value)); }
-      else { setPermissions(DEFAULT_PERMISSIONS); }
+      const { data } = await supabase.from('app_config')
+        .select('key, value')
+        .in('key', ['system_permissions', 'user_permission_overrides', 'menu_visibility', 'user_menu_visibility_overrides']);
 
-      const { data: overrideData } = await supabase.from('app_config').select('value').eq('key', 'user_permission_overrides').single();
-      if (overrideData && overrideData.value) { setUserOverrides(JSON.parse(overrideData.value)); }
-      else { setUserOverrides({}); }
+      const config = data?.reduce((acc: any, item: any) => {
+        acc[item.key] = item.value ? JSON.parse(item.value) : null;
+        return acc;
+      }, {}) || {};
 
-      const { data: mvData } = await supabase.from('app_config').select('value').eq('key', 'menu_visibility').single();
-      if (mvData && mvData.value) setMenuVisibility(JSON.parse(mvData.value));
-      else setMenuVisibility({});
-
-      const { data: umoData } = await supabase.from('app_config').select('value').eq('key', 'user_menu_visibility_overrides').single();
-      if (umoData && umoData.value) setUserMenuOverrides(JSON.parse(umoData.value));
-      else setUserMenuOverrides({});
+      setPermissions(config['system_permissions'] || DEFAULT_PERMISSIONS);
+      setUserOverrides(config['user_permission_overrides'] || {});
+      setMenuVisibility(config['menu_visibility'] || {});
+      setUserMenuOverrides(config['user_menu_visibility_overrides'] || {});
 
     } catch (e) { setPermissions(DEFAULT_PERMISSIONS); }
   }, []);
@@ -1444,19 +1446,27 @@ export function App() {
     if (isLocalMode && identifier === '00') {
       if (password === 'admin') {
         const emergencyUser: User = { id: 'emergency-master', name: 'SUPERVISOR (CONTINGÊNCIA)', role: UserRole.ADMIN, cpf: '000.000.000-00', matricula: 'EMERGENCY', userCode: '00', status: 'ACTIVE' };
-        setUser(emergencyUser); localStorage.setItem('vigilante_session', JSON.stringify(emergencyUser)); localStorage.setItem('app_version', APP_VERSION); return;
+        setUser(emergencyUser); localStorage.setItem('vigilante_session', JSON.stringify(emergencyUser)); localStorage.setItem('app_version', APP_VERSION);
+        createLog('LOGIN', 'Acesso de contingência (Admin)', emergencyUser);
+        return;
       } else { throw new Error("Senha de contingência incorreta."); }
     }
     const dbUser = users.find(u => u.email === identifier || u.cpf === identifier || u.matricula === identifier || u.userCode === identifier);
     if (!dbUser) throw new Error("Usuário não cadastrado.");
     if (dbUser.passwordHash && dbUser.passwordHash !== password) throw new Error("Senha incorreta.");
     setUser(dbUser); localStorage.setItem('vigilante_session', JSON.stringify(dbUser)); localStorage.setItem('app_version', APP_VERSION);
+    createLog('LOGIN', 'Acesso realizado via credenciais', dbUser);
   };
 
-  const handleLogout = async () => { setUser(null); localStorage.removeItem('vigilante_session'); handleNavigate('DASHBOARD'); };
+  const handleLogout = async () => { if (user) await createLog('LOGOUT', 'Saiu do sistema'); setUser(null); localStorage.removeItem('vigilante_session'); handleNavigate('DASHBOARD'); };
 
   const handleRegister = async (userData: Omit<User, 'id'>) => {
-    try { await supabase.from('users').insert({ ...userData, status: 'PENDING' }); showAlert("Sucesso", "Cadastro realizado. Aguarde aprovação."); }
+    try {
+      const { data, error } = await supabase.from('users').insert({ ...userData, status: 'PENDING' }).select().single();
+      if (error) throw error;
+      if (data) createLog('USER_REGISTER', `Novo cadastro: ${userData.name}`, data as User);
+      showAlert("Sucesso", "Cadastro realizado. Aguarde aprovação.");
+    }
     catch (err: any) { showError("Erro", err.message); }
   };
 
@@ -1593,7 +1603,7 @@ export function App() {
           <div className={`transition-all duration-500 flex items-center ${isSidebarCollapsed ? 'h-20 justify-center px-2' : 'h-24 px-8 justify-start gap-3'}`}>
             <div className={`transition-all duration-500 flex items-center justify-center group hover:scale-110 ${isSidebarCollapsed ? 'h-12 w-12' : 'h-16 w-16'}`}>
               {customLogoRight ? (
-                <img src={customLogoRight} className="w-full h-full object-contain drop-shadow-2xl" alt="Logo" />
+                <img src={customLogoRight} className="w-full h-full object-contain" alt="Logo" />
               ) : (
                 <Shield className="text-white drop-shadow-md" size={isSidebarCollapsed ? 28 : 36} strokeWidth={1.5} />
               )}

@@ -60,8 +60,28 @@ export const announcementService = {
      */
     async getUnreadCount(userId: string, userRole?: string): Promise<number> {
         try {
-            const announcements = await this.getActiveAnnouncements(userId, userRole);
-            return announcements.filter(a => !a.isRead).length;
+            let query = supabase.from('announcements').select('id').eq('is_archived', false);
+
+            if (userRole) {
+                query = query.or(`target_type.eq.BROADCAST,and(target_type.eq.USER,target_id.eq.${userId}),and(target_type.eq.GROUP,target_id.eq.${userRole})`);
+            } else {
+                query = query.or(`target_type.eq.BROADCAST,and(target_type.eq.USER,target_id.eq.${userId})`);
+            }
+
+            const { data: activeData, error } = await query;
+            if (error) return 0;
+            const activeIds = activeData?.map(a => a.id) || [];
+
+            if (activeIds.length === 0) return 0;
+
+            const { data: readData } = await supabase
+                .from('announcement_reads')
+                .select('announcement_id')
+                .eq('user_id', userId)
+                .in('announcement_id', activeIds);
+
+            const readCount = readData?.length || 0;
+            return activeIds.length - readCount;
         } catch (error) {
             return 0;
         }

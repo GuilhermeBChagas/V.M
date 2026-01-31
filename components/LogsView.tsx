@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { SystemLog } from '../types';
-import { History, Search, User, Clock, ShieldCheck, FilePlus, LogIn, Trash2, Filter, Calendar, Download, ChevronLeft, ChevronRight, ListFilter, TestTube, LogOut, PackagePlus, Pencil, ArrowRightLeft, CheckCircle, CornerDownLeft } from 'lucide-react';
+import { History, Search, User, Clock, ShieldCheck, FilePlus, LogIn, Trash2, Filter, Calendar, Download, ChevronLeft, ChevronRight, ListFilter, TestTube, LogOut, PackagePlus, Pencil, ArrowRightLeft, CheckCircle, CornerDownLeft, Settings, Shield, Database } from 'lucide-react';
 import { normalizeString } from '../utils/stringUtils';
 
 interface LogsViewProps {
@@ -41,6 +41,11 @@ export const LogsView: React.FC<LogsViewProps> = ({ logs, onTestLog }) => {
       case 'LOAN_CONFIRM': return <CheckCircle className="text-emerald-600" size={16} />;
       case 'LOAN_RETURN': return <CornerDownLeft className="text-purple-600" size={16} />;
 
+      // Admin
+      case 'UPDATE_PERMISSIONS': return <Shield className="text-red-500" size={16} />;
+      case 'MANAGE_SETTINGS': return <Settings className="text-slate-600 dark:text-slate-400" size={16} />;
+      case 'DATABASE_TOOLS': return <Database className="text-blue-500" size={16} />;
+
       default: return <History className="text-slate-400" size={16} />;
     }
   };
@@ -68,6 +73,11 @@ export const LogsView: React.FC<LogsViewProps> = ({ logs, onTestLog }) => {
       case 'LOAN_CREATE': return 'Nova Cautela';
       case 'LOAN_CONFIRM': return 'Recebimento';
       case 'LOAN_RETURN': return 'Devolução';
+
+      // Admin
+      case 'UPDATE_PERMISSIONS': return 'Permissões';
+      case 'MANAGE_SETTINGS': return 'Configurações';
+      case 'DATABASE_TOOLS': return 'Banco de Dados';
 
       default: return action;
     }
