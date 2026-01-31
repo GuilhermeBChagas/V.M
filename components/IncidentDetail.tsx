@@ -214,7 +214,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
 
             {/* --- ÁREA DE IMPRESSÃO / RELATÓRIO (FOLHA A4) --- */}
             <div className="w-full overflow-x-auto md:overflow-x-visible pb-6">
-                <div ref={contentRef} className={`bg-white text-black shadow-2xl relative flex flex-col mx-auto w-full min-w-[320px] md:max-w-[210mm] h-[297mm] overflow-hidden p-4 md:p-10 transition-colors ${isCancelled ? 'grayscale opacity-75' : ''}`} style={{ fontFamily: "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+                <div ref={contentRef} className={`bg-white text-black shadow-2xl relative flex flex-col mx-auto w-full min-w-[320px] md:max-w-[205mm] min-h-[285mm] overflow-hidden p-4 md:p-10 transition-colors ${isCancelled ? 'grayscale opacity-75' : ''}`} style={{ fontFamily: "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif" }}>
 
                     {/* CABEÇALHO - BRASÕES MAIS PRÓXIMOS DAS ESCRITAS */}
                     <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12">
@@ -340,7 +340,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     </div>
 
                     {/* CORPO DO TEXTO */}
-                    <div className="text-justify text-[11px] md:text-[13px] leading-relaxed mb-8 whitespace-pre-wrap px-2 min-h-[6rem] text-slate-900" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+                    <div className="text-justify text-[11px] md:text-[13px] leading-relaxed mb-8 whitespace-pre-wrap break-words break-all px-2 min-h-[6rem] text-slate-900" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
                         {incident.description}
                     </div>
 

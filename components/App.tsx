@@ -375,9 +375,20 @@ const IncidentHistory: React.FC<{
         })}
       </div>
 
+      {filterStatus !== 'PENDING' && hasMore && (
+        <button
+          onClick={() => onLoadMore?.()}
+          disabled={isLoadingMore}
+          className="w-full py-4 mt-4 bg-white dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-xs font-black uppercase text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
+        >
+          {isLoadingMore ? <Loader2 className="animate-spin" size={16} /> : <ChevronDown size={16} />}
+          {isLoadingMore ? 'BUSCANDO REGISTROS...' : 'CARREGAR MAIS REGISTROS'}
+        </button>
+      )}
+
       {/* Hidden Export Area */}
       <div className="hidden">
-        <div ref={printRef} className="p-10 bg-white text-black" style={{ width: '287mm', minHeight: '200mm', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+        <div ref={printRef} className="p-6 bg-white text-black" style={{ width: '280mm', minHeight: '180mm', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
           {/* Cabecalho Institucional conforme imagem */}
           <div className="flex justify-center items-center mb-8 gap-12">
             <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center">
@@ -403,6 +414,11 @@ const IncidentHistory: React.FC<{
               <div className="mt-8 inline-block px-8 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-[13px] font-black uppercase tracking-[0.15em] text-slate-700 shadow-sm">
                 Relatório Geral de Atendimentos
               </div>
+              {(dateStart || dateEnd) && (
+                <div className="text-[10px] uppercase font-bold text-slate-500 mt-2">
+                  Período: {dateStart ? new Date(dateStart + 'T00:00').toLocaleDateString('pt-BR') : 'Início'} até {dateEnd ? new Date(dateEnd + 'T00:00').toLocaleDateString('pt-BR') : 'Hoje'}
+                </div>
+              )}
             </div>
 
             <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center">
@@ -432,13 +448,13 @@ const IncidentHistory: React.FC<{
               {displayIncidents.map(i => {
                 const building = buildings.find(b => b.id === i.buildingId);
                 return (
-                  <tr key={i.id}>
+                  <tr key={i.id} style={{ pageBreakInside: 'avoid' }}>
                     <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.raCode}</td>
                     <td className="border border-slate-900 p-2 text-[10px] font-bold uppercase align-middle">{building?.name || '---'}</td>
                     <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{new Date(i.date).toLocaleDateString('pt-BR')}</td>
                     <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.startTime}</td>
                     <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.endTime || '--:--'}</td>
-                    <td className="border border-slate-900 p-2 text-[9px] font-medium leading-tight align-top whitespace-pre-wrap">{i.description}</td>
+                    <td className="border border-slate-900 p-2 text-[9px] font-medium leading-tight align-top whitespace-pre-wrap break-all">{i.description}</td>
                   </tr>
                 );
               })}

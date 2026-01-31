@@ -5,7 +5,7 @@ import { supabase } from '../services/supabaseClient';
 import {
     ArrowRightLeft, History, Plus, Search, User as UserIcon,
     Car, Shield, Radio as RadioIcon, Package, CheckCircle,
-    XCircle, Clock, Calendar, ChevronRight, CornerDownLeft,
+    XCircle, Clock, Calendar, ChevronRight, ChevronDown, CornerDownLeft,
     AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download, X
 } from 'lucide-react';
 import { Modal } from './Modal';
@@ -1023,15 +1023,14 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                             )}
                         </div>
                         {hasMore && (
-                            <div className="text-center pt-4">
-                                <button
-                                    onClick={onLoadMore}
-                                    disabled={isLoadingMore}
-                                    className="text-xs font-bold text-blue-600 hover:text-blue-800 uppercase"
-                                >
-                                    {isLoadingMore ? 'Carregando...' : 'Carregar Mais'}
-                                </button>
-                            </div>
+                            <button
+                                onClick={onLoadMore}
+                                disabled={isLoadingMore}
+                                className="w-full py-4 mt-4 bg-white dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-xs font-black uppercase text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
+                            >
+                                {isLoadingMore ? <Loader2 className="animate-spin" size={16} /> : <ChevronDown size={16} />}
+                                {isLoadingMore ? 'BUSCANDO REGISTROS...' : 'CARREGAR MAIS REGISTROS'}
+                            </button>
                         )}
                     </>
                 )}

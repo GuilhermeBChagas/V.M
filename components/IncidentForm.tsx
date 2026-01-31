@@ -549,12 +549,17 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                 </div>
 
                 {/* RELATO DA ALTERAÇÃO */}
+                {/* RELATO DA ALTERAÇÃO */}
                 <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">RELATO DA ALTERAÇÃO</label>
+                    <div className="flex justify-between items-center ml-1">
+                        <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">RELATO DA ALTERAÇÃO</label>
+                        <span className={`text-[10px] font-bold ${description.length >= 2000 ? 'text-red-500' : 'text-slate-400'}`}>{description.length}/2000</span>
+                    </div>
                     <textarea
                         required
                         value={description}
                         onChange={e => setDescription(e.target.value)}
+                        maxLength={2000}
                         rows={6}
                         className="w-full p-6 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-3xl text-sm font-medium outline-none focus:border-blue-500 transition-all resize-none shadow-inner"
                         placeholder="Descreva a alteração"
