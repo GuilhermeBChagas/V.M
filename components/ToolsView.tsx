@@ -38,7 +38,8 @@ type Tab = 'LOGS' | 'APPEARANCE' | 'DATABASE' | 'ACCESS_CONTROL' | 'IMPORT_EXPOR
 export const ToolsView: React.FC<ToolsViewProps> = ({
     logs, onTestLog, currentLogo, onUpdateLogo, currentLogoLeft, onUpdateLogoLeft, initialTab,
     isLocalMode, onToggleLocalMode, unsyncedCount, onSync, permissions, onUpdatePermissions,
-    userOverrides = {}, onUpdateOverrides, users = [], onLogAction
+    userOverrides = {}, onUpdateOverrides,
+    users = [], onLogAction
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>(initialTab || 'APPEARANCE');
 

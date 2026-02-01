@@ -12,38 +12,56 @@ interface AccessControlViewProps {
     onUpdateOverrides: (overrides: UserPermissionOverrides) => Promise<void>;
 }
 
+
 const PERMISSION_GROUPS = [
     {
-        title: 'Gestão de Incidentes',
+        title: 'Painel e Monitoramento',
         permissions: [
-            { key: 'VIEW_DASHBOARD', label: 'Acessar Painel Principal' },
-            { key: 'CREATE_INCIDENT', label: 'Criar Registros (R.A)' },
+            { key: 'VIEW_DASHBOARD', label: 'Acessar Painel Principal (Dashboard)' },
+            { key: 'VIEW_CHARTS', label: 'Acessar Estatísticas e Gráficos' },
+            { key: 'VIEW_ANNOUNCEMENTS', label: 'Visualizar Mural de Avisos' },
+        ]
+    },
+    {
+        title: 'Gestão de Incidentes (R.A)',
+        permissions: [
+            { key: 'CREATE_INCIDENT', label: 'Criar Novos Registros' },
+            { key: 'VIEW_MY_INCIDENTS', label: 'Ver Meus Registros (Histórico Próprio)' },
+            { key: 'VIEW_ALL_INCIDENTS', label: 'Ver Todos os Registros (Histórico Global)' },
             { key: 'EDIT_INCIDENT', label: 'Editar Registros Existentes' },
-            { key: 'VIEW_ALL_INCIDENTS', label: 'Ver Todos os Registros (Histórico Completo)' },
-            { key: 'APPROVE_INCIDENT', label: 'Validar/Aprovar Registros' },
-            { key: 'DELETE_INCIDENT', label: 'Cancelar/Excluir Registros' },
+            { key: 'APPROVE_INCIDENT', label: 'Validar / Aprovar Registros' },
+            { key: 'DELETE_INCIDENT', label: 'Cancelar / Excluir Registros' },
         ]
     },
     {
-        title: 'Gestão de Ativos e Cautelas',
+        title: 'Gestão de Cautelas',
         permissions: [
-            { key: 'MANAGE_ASSETS', label: 'Gerenciar Ativos (VTR, Rádio, etc)' },
-            { key: 'DELETE_ASSETS', label: 'Excluir Ativos do Inventário' },
-            { key: 'MANAGE_LOANS', label: 'Gerenciar Cautelas (Criar/Ver)' },
-            { key: 'RETURN_LOANS', label: 'Realizar Devoluções' },
+            { key: 'CREATE_LOAN', label: 'Iniciar/Saída de Cautelas' },
+            { key: 'APPROVE_LOAN', label: 'Aceitar/Confirmar Cautelas (Recebimento)' },
+            { key: 'RETURN_LOAN', label: 'Realizar Devolução de Itens' },
+            { key: 'VIEW_MY_LOANS', label: 'Ver Minhas Cautelas (Histórico Próprio)' },
+            { key: 'VIEW_ALL_LOANS', label: 'Ver Todas as Cautelas (Histórico Global)' },
         ]
     },
     {
-        title: 'Administração do Sistema',
+        title: 'Gestão de Ativos (Inventário)',
+        permissions: [
+            { key: 'VIEW_ASSETS', label: 'Visualizar Lista de Ativos' },
+            { key: 'MANAGE_ASSETS', label: 'Cadastrar / Editar Ativos' },
+            { key: 'DELETE_ASSETS', label: 'Excluir Ativos' },
+        ]
+    },
+    {
+        title: 'Administração e Ferramentas',
         permissions: [
             { key: 'MANAGE_USERS', label: 'Gerenciar Usuários' },
             { key: 'DELETE_USERS', label: 'Excluir Usuários' },
             { key: 'MANAGE_BUILDINGS', label: 'Gerenciar Prédios/Locais' },
             { key: 'MANAGE_SECTORS', label: 'Gerenciar Setores' },
             { key: 'MANAGE_ALTERATION_TYPES', label: 'Gerenciar Tipos de Alteração' },
-            { key: 'MANAGE_ANNOUNCEMENTS', label: 'Gerenciar Mural de Avisos' },
-            { key: 'ACCESS_TOOLS', label: 'Acesso a Ferramentas Avançadas' },
-            { key: 'EXPORT_REPORTS', label: 'Exportar Relatórios PDF/Excel' },
+            { key: 'MANAGE_ANNOUNCEMENTS', label: 'Administrar Mural de Avisos' },
+            { key: 'ACCESS_TOOLS', label: 'Acesso total a Ferramentas Avançadas' },
+            { key: 'EXPORT_REPORTS', label: 'Exportar Relatórios (PDF/Excel)' },
         ]
     }
 ];
@@ -83,6 +101,7 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
         });
     };
 
+
     const getEffectiveUserPermission = (userId: string, key: string): { allowed: boolean, source: 'ROLE' | 'OVERRIDE_ALLOW' | 'OVERRIDE_DENY' } => {
         const user = users.find(u => u.id === userId);
         if (!user) return { allowed: false, source: 'ROLE' };
@@ -94,6 +113,7 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
         const allowedByRole = (localPermissions[key] || []).includes(user.role);
         return { allowed: allowedByRole, source: 'ROLE' };
     };
+
 
     const handleUserPermissionOverride = (userId: string, key: PermissionKey, value: boolean | undefined) => {
         setLocalOverrides(prev => {
@@ -113,6 +133,7 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
             return { ...prev, [userId]: userO };
         });
     };
+
 
     const handleSave = async () => {
         setSaving(true);

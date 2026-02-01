@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 // Fix: All components in this project use named exports. Changed from default import to named import.
 import { App } from './App';
 
+console.log("Iniciando Aplicação...");
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");

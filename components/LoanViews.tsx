@@ -30,13 +30,21 @@ interface LoanViewsProps {
     onLoadMore?: () => void;
     filterStatus?: 'ACTIVE' | 'PENDING';
     onShowConfirm: (title: string, message: string, onConfirm: () => void) => void;
+
+    // New granular permissions
+    canCreate?: boolean;
+    canApprove?: boolean;
+    canReturn?: boolean;
+    canViewHistory?: boolean;
+    canViewAll?: boolean;
 }
 
 export const LoanViews: React.FC<LoanViewsProps> = ({
     currentUser, users, vehicles, vests, radios, equipments, onLogAction,
     loans, onRefresh, initialTab = 'ACTIVE', isReportView = false,
     hasMore = false, isLoadingMore = false, onLoadMore, filterStatus,
-    onShowConfirm
+    onShowConfirm,
+    canCreate = false, canApprove = false, canReturn = false, canViewHistory = false, canViewAll = false
 }) => {
     const [activeTab, setActiveTab] = useState<'ACTIVE' | 'HISTORY' | 'NEW'>(initialTab === 'HISTORY' ? 'HISTORY' : 'ACTIVE');
     const [searchTerm, setSearchTerm] = useState('');
@@ -307,6 +315,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             "Devolver Todos",
             `Confirmar a devolução de ${loansToReturn.length} itens de ${receiverName}?`,
             async () => {
+                setIsSubmitting(true); // Set submitting true inside confirm callback
                 try {
                     const ids = loansToReturn.map(l => l.id);
                     const { error } = await supabase.from('loan_records').update({
@@ -320,12 +329,16 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                 } catch (err: any) {
                     console.error("Erro ao devolver lote:", err);
                     alert('Erro ao processar devolução em lote: ' + err.message);
+                } finally {
+                    setIsSubmitting(false); // Set submitting false in finally
                 }
             }
         );
     };
 
     const handleConfirm = async (loan: LoanRecord) => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
         try {
             const { error } = await supabase.from('loan_records').update({ status: 'ACTIVE' }).eq('id', loan.id);
             if (error) throw error;
@@ -333,14 +346,18 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             onRefresh();
         } catch (err: any) {
             alert('Erro: ' + err.message);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleReject = async (loan: LoanRecord) => {
+        if (isSubmitting) return;
         onShowConfirm(
             "Recusar Item",
             `Deseja recursar o item: ${loan.assetDescription}?`,
             async () => {
+                setIsSubmitting(true); // Set submitting true inside confirm callback
                 try {
                     const { error } = await supabase.from('loan_records').update({
                         status: 'REJECTED',
@@ -351,17 +368,21 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     onRefresh();
                 } catch (err: any) {
                     alert('Erro ao recusar item: ' + err.message);
+                } finally {
+                    setIsSubmitting(false); // Set submitting false in finally
                 }
             }
         );
     };
 
     const handleCancelBatch = async (loansToCancel: LoanRecord[]) => {
+        if (isSubmitting) return;
         const receiverName = loansToCancel[0].receiverName;
         onShowConfirm(
             "Cancelar Cautela",
             `Deseja cancelar esta cautela pendente para ${receiverName}? Todos os itens serão liberados.`,
             async () => {
+                setIsSubmitting(true); // Set submitting true inside confirm callback
                 try {
                     const ids = loansToCancel.map(l => l.id);
                     const { error } = await supabase.from('loan_records').delete().in('id', ids);
@@ -370,6 +391,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     onRefresh();
                 } catch (err: any) {
                     alert('Erro ao cancelar cautela: ' + err.message);
+                } finally {
+                    setIsSubmitting(false); // Set submitting false in finally
                 }
             }
         );
@@ -377,13 +400,14 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
     // --- BATCH CONFIRMATION LOGIC ---
     const handleConfirmBatch = (loansToConfirm: LoanRecord[]) => {
-        if (loansToConfirm.length === 0) return;
+        if (isSubmitting || loansToConfirm.length === 0) return;
         const receiverName = loansToConfirm[0].receiverName;
 
         onShowConfirm(
             "Confirmar Lote",
             `Confirma a entrega de ${loansToConfirm.length} itens para ${receiverName}?`,
             async () => {
+                setIsSubmitting(true); // Set submitting true inside confirm callback
                 try {
                     const ids = loansToConfirm.map(l => l.id);
                     const { error } = await supabase.from('loan_records').update({ status: 'ACTIVE' }).in('id', ids);
@@ -392,6 +416,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     onRefresh();
                 } catch (err: any) {
                     alert('Erro ao confirmar lote: ' + err.message);
+                } finally {
+                    setIsSubmitting(false); // Set submitting false in finally
                 }
             }
         );
@@ -411,6 +437,12 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         return normalizeString(l.receiverName).includes(term) ||
             normalizeString(l.assetDescription).includes(term) ||
             matriculaMatch;
+    }).filter(l => {
+        // PERMISSION FILTER:
+        // 1. If canViewAll, see everything
+        // 2. Otherwise, only see loans where user is receiver or operator
+        if (canViewAll) return true;
+        return l.receiverId === currentUser.id || l.operatorId === currentUser.id;
     }).filter(l => {
         // Date filtering
         const loanDate = new Date(l.checkoutTime);
@@ -667,15 +699,17 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                         >
                             Monitoramento
                         </button>
-                        <button
-                            onClick={() => setActiveTab('NEW')}
-                            className={`flex-1 justify-center px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 border-2 flex items-center gap-1.5 ${activeTab === 'NEW'
-                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/25'
-                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-blue-300 hover:text-blue-600'
-                                }`}
-                        >
-                            <Plus size={14} /> <span className="hidden sm:inline">Nova Cautela</span><span className="sm:hidden">Novo</span>
-                        </button>
+                        {canCreate && (
+                            <button
+                                onClick={() => setActiveTab('NEW')}
+                                className={`flex-1 justify-center px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 border-2 flex items-center gap-1.5 ${activeTab === 'NEW'
+                                    ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/25'
+                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-blue-300 hover:text-blue-600'
+                                    }`}
+                            >
+                                <Plus size={14} /> <span className="hidden sm:inline">Nova Cautela</span><span className="sm:hidden">Novo</span>
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
@@ -935,21 +969,23 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                         )}
 
                                                         {/* Individual Action (Overlay) */}
-                                                        {((group.type === 'PENDING' && (currentUser.id === group.receiverId || currentUser.id === loan.operatorId)) || group.type === 'ACTIVE') && (
+                                                        {((group.type === 'PENDING' && ((canApprove && currentUser.id === group.receiverId) || (canCreate && currentUser.id === loan.operatorId))) || (group.type === 'ACTIVE' && canReturn)) && (
                                                             <div className="absolute inset-0 bg-slate-900/90 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-[2px] z-10 p-1.5 gap-1 font-black uppercase">
                                                                 {group.type === 'PENDING' ? (
                                                                     <>
-                                                                        {currentUser.id === group.receiverId && (
+                                                                        {currentUser.id === group.receiverId && canApprove && (
                                                                             <>
                                                                                 <button
+                                                                                    disabled={isSubmitting}
                                                                                     onClick={(e) => { e.stopPropagation(); handleConfirm(loan); }}
-                                                                                    className="flex-1 py-1 bg-emerald-600 text-white text-[7px] rounded-lg shadow-lg active:scale-95 transition-all"
+                                                                                    className="flex-1 py-1 bg-emerald-600 text-white text-[7px] rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50"
                                                                                 >
                                                                                     Aceitar
                                                                                 </button>
                                                                                 <button
+                                                                                    disabled={isSubmitting}
                                                                                     onClick={(e) => { e.stopPropagation(); handleReject(loan); }}
-                                                                                    className="flex-1 py-1 bg-red-600 text-white text-[7px] rounded-lg shadow-lg active:scale-95 transition-all"
+                                                                                    className="flex-1 py-1 bg-red-600 text-white text-[7px] rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50"
                                                                                 >
                                                                                     Recusar
                                                                                 </button>
@@ -960,12 +996,15 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                                         )}
                                                                     </>
                                                                 ) : (
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); handleReturn(loan); }}
-                                                                        className="w-full py-1 bg-emerald-600 text-white text-[8px] rounded-lg shadow-lg active:scale-95 transition-all"
-                                                                    >
-                                                                        Devolver
-                                                                    </button>
+                                                                    canReturn && (
+                                                                        <button
+                                                                            disabled={isSubmitting}
+                                                                            onClick={(e) => { e.stopPropagation(); handleReturn(loan); }}
+                                                                            className="w-full py-1 bg-emerald-600 text-white text-[8px] rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50"
+                                                                        >
+                                                                            Devolver
+                                                                        </button>
+                                                                    )
                                                                 )}
                                                             </div>
                                                         )}
@@ -979,19 +1018,21 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                             <div className={`p-2 border-t ${group.type === 'PENDING' ? 'bg-amber-50/20' : 'bg-emerald-50/20'} dark:bg-slate-800/50 border-slate-100 dark:border-slate-800`}>
                                                 {group.type === 'PENDING' ? (
                                                     <div className="flex gap-1.5">
-                                                        {currentUser.id === group.receiverId && (
+                                                        {currentUser.id === group.receiverId && canApprove && (
                                                             <button
+                                                                disabled={isSubmitting}
                                                                 onClick={(e) => { e.stopPropagation(); handleConfirmBatch(group.loans); }}
-                                                                className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-amber-500/25"
+                                                                className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-amber-500/25 disabled:opacity-50"
                                                             >
                                                                 <CheckCircle size={12} /> ACEITAR TUDO
                                                             </button>
                                                         )}
 
-                                                        {group.loans.some(l => l.operator_id === currentUser.id || l.operatorId === currentUser.id) && (
+                                                        {group.loans.some(l => l.operator_id === currentUser.id || l.operatorId === currentUser.id) && canCreate && (
                                                             <button
+                                                                disabled={isSubmitting}
                                                                 onClick={(e) => { e.stopPropagation(); handleCancelBatch(group.loans); }}
-                                                                className="px-2.5 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95"
+                                                                className="px-2.5 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95 disabled:opacity-50"
                                                                 title="Cancelar Cautela"
                                                             >
                                                                 <XCircle size={16} />
@@ -999,12 +1040,15 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); handleReturnBatch(group.loans); }}
-                                                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/25"
-                                                    >
-                                                        <CornerDownLeft size={12} /> DEVOLVER TODOS
-                                                    </button>
+                                                    canReturn && (
+                                                        <button
+                                                            disabled={isSubmitting}
+                                                            onClick={(e) => { e.stopPropagation(); handleReturnBatch(group.loans); }}
+                                                            className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/25 disabled:opacity-50"
+                                                        >
+                                                            <CornerDownLeft size={12} /> DEVOLVER TODOS
+                                                        </button>
+                                                    )
                                                 )}
                                             </div>
                                         )}

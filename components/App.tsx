@@ -35,25 +35,43 @@ declare const __BUILD_DATE__: string;
 
 // --- CONFIGURAÇÃO PADRÃO DE PERMISSÕES (FALLBACK) ---
 const DEFAULT_PERMISSIONS: SystemPermissionMap = {
+  // Dashboard & General
   VIEW_DASHBOARD: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA, UserRole.OUTROS],
+  VIEW_CHARTS: [UserRole.ADMIN, UserRole.SUPERVISOR],
+  VIEW_ANNOUNCEMENTS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA, UserRole.OUTROS],
+
+  // Incidents
   CREATE_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA],
+  VIEW_MY_INCIDENTS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA],
   VIEW_ALL_INCIDENTS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   EDIT_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR],
   APPROVE_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR],
   DELETE_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR],
+
+  // Loans
+  CREATE_LOAN: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
+  APPROVE_LOAN: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
+  RETURN_LOAN: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
+  VIEW_MY_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
+  VIEW_ALL_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR],
+
+  // Assets
+  VIEW_ASSETS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
   MANAGE_ASSETS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   DELETE_ASSETS: [UserRole.ADMIN],
-  MANAGE_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
-  RETURN_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
+
+  // Administration
   MANAGE_USERS: [UserRole.ADMIN],
   DELETE_USERS: [UserRole.ADMIN],
   MANAGE_BUILDINGS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   MANAGE_SECTORS: [UserRole.ADMIN, UserRole.SUPERVISOR],
+  MANAGE_JOB_TITLES: [UserRole.ADMIN, UserRole.SUPERVISOR],
   MANAGE_ALTERATION_TYPES: [UserRole.ADMIN, UserRole.SUPERVISOR],
   MANAGE_ANNOUNCEMENTS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   ACCESS_TOOLS: [UserRole.ADMIN],
   EXPORT_REPORTS: [UserRole.ADMIN, UserRole.SUPERVISOR]
 };
+
 
 // --- HELPER FUNCTION ---
 const mapIncident = (db: any): Incident => ({
@@ -104,12 +122,13 @@ interface NavItemProps {
   badge?: number;
   isSubItem?: boolean;
   hasChevron?: boolean;
+  isOpen?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, collapsed, badge, isSubItem, hasChevron }) => (
+const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, collapsed, badge, isSubItem, hasChevron, isOpen }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center transition-all duration-300 relative group
+    className={`w-full flex items-center transition-all duration-300 relative group gap-4
       ${collapsed ? 'justify-center py-4 px-0' : 'px-4 py-3 mx-0 rounded-2xl'} 
       ${active
         ? 'bg-blue-600/10 text-blue-400 ring-1 ring-blue-500/20'
@@ -129,13 +148,19 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, collaps
     )}
 
     {!collapsed && (
-      <span className={`text-sm font-semibold tracking-wide truncate ${isSubItem ? 'text-[13px]' : 'ml-3'}`}>
+      <span className={`text-sm font-semibold tracking-wide truncate ${isSubItem ? 'text-[13px]' : ''}`}>
         {label}
       </span>
     )}
 
+    {hasChevron && !collapsed && (
+      <div className={`ml-auto transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} text-slate-500`}>
+        <ChevronDown size={14} />
+      </div>
+    )}
+
     {badge && badge > 0 && (
-      <span className={`absolute ${collapsed ? 'top-2 right-1' : 'right-10'} bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full ring-2 ring-[#0b101d] shadow-lg transform transition-transform group-hover:scale-110 top-1/2 -translate-y-1/2`}>
+      <span className={`absolute ${collapsed ? 'top-2 right-1' : (hasChevron ? 'right-[40px]' : 'right-10')} bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full ring-2 ring-[#0b101d] shadow-lg transform transition-transform group-hover:scale-110 top-1/2 -translate-y-1/2`}>
         {badge}
       </span>
     )}
@@ -163,10 +188,11 @@ const IncidentHistory: React.FC<{
   canDelete: boolean;
   canApprove: boolean;
   canExport: boolean;
+  canViewAll?: boolean;
 }> = (props) => {
-  const { incidents, buildings, onView, onApprove,
+  const { incidents, buildings, onView, onEdit, onDelete, onApprove,
     filterStatus, currentUser, customLogo, customLogoLeft, loans = [], onConfirmLoanBatch,
-    onLoadMore, hasMore, isLoadingMore, canApprove, canExport } = props;
+    onLoadMore, hasMore, isLoadingMore, canEdit, canDelete, canApprove, canExport, canViewAll = false } = props;
   const [search, setSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [dateStart, setDateStart] = useState('');
@@ -190,6 +216,11 @@ const IncidentHistory: React.FC<{
     if (filterStatus === 'PENDING') return status === 'PENDING';
     return status === 'APPROVED' || status === 'CANCELLED';
   });
+
+  // Permission filtering: if not canViewAll, only see own records
+  if (!canViewAll && currentUser) {
+    filtered = filtered.filter(i => i.userId === currentUser.id);
+  }
 
   const startFilter = dateStart ? new Date(`${dateStart}T${timeStart || '00:00'}`) : null;
   const endFilter = dateEnd ? new Date(`${dateEnd}T${timeEnd || '23:59'}`) : null;
@@ -842,6 +873,7 @@ export function App() {
   const [saving, setSaving] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [pendingSubTab, setPendingSubTab] = useState<'INCIDENTS' | 'LOANS'>('INCIDENTS');
+  const [openMenus, setOpenMenus] = useState<string[]>(['history_root', 'pending_root', 'registrations_root', 'tools_root']);
 
   // Data States
   const [sectors, setSectors] = useState<Sector[]>([]);
@@ -1042,7 +1074,7 @@ export function App() {
     try {
       const { data } = await supabase.from('app_config')
         .select('key, value')
-        .in('key', ['system_permissions', 'user_permission_overrides', 'menu_visibility', 'user_menu_visibility_overrides']);
+        .in('key', ['system_permissions', 'user_permission_overrides']);
 
       const config = data?.reduce((acc: any, item: any) => {
         acc[item.key] = item.value ? JSON.parse(item.value) : null;
@@ -1073,7 +1105,6 @@ export function App() {
     } catch (e: any) { showError('Erro', e.message); }
   };
 
-  // Menu management methods removed as visibility is now dynamic based on permissions.
 
   // --- PERMISSION CHECKER ---
   const can = (action: PermissionKey): boolean => {
@@ -1089,41 +1120,26 @@ export function App() {
     return allowedRoles.includes(user.role);
   };
 
-  const isMenuVisible = (menuIdOrItem: string | MenuItemDef): boolean => {
+  const isMenuVisible = (item: MenuItemDef): boolean => {
     if (!user) return false;
     if (user.role === UserRole.ADMIN) return true;
 
-    let item: MenuItemDef | undefined;
-    if (typeof menuIdOrItem === 'string') {
-      const findItem = (items: MenuItemDef[]): MenuItemDef | undefined => {
-        for (const i of items) {
-          if (i.id === menuIdOrItem) return i;
-          if (i.children) {
-            const found = findItem(i.children);
-            if (found) return found;
-          }
-        }
-        return undefined;
-      };
-      item = findItem(MENU_STRUCTURE);
-    } else {
-      item = menuIdOrItem;
+    // Se o item é uma seção, ele é visível se algum de seus filhos for visível
+    if (item.isSection && item.children) {
+      return item.children.some(child => isMenuVisible(child));
     }
 
-    if (!item) return false;
-
-    // A menu item is visible if:
-    // 1. The user has at least one of its required permissions OR
-    // 2. If it has children, at least one child is visible.
-
-    const hasRequiredPerm = item.requiredPermissions.some(perm => can(perm));
-
+    // Se o item tem filhos, e nenhum deles é visível, o item pai também não deve ser
     if (item.children && item.children.length > 0) {
-      const hasVisibleChild = item.children.some(child => isMenuVisible(child));
-      return hasRequiredPerm || hasVisibleChild;
+      const anyChildVisible = item.children.some(child => isMenuVisible(child));
+      if (!anyChildVisible) return false;
     }
 
-    return hasRequiredPerm;
+    // Caso não tenha permissões específicas exigidas, é público para logados
+    if (!item.requiredPermissions || item.requiredPermissions.length === 0) return true;
+
+    // Visibilidade baseada em se o usuário tem PELO MENOS UMA das permissões exigidas
+    return item.requiredPermissions.some(p => can(p));
   };
 
   const fetchGlobalConfig = useCallback(async () => {
@@ -1211,15 +1227,19 @@ export function App() {
 
   const handleDeleteSector = (id: string) => {
     if (!can('MANAGE_SECTORS')) return showError('Acesso Negado', 'Sem permissão.');
+    if (saving) return;
     showConfirm("Remover Setor", "Deseja realmente remover este setor?", async () => {
-      try { await supabase.from('sectors').delete().eq('id', id); fetchStaticData(); handleNavigate('SECTORS'); } catch (err: any) { showError("Erro", err.message); }
+      setSaving(true);
+      try { await supabase.from('sectors').delete().eq('id', id); fetchStaticData(); handleNavigate('SECTORS'); } catch (err: any) { showError("Erro", err.message); } finally { setSaving(false); }
     });
   };
 
   const handleDeleteAlterationType = (id: string) => {
     if (!can('MANAGE_ALTERATION_TYPES')) return showError('Acesso Negado', 'Sem permissão.');
+    if (saving) return;
     showConfirm("Remover Tipo", "Deseja realmente remover este tipo de alteração?", async () => {
-      try { await supabase.from('alteration_types').delete().eq('id', id); fetchStaticData(); handleNavigate('ALTERATION_TYPES'); } catch (err: any) { showError("Erro", err.message); }
+      setSaving(true);
+      try { await supabase.from('alteration_types').delete().eq('id', id); fetchStaticData(); handleNavigate('ALTERATION_TYPES'); } catch (err: any) { showError("Erro", err.message); } finally { setSaving(false); }
     });
   };
 
@@ -1301,6 +1321,8 @@ export function App() {
   };
 
   const handleConfirmLoanBatch = async (batchId: string) => {
+    if (saving) return;
+    setSaving(true);
     try {
       const pendingIds = loans.filter(l => l.batchId === batchId && (l.status === 'PENDING' || (l.status as string) === 'pending')).map(l => l.id);
       if (pendingIds.length === 0) return;
@@ -1309,7 +1331,7 @@ export function App() {
       createLog('LOAN_CONFIRM', `Confirmou recebimento de lote`);
       fetchLoans();
       showAlert("Sucesso", "Recebimento confirmado.");
-    } catch (err: any) { showError("Erro", "Falha ao confirmar: " + err.message); }
+    } catch (err: any) { showError("Erro", "Falha ao confirmar: " + err.message); } finally { setSaving(false); }
   };
 
   const generateNextRaCode = () => {
@@ -1384,6 +1406,8 @@ export function App() {
   };
 
   const handleSaveAsset = async (table: string, item: any, viewReturn: ViewState, logName: string) => {
+    if (saving) return;
+    setSaving(true);
     try {
       const isNew = !item.id || item.id === '';
       const payload = { ...item, id: isNew ? crypto.randomUUID() : item.id };
@@ -1392,13 +1416,15 @@ export function App() {
       fetchAssets();
       handleNavigate(viewReturn);
       createLog(isNew ? 'CREATE_ASSET' : 'UPDATE_ASSET', `${isNew ? 'Criou' : 'Atualizou'} ${logName}: ${item.model || item.number || item.name}`);
-    } catch (err: any) { showError("Erro", err.message); }
+    } catch (err: any) { showError("Erro", err.message); } finally { setSaving(false); }
   };
 
   const handleDeleteAsset = (table: string, id: string, logName: string) => {
     if (!can('DELETE_ASSETS')) return showError('Acesso Negado', 'Você não tem permissão para excluir ativos.');
+    if (saving) return;
     showConfirm("Excluir Item", "Tem certeza?", async () => {
-      try { await supabase.from(table).delete().eq('id', id); fetchAssets(); } catch (err: any) { showError("Erro", err.message); }
+      setSaving(true);
+      try { await supabase.from(table).delete().eq('id', id); fetchAssets(); } catch (err: any) { showError("Erro", err.message); } finally { setSaving(false); }
     });
   };
 
@@ -1409,7 +1435,8 @@ export function App() {
 
   const handleConfirmCancellation = async () => {
     if (cancelModal.reason.trim() === "") return showError("Erro", "O motivo do cancelamento é obrigatório.");
-
+    if (saving) return;
+    setSaving(true);
     try {
       await supabase.from('incidents').update({
         status: 'CANCELLED',
@@ -1422,13 +1449,15 @@ export function App() {
       handleNavigate('HISTORY');
       setCancelModal({ isOpen: false, incidentId: '', reason: '' });
       createLog('UPDATE_INCIDENT', `Cancelou RA (Motivo: ${cancelModal.reason})`);
-    } catch (err: any) { showError("Erro", err.message); }
+    } catch (err: any) { showError("Erro", err.message); } finally { setSaving(false); }
   };
 
   const handleDeleteUser = (id: string) => {
     if (!can('DELETE_USERS')) return showError('Acesso Negado', 'Você não tem permissão para excluir usuários.');
+    if (saving) return;
     showConfirm("Remover Usuário", "Deseja realmente remover?", async () => {
-      try { await supabase.from('users').delete().eq('id', id); fetchUsers(); } catch (err: any) { showError("Erro", err.message); }
+      setSaving(true);
+      try { await supabase.from('users').delete().eq('id', id); fetchUsers(); } catch (err: any) { showError("Erro", err.message); } finally { setSaving(false); }
     });
   };
 
@@ -1441,10 +1470,12 @@ export function App() {
 
   const handleApproveIncident = async (id: string) => {
     if (!can('APPROVE_INCIDENT')) return showError('Acesso Negado', 'Você não tem permissão para validar registros.');
+    if (saving) return;
+    setSaving(true);
     try {
       await supabase.from('incidents').update({ status: 'APPROVED', approved_by: user?.name, approved_at: new Date().toISOString() }).eq('id', id);
       fetchIncidents(); handleNavigate('HISTORY');
-    } catch (err: any) { showError("Falha", err.message); }
+    } catch (err: any) { showError("Falha", err.message); } finally { setSaving(false); }
   };
 
   const handleUpdatePassword = async (currentPass: string, nPass: string) => {
@@ -1518,12 +1549,12 @@ export function App() {
           pendingIncidentsCount={pendingIncidentsCount}
           pendingLoansCount={pendingLoansCount}
           unreadAnnouncementsCount={unreadAnnouncementsCount}
-          isAnnouncementsVisible={isMenuVisible('announcements')}
+          isAnnouncementsVisible={MENU_STRUCTURE.some(s => s.children?.some(c => c.id === 'announcements' && isMenuVisible(c)))}
         />;
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
         return <IncidentForm user={user!} users={users} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleNavigate('DASHBOARD'); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} />;
-      case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} />;
+      case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} />;
       case 'PENDING_APPROVALS':
         return (
           <div className="space-y-4 animate-fade-in">
@@ -1547,6 +1578,7 @@ export function App() {
                   canDelete={can('DELETE_INCIDENT')}
                   canApprove={can('APPROVE_INCIDENT')}
                   canExport={can('EXPORT_REPORTS')}
+                  canViewAll={can('VIEW_ALL_INCIDENTS')}
                 />
               ) : (
                 <LoanViews
@@ -1562,27 +1594,32 @@ export function App() {
                   initialTab="ACTIVE"
                   filterStatus="PENDING"
                   onShowConfirm={showConfirm}
+                  canCreate={can('CREATE_LOAN')}
+                  canApprove={can('APPROVE_LOAN')}
+                  canReturn={can('RETURN_LOAN')}
+                  canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')}
+                  canViewAll={can('VIEW_ALL_LOANS')}
                 />
               )}
             </div>
           </div>
         );
       case 'BUILDINGS': return <BuildingList buildings={buildings} sectors={sectors} onEdit={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} onDelete={handleDeleteBuilding} onAdd={() => { setEditingBuilding(null); handleNavigate('BUILDING_FORM'); }} onRefresh={fetchStaticData} canEdit={can('MANAGE_BUILDINGS')} canDelete={can('MANAGE_BUILDINGS')} />;
-      case 'BUILDING_FORM': return <BuildingForm initialData={editingBuilding} sectors={sectors} onSave={async (b) => { await supabase.from('buildings').upsert(b); fetchStaticData(); handleNavigate('BUILDINGS'); }} onCancel={() => handleNavigate('BUILDINGS')} onDelete={handleDeleteBuilding} />;
+      case 'BUILDING_FORM': return <BuildingForm initialData={editingBuilding} sectors={sectors} onSave={async (b) => { setSaving(true); try { await supabase.from('buildings').upsert(b); fetchStaticData(); handleNavigate('BUILDINGS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={() => handleNavigate('BUILDINGS')} onDelete={handleDeleteBuilding} isLoading={saving} />;
       case 'USERS': return <UserList users={users} jobTitles={jobTitles} onEdit={(u) => { setEditingUser(u); handleNavigate('USER_FORM'); }} onDelete={handleDeleteUser} onAdd={() => { setEditingUser(null); handleNavigate('USER_FORM'); }} onRefresh={fetchUsers} canEdit={can('MANAGE_USERS')} canDelete={can('DELETE_USERS')} />;
-      case 'USER_FORM': return <UserForm initialData={editingUser} jobTitles={jobTitles} onSave={async (u) => { const { userCode, jobTitleId, ...rest } = u; await supabase.from('users').upsert({ ...rest, user_code: userCode, job_title_id: jobTitleId }); fetchUsers(); handleNavigate('USERS'); }} onCancel={() => handleNavigate('USERS')} onDelete={handleDeleteUser} />;
+      case 'USER_FORM': return <UserForm initialData={editingUser} jobTitles={jobTitles} onSave={async (u) => { setSaving(true); try { const { userCode, jobTitleId, ...rest } = u; await supabase.from('users').upsert({ ...rest, user_code: userCode, job_title_id: jobTitleId }); fetchUsers(); handleNavigate('USERS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={() => handleNavigate('USERS')} onDelete={handleDeleteUser} isLoading={saving} />;
       case 'JOB_TITLES': return <JobTitleList jobTitles={jobTitles} onEdit={(t) => { setEditingJobTitle(t); handleNavigate('JOB_TITLE_FORM'); }} onDelete={handleDeleteJobTitle} onAdd={() => { setEditingJobTitle(null); handleNavigate('JOB_TITLE_FORM'); }} />;
       case 'JOB_TITLE_FORM': return <JobTitleForm initialData={editingJobTitle} onSave={handleSaveJobTitle} onCancel={() => handleNavigate('JOB_TITLES')} onDelete={handleDeleteJobTitle} />;
       case 'VEHICLES': return <VehicleList items={vehicles} onAdd={() => { setEditingVehicle(null); handleNavigate('VEHICLE_FORM'); }} onEdit={(i) => { setEditingVehicle(i); handleNavigate('VEHICLE_FORM'); }} onDelete={(id) => handleDeleteAsset('vehicles', id, 'Veículo')} />;
-      case 'VEHICLE_FORM': return <VehicleForm initialData={editingVehicle} onSave={(i: any) => handleSaveAsset('vehicles', i, 'VEHICLES', 'Veículo')} onCancel={() => handleNavigate('VEHICLES')} onDelete={() => editingVehicle && handleDeleteAsset('vehicles', editingVehicle.id, 'Veículo')} />;
+      case 'VEHICLE_FORM': return <VehicleForm initialData={editingVehicle} onSave={(i: any) => handleSaveAsset('vehicles', i, 'VEHICLES', 'Veículo')} onCancel={() => handleNavigate('VEHICLES')} onDelete={() => editingVehicle && handleDeleteAsset('vehicles', editingVehicle.id, 'Veículo')} isLoading={saving} />;
       case 'VESTS': return <VestList items={vests} onAdd={() => { setEditingVest(null); handleNavigate('VEST_FORM'); }} onEdit={(i) => { setEditingVest(i); handleNavigate('VEST_FORM'); }} onDelete={(id) => handleDeleteAsset('vests', id, 'Colete')} />;
-      case 'VEST_FORM': return <VestForm initialData={editingVest} onSave={(i: any) => handleSaveAsset('vests', i, 'VESTS', 'Colete')} onCancel={() => handleNavigate('VESTS')} onDelete={() => editingVest && handleDeleteAsset('vests', editingVest.id, 'Colete')} />;
+      case 'VEST_FORM': return <VestForm initialData={editingVest} onSave={(i: any) => handleSaveAsset('vests', i, 'VESTS', 'Colete')} onCancel={() => handleNavigate('VESTS')} onDelete={() => editingVest && handleDeleteAsset('vests', editingVest.id, 'Colete')} isLoading={saving} />;
       case 'RADIOS': return <RadioList items={radios} onAdd={() => { setEditingRadio(null); handleNavigate('RADIO_FORM'); }} onEdit={(i) => { setEditingRadio(i); handleNavigate('RADIO_FORM'); }} onDelete={(id) => handleDeleteAsset('radios', id, 'Rádio')} />;
-      case 'RADIO_FORM': return <RadioForm initialData={editingRadio} onSave={(i: any) => handleSaveAsset('radios', i, 'RADIOS', 'Rádio')} onCancel={() => handleNavigate('RADIOS')} onDelete={() => editingRadio && handleDeleteAsset('radios', editingRadio.id, 'Rádio')} />;
+      case 'RADIO_FORM': return <RadioForm initialData={editingRadio} onSave={(i: any) => handleSaveAsset('radios', i, 'RADIOS', 'Rádio')} onCancel={() => handleNavigate('RADIOS')} onDelete={() => editingRadio && handleDeleteAsset('radios', editingRadio.id, 'Rádio')} isLoading={saving} />;
       case 'EQUIPMENTS': return <EquipmentList items={equipments} onAdd={() => { setEditingEquipment(null); handleNavigate('EQUIPMENT_FORM'); }} onEdit={(i) => { setEditingEquipment(i); handleNavigate('EQUIPMENT_FORM'); }} onDelete={(id) => handleDeleteAsset('equipments', id, 'Equipamento')} />;
-      case 'EQUIPMENT_FORM': return <EquipmentForm initialData={editingEquipment} onSave={(i: any) => handleSaveAsset('equipments', i, 'EQUIPMENTS', 'Equipamento')} onCancel={() => handleNavigate('EQUIPMENTS')} onDelete={() => editingEquipment && handleDeleteAsset('equipments', editingEquipment.id, 'Equipamento')} />;
-      case 'LOANS': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} filterStatus="ACTIVE" onShowConfirm={showConfirm} />;
-      case 'LOAN_HISTORY': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} initialTab="HISTORY" isReportView={true} loans={loans} onRefresh={() => fetchLoans(false)} hasMore={hasMoreLoans} isLoadingMore={loadingMoreLoans} onLoadMore={() => fetchLoans(true)} onShowConfirm={showConfirm} />;
+      case 'EQUIPMENT_FORM': return <EquipmentForm initialData={editingEquipment} onSave={(i: any) => handleSaveAsset('equipments', i, 'EQUIPMENTS', 'Equipamento')} onCancel={() => handleNavigate('EQUIPMENTS')} onDelete={() => editingEquipment && handleDeleteAsset('equipments', editingEquipment.id, 'Equipamento')} isLoading={saving} />;
+      case 'LOANS': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} />;
+      case 'LOAN_HISTORY': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} initialTab="HISTORY" isReportView={true} loans={loans} onRefresh={() => fetchLoans(false)} hasMore={hasMoreLoans} isLoadingMore={loadingMoreLoans} onLoadMore={() => fetchLoans(true)} onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} />;
       case 'SECTORS': return <SectorList sectors={sectors} onEdit={(s) => { setEditingSector(s); handleNavigate('SECTOR_FORM'); }} onDelete={handleDeleteSector} onAdd={() => { setEditingSector(null); handleNavigate('SECTOR_FORM'); }} />;
       case 'SECTOR_FORM': return <SectorForm initialData={editingSector} onSave={handleSaveSector} onCancel={() => handleNavigate('SECTORS')} onDelete={handleDeleteSector} />;
       case 'ALTERATION_TYPES': return <AlterationTypeManager types={alterationTypes} onAdd={async (name) => { const newType = { id: crypto.randomUUID(), name, order: alterationTypes.length }; await handleSaveAlterationType(newType); }} onEdit={(t) => { setEditingAlterationType(t); setView('ALTERATION_TYPE_FORM'); }} onDelete={handleDeleteAlterationType} onReorder={handleReorderAlterationTypes} />;
@@ -1607,28 +1644,26 @@ export function App() {
         onRefresh={() => fetchIncidents(false)}
         currentUser={user!}
         pendingIncidentsCount={pendingIncidentsCount}
-        pendingLoansCount={pendingLoansCount}
         unreadAnnouncementsCount={unreadAnnouncementsCount}
-        isAnnouncementsVisible={isMenuVisible('announcements')}
+        isAnnouncementsVisible={MENU_STRUCTURE.some(s => s.children?.some(c => c.id === 'announcements' && isMenuVisible(c)))}
       />;
     }
   };
-
   if (!user) return <Auth onLogin={handleLogin} onRegister={handleRegister} darkMode={darkMode} onToggleDarkMode={() => setDarkMode(!darkMode)} customLogo={customLogoRight} onShowSetup={() => setShowDbSetup(true)} systemVersion={DISPLAY_VERSION} users={users} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} />;
+
   const pendingIncidentsCount = incidents.filter(i => i.status === 'PENDING').length;
   // Conta lotes (batches) pendentes. Supervisores veem tudo, outros veem os seus (como recebedor ou operador)
   const pendingLoansCount = Array.from(new Set(
     loans.filter(l => l.status === 'PENDING' && (
       l.receiverId === user.id ||
       l.operatorId === user.id ||
-      can('APPROVE_INCIDENT')
+      can('APPROVE_LOAN')
     )).map(l => l.batchId || l.id)
   )).length;
   // Badge total é a soma
   const totalPendingBadge = pendingIncidentsCount + pendingLoansCount;
 
   // --- DYNAMIC SIDEBAR HELPERS ---
-  const [openMenus, setOpenMenus] = useState<string[]>(['history_root', 'pending_root', 'registrations_root', 'tools_root']);
 
   const getIcon = (name?: string) => {
     switch (name) {
@@ -1656,9 +1691,9 @@ export function App() {
 
   const getBadge = (id: string) => {
     if (id === 'announcements') return unreadAnnouncementsCount > 0 ? unreadAnnouncementsCount : undefined;
-    if (id === 'pending_root' || id === 'pending_incidents') return pendingIncidentsCount > 0 ? pendingIncidentsCount : undefined;
+    if (id === 'pending_root') return totalPendingBadge > 0 ? totalPendingBadge : undefined;
+    if (id === 'pending_incidents') return pendingIncidentsCount > 0 ? pendingIncidentsCount : undefined;
     if (id === 'pending_loans') return pendingLoansCount > 0 ? pendingLoansCount : undefined;
-    if (id === 'pending_root' && totalPendingBadge > 0) return totalPendingBadge;
     return undefined;
   };
 
@@ -1755,9 +1790,10 @@ export function App() {
             badge={getBadge(item.id)}
             isSubItem={depth > 1}
             hasChevron={item.children && item.children.length > 0 && !isSidebarCollapsed}
+            isOpen={isOpen}
           />
           {item.children && isOpen && !isSidebarCollapsed && (
-            <div className="space-y-1 mt-1">
+            <div className={`space-y-1 mt-1 ${depth > 0 ? 'pl-0' : 'pl-0'}`}>
               {renderMenuItems(item.children, depth + 1)}
             </div>
           )}
@@ -1771,7 +1807,7 @@ export function App() {
       {sidebarOpen && <div className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />}
       <aside className={`fixed inset-y-0 left-0 z-50 bg-[#0b101d] transform transition-all duration-500 lg:relative border-r border-white/5 shadow-[10px_0_30px_-15px_rgba(0,0,0,0.5)] ${sidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'} ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'}`}>
         <div className="h-full flex flex-col text-white">
-          <div className={`transition-all duration-500 flex items-center ${isSidebarCollapsed ? 'h-20 justify-center px-2' : 'h-24 px-8 justify-start gap-3'}`}>
+          <div className={`transition-all duration-500 flex items-center ${isSidebarCollapsed ? 'h-20 justify-center px-2' : 'h-24 px-8 justify-start gap-4'}`}>
             <div className={`transition-all duration-500 flex items-center justify-center group hover:scale-110 ${isSidebarCollapsed ? 'h-12 w-12' : 'h-16 w-16'}`}>
               {customLogoRight ? (
                 <img src={customLogoRight} className="w-full h-full object-contain" alt="Logo" />
@@ -1788,10 +1824,9 @@ export function App() {
           </div>
           <nav className={`flex-1 overflow-y-auto no-scrollbar pt-4 ${isSidebarCollapsed ? 'px-0' : 'px-4 space-y-1'}`}>
             {renderMenuItems(MENU_STRUCTURE)}
+
             <div className="mt-8 pt-4 border-t border-white/5">
-
               <NavItem icon={<LogOut className="rotate-180" />} label="Sair do Sistema" onClick={handleLogout} collapsed={isSidebarCollapsed} />
-
               {!isSidebarCollapsed && (
                 <div className="py-2 text-center opacity-30 group-hover:opacity-100 transition-opacity duration-700">
                   <p className="text-[8px] font-mono text-slate-500 uppercase tracking-[0.15em] cursor-default">

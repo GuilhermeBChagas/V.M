@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, UserRole, JobTitle } from '../types';
-import { Save, X, User as UserIcon, Shield, Trash2, UserCheck, Eye, Activity, Mail, Hash, MoreHorizontal, Briefcase } from 'lucide-react';
+import { Save, X, User as UserIcon, Shield, Trash2, UserCheck, Eye, Activity, Mail, Hash, MoreHorizontal, Briefcase, Loader2 } from 'lucide-react';
 
 interface UserFormProps {
     initialData?: User | null;
@@ -9,9 +9,10 @@ interface UserFormProps {
     onDelete?: (id: string) => void;
     onCancel: () => void;
     jobTitles?: JobTitle[];
+    isLoading?: boolean;
 }
 
-export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelete, onCancel, jobTitles = [] }) => {
+export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelete, onCancel, jobTitles = [], isLoading }) => {
     const [formData, setFormData] = useState<Partial<User>>({
         id: '',
         name: '',
@@ -238,11 +239,12 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
 
                 <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 pt-6 border-t border-slate-100 dark:border-slate-700">
                     <div className="w-full sm:w-auto">
-                        {initialData && onDelete && (
+                        {initialData && initialData.id && onDelete && (
                             <button
                                 type="button"
                                 onClick={handleDelete}
-                                className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-3 border border-red-200 dark:border-red-800 text-sm font-medium rounded-lg text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors uppercase"
+                                disabled={isLoading}
+                                className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-3 border border-red-200 dark:border-red-800 text-sm font-medium rounded-lg text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors uppercase disabled:opacity-50"
                             >
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Excluir Usuário
@@ -251,8 +253,8 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                     </div>
                     <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
                         <button type="button" onClick={onCancel} className="w-full sm:w-auto py-3 px-6 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors uppercase">Cancelar</button>
-                        <button type="submit" className="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-md text-sm font-bold rounded-lg text-white bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 transition-all active:scale-95 uppercase">
-                            <Save className="w-4 h-4 mr-2" />
+                        <button type="submit" disabled={isLoading} className="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-md text-sm font-bold rounded-lg text-white bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 transition-all active:scale-95 uppercase disabled:opacity-70 disabled:cursor-not-allowed">
+                            {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                             {initialData ? 'Salvar Alterações' : 'Cadastrar Usuário'}
                         </button>
                     </div>

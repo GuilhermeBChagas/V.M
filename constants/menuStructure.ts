@@ -18,9 +18,9 @@ export const MENU_STRUCTURE: MenuItemDef[] = [
         requiredPermissions: [],
         children: [
             { id: 'dashboard', label: 'Painel de Controle', iconName: 'LayoutDashboard', requiredPermissions: ['VIEW_DASHBOARD'] },
-            { id: 'announcements', label: 'Mural de Avisos', iconName: 'Megaphone', requiredPermissions: ['VIEW_DASHBOARD'] },
+            { id: 'announcements', label: 'Mural de Avisos', iconName: 'Megaphone', requiredPermissions: ['VIEW_ANNOUNCEMENTS'] },
             { id: 'new_record', label: 'Registar R.A', iconName: 'FileText', requiredPermissions: ['CREATE_INCIDENT'] },
-            { id: 'loans', label: 'Cautelas', iconName: 'ArrowRightLeft', requiredPermissions: ['MANAGE_LOANS', 'RETURN_LOANS'] }
+            { id: 'loans', label: 'Cautelas', iconName: 'ArrowRightLeft', requiredPermissions: ['CREATE_LOAN', 'APPROVE_LOAN', 'RETURN_LOAN', 'VIEW_MY_LOANS'] }
         ]
     },
     {
@@ -33,23 +33,23 @@ export const MENU_STRUCTURE: MenuItemDef[] = [
                 id: 'history_root',
                 label: 'Históricos',
                 iconName: 'History',
-                requiredPermissions: ['VIEW_ALL_INCIDENTS'],
+                requiredPermissions: ['VIEW_ALL_INCIDENTS', 'VIEW_ALL_LOANS', 'VIEW_MY_INCIDENTS', 'VIEW_MY_LOANS'],
                 children: [
-                    { id: 'history_incidents', label: 'Atendimentos', iconName: 'FileText', requiredPermissions: ['VIEW_ALL_INCIDENTS'] },
-                    { id: 'history_loans', label: 'Cautelas', iconName: 'ArrowRightLeft', requiredPermissions: ['VIEW_ALL_INCIDENTS', 'MANAGE_LOANS'] }
+                    { id: 'history_incidents', label: 'Atendimentos', iconName: 'FileText', requiredPermissions: ['VIEW_ALL_INCIDENTS', 'VIEW_MY_INCIDENTS'] },
+                    { id: 'history_loans', label: 'Cautelas', iconName: 'ArrowRightLeft', requiredPermissions: ['VIEW_ALL_LOANS', 'VIEW_MY_LOANS'] }
                 ]
             },
             {
                 id: 'pending_root',
                 label: 'Pendentes',
                 iconName: 'UserCheck',
-                requiredPermissions: ['VIEW_DASHBOARD'],
+                requiredPermissions: ['APPROVE_INCIDENT', 'APPROVE_LOAN', 'RETURN_LOAN'],
                 children: [
                     { id: 'pending_incidents', label: 'Atendimentos', iconName: 'FileText', requiredPermissions: ['APPROVE_INCIDENT'] },
-                    { id: 'pending_loans', label: 'Cautelas', iconName: 'ArrowRightLeft', requiredPermissions: ['MANAGE_LOANS', 'RETURN_LOANS'] }
+                    { id: 'pending_loans', label: 'Cautelas', iconName: 'ArrowRightLeft', requiredPermissions: ['APPROVE_LOAN', 'RETURN_LOAN'] }
                 ]
             },
-            { id: 'charts', label: 'Estatísticas', iconName: 'PieChartIcon', requiredPermissions: ['VIEW_DASHBOARD'] }
+            { id: 'charts', label: 'Estatísticas', iconName: 'PieChartIcon', requiredPermissions: ['VIEW_CHARTS'] }
         ]
     },
     {

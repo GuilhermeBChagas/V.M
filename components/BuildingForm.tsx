@@ -9,9 +9,10 @@ interface BuildingFormProps {
     onSave: (building: Building) => void;
     onCancel: () => void;
     onDelete?: (id: string) => void;
+    isLoading?: boolean;
 }
 
-export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors, onSave, onCancel, onDelete }) => {
+export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors, onSave, onCancel, onDelete, isLoading }) => {
     const [formData, setFormData] = useState<Building>({
         id: '',
         buildingNumber: '',
@@ -194,7 +195,8 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
                             <button
                                 type="button"
                                 onClick={handleDelete}
-                                className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-3 border border-red-200 dark:border-red-800 text-sm font-medium rounded-lg text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors uppercase"
+                                disabled={isLoading}
+                                className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-3 border border-red-200 dark:border-red-800 text-sm font-medium rounded-lg text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors uppercase disabled:opacity-50"
                             >
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Excluir Prédio
@@ -203,8 +205,8 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
                     </div>
                     <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
                         <button type="button" onClick={onCancel} className="w-full sm:w-auto py-3 px-6 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors uppercase">Cancelar</button>
-                        <button type="submit" className="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-md text-sm font-bold rounded-lg text-white bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 transition-all active:scale-95 uppercase">
-                            <Save className="w-4 h-4 mr-2" />
+                        <button type="submit" disabled={isLoading} className="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-md text-sm font-bold rounded-lg text-white bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 transition-all active:scale-95 uppercase disabled:opacity-70 disabled:cursor-not-allowed">
+                            {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                             {initialData ? 'Salvar Alterações' : 'Cadastrar Prédio'}
                         </button>
                     </div>

@@ -8,24 +8,40 @@ export enum UserRole {
 }
 
 export type PermissionKey =
+  // Dashboard & General
   | 'VIEW_DASHBOARD'
+  | 'VIEW_CHARTS'
+  | 'VIEW_ANNOUNCEMENTS'
+
+  // Incidents (R.A)
   | 'CREATE_INCIDENT'
-  | 'VIEW_ALL_INCIDENTS' // Ver histórico completo (não apenas os seus) ou menu Histórico
+  | 'VIEW_MY_INCIDENTS'
+  | 'VIEW_ALL_INCIDENTS'
   | 'EDIT_INCIDENT'
-  | 'DELETE_INCIDENT'
   | 'APPROVE_INCIDENT'
-  | 'MANAGE_ASSETS'      // Veículos, Coletes, Rádios, Equipamentos
+  | 'DELETE_INCIDENT'
+
+  // Loans (Cautelas)
+  | 'CREATE_LOAN'
+  | 'APPROVE_LOAN'
+  | 'RETURN_LOAN'
+  | 'VIEW_MY_LOANS'
+  | 'VIEW_ALL_LOANS'
+
+  // Assets (Inventário)
+  | 'VIEW_ASSETS'
+  | 'MANAGE_ASSETS'
   | 'DELETE_ASSETS'
-  | 'MANAGE_LOANS'       // Criar e Visualizar Cautelas
-  | 'RETURN_LOANS'       // Realizar Devolução
-  | 'MANAGE_USERS'       // Criar/Editar Usuários
+
+  // Administration
+  | 'MANAGE_USERS'
   | 'DELETE_USERS'
-  | 'MANAGE_BUILDINGS'   // Gerenciar Prédios
-  | 'MANAGE_SECTORS'     // Gerenciar Setores
-  | 'MANAGE_JOB_TITLES'  // Gerenciar Cargos/Funções
-  | 'MANAGE_ALTERATION_TYPES' // Gerenciar Tipos de Alteração
-  | 'ACCESS_TOOLS'       // Logs, Backup, Config Visual, Permissões
-  | 'MANAGE_ANNOUNCEMENTS' // Mural de Avisos
+  | 'MANAGE_BUILDINGS'
+  | 'MANAGE_SECTORS'
+  | 'MANAGE_JOB_TITLES'
+  | 'MANAGE_ALTERATION_TYPES'
+  | 'MANAGE_ANNOUNCEMENTS'
+  | 'ACCESS_TOOLS'
   | 'EXPORT_REPORTS';
 
 export interface SystemPermissionMap {
@@ -38,8 +54,6 @@ export interface UserPermissionOverrides {
   };
 }
 
-// Menu visibility is now derived directly from action permissions.
-// The previous MenuVisibilityMap and UserMenuVisibilityOverrides are deprecated.
 
 export interface Sector {
   id: string;

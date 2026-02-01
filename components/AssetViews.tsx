@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Vehicle, Vest, Radio, Equipment } from '../types';
-import { Plus, Pencil, Trash2, Search, Save, X, Car, Shield, Radio as RadioIcon, Package, Fuel, AlertCircle, Gauge, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Save, X, Car, Shield, Radio as RadioIcon, Package, Fuel, AlertCircle, Gauge, ChevronRight, Loader2 } from 'lucide-react';
 import { normalizeString } from '../utils/stringUtils';
 
 // --- STYLES & UTILS (MATCHING BUILDING FORM) ---
@@ -85,10 +85,11 @@ interface GenericFormProps {
     onCancel: () => void;
     onDelete?: () => void;
     isEditing: boolean;
+    isLoading?: boolean;
     maxWidth?: string;
 }
 
-const GenericForm: React.FC<GenericFormProps> = ({ title, icon, children, onSubmit, onCancel, onDelete, isEditing, maxWidth = 'max-w-3xl' }) => (
+const GenericForm: React.FC<GenericFormProps> = ({ title, icon, children, onSubmit, onCancel, onDelete, isEditing, isLoading, maxWidth = 'max-w-3xl' }) => (
     <div className={`${maxWidth} mx-auto bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors animate-fade-in`}>
         <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 uppercase tracking-tight">
@@ -101,15 +102,24 @@ const GenericForm: React.FC<GenericFormProps> = ({ title, icon, children, onSubm
             <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 pt-6 border-t border-slate-100 dark:border-slate-700">
                 <div className="w-full sm:w-auto">
                     {isEditing && onDelete && (
-                        <button type="button" onClick={onDelete} className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-3 border border-red-200 dark:border-red-800 text-sm font-medium rounded-lg text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors uppercase">
+                        <button
+                            type="button"
+                            onClick={onDelete}
+                            disabled={isLoading}
+                            className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-3 border border-red-200 dark:border-red-800 text-sm font-medium rounded-lg text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors uppercase disabled:opacity-50"
+                        >
                             <Trash2 className="w-4 h-4 mr-2" /> Excluir
                         </button>
                     )}
                 </div>
                 <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
                     <button type="button" onClick={onCancel} className="w-full sm:w-auto py-3 px-6 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors uppercase">Cancelar</button>
-                    <button type="submit" className="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-md text-sm font-bold uppercase rounded-lg text-white bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 transition-all active:scale-95">
-                        <Save className="w-4 h-4 mr-2" /> Salvar
+                    <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-md text-sm font-bold uppercase rounded-lg text-white bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Salvar
                     </button>
                 </div>
             </div>
@@ -196,7 +206,7 @@ export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit
     );
 };
 
-export const VehicleForm: React.FC<any> = ({ initialData, onSave, onCancel, onDelete }) => {
+export const VehicleForm: React.FC<any> = ({ initialData, onSave, onCancel, onDelete, isLoading }) => {
     const [data, setData] = useState<Vehicle>(initialData || { id: '', model: '', plate: '', prefix: '', fleetNumber: '', fuelType: '', department: '', currentKm: 0 });
 
     const handlePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -217,7 +227,7 @@ export const VehicleForm: React.FC<any> = ({ initialData, onSave, onCancel, onDe
     };
 
     return (
-        <GenericForm title={initialData ? 'Editar Veículo' : 'Novo Veículo'} icon={<Car className="w-6 h-6 text-blue-600" />} onSubmit={(e) => { e.preventDefault(); onSave(data); }} onCancel={onCancel} onDelete={() => onDelete(data.id)} isEditing={!!initialData}>
+        <GenericForm title={initialData ? 'Editar Veículo' : 'Novo Veículo'} icon={<Car className="w-6 h-6 text-blue-600" />} onSubmit={(e) => { e.preventDefault(); onSave(data); }} onCancel={onCancel} onDelete={() => onDelete(data.id)} isEditing={!!initialData} isLoading={isLoading}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 <div>
@@ -330,10 +340,10 @@ export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: 
     );
 };
 
-export const VestForm: React.FC<any> = ({ initialData, onSave, onCancel, onDelete }) => {
+export const VestForm: React.FC<any> = ({ initialData, onSave, onCancel, onDelete, isLoading }) => {
     const [data, setData] = useState<Vest>(initialData || { id: '', number: '', size: 'M' });
     return (
-        <GenericForm title={initialData ? 'Editar Colete' : 'Novo Colete'} icon={<Shield className="w-6 h-6 text-blue-600" />} onSubmit={(e) => { e.preventDefault(); onSave(data); }} onCancel={onCancel} onDelete={() => onDelete(data.id)} isEditing={!!initialData}>
+        <GenericForm title={initialData ? 'Editar Colete' : 'Novo Colete'} icon={<Shield className="w-6 h-6 text-blue-600" />} onSubmit={(e) => { e.preventDefault(); onSave(data); }} onCancel={onCancel} onDelete={() => onDelete(data.id)} isEditing={!!initialData} isLoading={isLoading}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className={labelClass}>Número de Série</label>
@@ -415,10 +425,10 @@ export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r
     );
 };
 
-export const RadioForm: React.FC<any> = ({ initialData, onSave, onCancel, onDelete }) => {
+export const RadioForm: React.FC<any> = ({ initialData, onSave, onCancel, onDelete, isLoading }) => {
     const [data, setData] = useState<Radio>(initialData || { id: '', number: '', brand: '', serialNumber: '' });
     return (
-        <GenericForm title={initialData ? 'Editar Rádio' : 'Novo Rádio'} icon={<RadioIcon className="w-6 h-6 text-blue-600" />} onSubmit={(e) => { e.preventDefault(); onSave(data); }} onCancel={onCancel} onDelete={() => onDelete(data.id)} isEditing={!!initialData}>
+        <GenericForm title={initialData ? 'Editar Rádio' : 'Novo Rádio'} icon={<RadioIcon className="w-6 h-6 text-blue-600" />} onSubmit={(e) => { e.preventDefault(); onSave(data); }} onCancel={onCancel} onDelete={() => onDelete(data.id)} isEditing={!!initialData} isLoading={isLoading}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className={labelClass}>Identificador (HT)</label>
@@ -497,10 +507,10 @@ export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, on
     );
 };
 
-export const EquipmentForm: React.FC<any> = ({ initialData, onSave, onCancel, onDelete }) => {
+export const EquipmentForm: React.FC<any> = ({ initialData, onSave, onCancel, onDelete, isLoading }) => {
     const [data, setData] = useState<Equipment>(initialData || { id: '', name: '', description: '', quantity: 1 });
     return (
-        <GenericForm title={initialData ? 'Editar Item' : 'Novo Item'} icon={<Package className="w-6 h-6 text-blue-600" />} onSubmit={(e) => { e.preventDefault(); onSave(data); }} onCancel={onCancel} onDelete={() => onDelete(data.id)} isEditing={!!initialData}>
+        <GenericForm title={initialData ? 'Editar Item' : 'Novo Item'} icon={<Package className="w-6 h-6 text-blue-600" />} onSubmit={(e) => { e.preventDefault(); onSave(data); }} onCancel={onCancel} onDelete={() => onDelete(data.id)} isEditing={!!initialData} isLoading={isLoading}>
             <div className="space-y-6">
                 <div>
                     <label className={labelClass}>Nome do Item</label>

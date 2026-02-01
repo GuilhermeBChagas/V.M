@@ -13,22 +13,32 @@ interface PermissionsViewProps {
 
 const PERMISSION_GROUPS = [
   {
-    category: 'REGISTROS',
+    category: 'REGISTROS (R.A)',
     items: [
       { key: 'CREATE_INCIDENT', label: 'CRIAR NOVO REGISTRO' },
-      { key: 'VIEW_ALL_INCIDENTS', label: 'VER HISTÓRICO DE REGISTROS' },
-      { key: 'EDIT_INCIDENT', label: 'EDITAR REGISTROS EXISTENTES' },
-      { key: 'APPROVE_INCIDENT', label: 'VALIDAR/APROVAR REGISTROS' },
-      { key: 'DELETE_INCIDENT', label: 'EXCLUIR/CANCELAR REGISTROS' },
+      { key: 'VIEW_MY_INCIDENTS', label: 'VER MEU HISTÓRICO' },
+      { key: 'VIEW_ALL_INCIDENTS', label: 'VER HISTÓRICO GLOBAL' },
+      { key: 'EDIT_INCIDENT', label: 'EDITAR REGISTROS' },
+      { key: 'APPROVE_INCIDENT', label: 'VALIDAR/APROVAR' },
+      { key: 'DELETE_INCIDENT', label: 'EXCLUIR/CANCELAR' },
     ]
   },
   {
     category: 'CAUTELAS',
     items: [
-      { key: 'MANAGE_ASSETS', label: 'GERENCIAR CAUTELAS (CRIAR/EDITAR)' },
-      { key: 'DELETE_ASSETS', label: 'EXCLUIR CAUTELAS' },
-      { key: 'MANAGE_LOANS', label: 'GERENCIAR CAUTELAS' },
-      { key: 'RETURN_LOANS', label: 'REALIZAR DEVOLUÇÕES' },
+      { key: 'CREATE_LOAN', label: 'GERAR NOVA CAUTELA (SAÍDA)' },
+      { key: 'APPROVE_LOAN', label: 'ACEITAR CAUTELA (RECEBIMENTO)' },
+      { key: 'RETURN_LOAN', label: 'REALIZAR DEVOLUÇÃO' },
+      { key: 'VIEW_MY_LOANS', label: 'VER MEU HISTÓRICO' },
+      { key: 'VIEW_ALL_LOANS', label: 'VER HISTÓRICO GLOBAL' },
+    ]
+  },
+  {
+    category: 'ESTOQUE/ATIVOS',
+    items: [
+      { key: 'VIEW_ASSETS', label: 'VISUALIZAR INVENTÁRIO' },
+      { key: 'MANAGE_ASSETS', label: 'CADASTRAR/EDITAR ATIVOS' },
+      { key: 'DELETE_ASSETS', label: 'EXCLUIR ATIVOS' },
     ]
   },
   {
@@ -38,10 +48,11 @@ const PERMISSION_GROUPS = [
       { key: 'DELETE_USERS', label: 'EXCLUIR USUÁRIOS' },
       { key: 'MANAGE_BUILDINGS', label: 'GERENCIAR PRÉDIOS' },
       { key: 'MANAGE_SECTORS', label: 'GERENCIAR SETORES' },
-      { key: 'MANAGE_ALTERATION_TYPES', label: 'GERENCIAR TIPOS DE ALTERAÇÃO' },
-      { key: 'MANAGE_ANNOUNCEMENTS', label: 'GERENCIAR MURAL DE AVISOS' },
-      { key: 'ACCESS_TOOLS', label: 'ACESSO A FERRAMENTAS/LOGS' },
-      { key: 'EXPORT_REPORTS', label: 'EXPORTAR PDF/EXCEL' },
+      { key: 'MANAGE_JOB_TITLES', label: 'GERENCIAR CARGOS' },
+      { key: 'MANAGE_ALTERATION_TYPES', label: 'GERENCIAR TIPOS R.A' },
+      { key: 'MANAGE_ANNOUNCEMENTS', label: 'GERENCIAR MURAL' },
+      { key: 'ACCESS_TOOLS', label: 'FERRAMENTAS/SISTEMA' },
+      { key: 'EXPORT_REPORTS', label: 'EXPORTAR RELATÓRIOS' },
     ]
   }
 ];
