@@ -2,6 +2,7 @@
 import React, { useRef, useState } from 'react';
 import { Incident, Building, User } from '../types';
 import { ArrowLeft, Pencil, CheckCircle, XCircle, Download, Loader2, Ban, ShieldCheck, Printer } from 'lucide-react';
+import { formatDateBR } from '../utils/dateUtils';
 
 declare var html2pdf: any;
 
@@ -288,7 +289,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                         <div style={{ display: 'grid', gridTemplateColumns: '75px 60px 60px 1fr', borderBottom: '1px solid #e2e8f0' }}>
                             <div style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
                                 <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>DATA</span>
-                                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#0f172a', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{new Date(incident.date).toLocaleDateString('pt-BR')}</span>
+                                <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#0f172a', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>{formatDateBR(incident.date)}</span>
                             </div>
                             <div style={{ padding: '5px 8px', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
                                 <span style={{ display: 'block', fontSize: '6px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '1px', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>INÍCIO</span>

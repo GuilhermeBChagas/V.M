@@ -8,6 +8,7 @@ import {
 import {
     FileText, Activity, MapPin, AlertTriangle, TrendingUp, CheckCircle, Clock
 } from 'lucide-react';
+import { getTodayLocalDate } from '../utils/dateUtils';
 
 interface ChartsViewProps {
     incidents: Incident[];
@@ -57,7 +58,10 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
         for (let i = 6; i >= 0; i--) {
             const d = new Date(today);
             d.setDate(today.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
             const label = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 
             const count = activeIncidents.filter(inc => inc.date === dateStr).length;
@@ -80,7 +84,7 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
     const totalIncidents = activeIncidents.length;
     const pendingCount = incidents.filter(i => i.status === 'PENDING').length;
     const topSector = sectorData.length > 0 ? sectorData[0].name : '---';
-    const incidentsToday = activeIncidents.filter(i => i.date === new Date().toISOString().split('T')[0]).length;
+    const incidentsToday = activeIncidents.filter(i => i.date === getTodayLocalDate()).length;
 
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {

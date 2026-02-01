@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Incident, Building, User, AlterationType } from '../types';
 import { Save, X, Clock, MapPin, FileText, Loader2, Search, Users, Navigation, Check, AlertTriangle, Plus, UserPlus, UserMinus, Calendar, ChevronDown, Send, Camera, ImagePlus, Trash2, Zap } from 'lucide-react';
 import { normalizeString } from '../utils/stringUtils';
+import { getTodayLocalDate } from '../utils/dateUtils';
 
 interface IncidentFormProps {
     user: User;
@@ -101,12 +102,8 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
             setDescription(initialData.description);
             setPhotos(initialData.photos || []);
         } else {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            setDate(`${year}-${month}-${day}`);
-            setStartTime(now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+            setDate(getTodayLocalDate());
+            setStartTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
             setEndTime('');
             setVigilantsList([user.name]);
 

@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { CheckCircle, Clock, Activity, Zap, Plus, ArrowRight, CalendarClock, FileText, Search, MapPin, Loader2, Navigation, AlertTriangle, X } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
+import { formatDateBR } from '../utils/dateUtils';
 import AnnouncementBoard from './AnnouncementBoard';
 import { User } from '../types';
 
@@ -317,7 +318,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                             {building?.name || 'Local'}
                                         </h4>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap pt-0.5">
-                                            {new Date(incident.date).toLocaleDateString()}
+                                            {formatDateBR(incident.date)}
                                         </span>
                                     </div>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 break-words whitespace-normal leading-relaxed mb-2.5">

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { normalizeString } from '../utils/stringUtils';
+import { formatDateBR } from '../utils/dateUtils';
 
 declare var html2pdf: any;
 
@@ -449,11 +450,14 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         return l.receiverId === currentUser.id || l.operatorId === currentUser.id;
     }).filter(l => {
         // Date filtering
+        // Date filtering - Treat inputs as local midnight
         const loanDate = new Date(l.checkoutTime);
-        if (dateStart && new Date(dateStart) > loanDate) return false;
+        if (dateStart) {
+            const startDate = new Date(`${dateStart}T00:00:00`);
+            if (startDate > loanDate) return false;
+        }
         if (dateEnd) {
-            const endDate = new Date(dateEnd);
-            endDate.setHours(23, 59, 59, 999);
+            const endDate = new Date(`${dateEnd}T23:59:59`);
             if (endDate < loanDate) return false;
         }
         return true;

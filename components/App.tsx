@@ -26,6 +26,7 @@ import { MENU_STRUCTURE, MenuItemDef } from '../constants/menuStructure';
 import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
+import { formatDateBR } from '../utils/dateUtils';
 
 declare var html2pdf: any;
 declare var XLSX: any;
@@ -229,7 +230,10 @@ const IncidentHistory: React.FC<{
 
   filtered = filtered.filter(i => {
     if (!startFilter && !endFilter) return true;
-    const incidentTime = new Date(`${i.date}T${i.startTime}`);
+    // Forçar interpretação local ao remover qualquer 'Z' ou offset se existir e garantir formato ISO básico
+    const incidentTimeStr = `${i.date}T${i.startTime || '00:00'}`;
+    const incidentTime = new Date(incidentTimeStr);
+
     if (startFilter && incidentTime < startFilter) return false;
     if (endFilter && incidentTime > endFilter) return false;
     return true;
@@ -402,7 +406,7 @@ const IncidentHistory: React.FC<{
                   {isCancelled && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Ban size={10} /> Cancelado</span>}
                   {isApproved && <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><CheckCircle size={10} /> Validado</span>}
                   {isPending && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Clock size={10} /> Pendente</span>}
-                  <span className="text-[10px] font-bold text-slate-400 ml-auto whitespace-nowrap">{new Date(incident.date).toLocaleDateString('pt-BR')} • {incident.startTime}</span>
+                  <span className="text-[10px] font-bold text-slate-400 ml-auto whitespace-nowrap">{formatDateBR(incident.date)} • {incident.startTime}</span>
                 </div>
                 <h3 className={`font-black text-sm uppercase mb-1 break-words group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors ${isCancelled ? 'text-slate-500 line-through decoration-red-500 decoration-2' : 'text-slate-800 dark:text-slate-100'}`}>{building?.name || 'Local Desconhecido'}</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium break-words whitespace-normal leading-relaxed">{incident.description}</p>
@@ -460,7 +464,7 @@ const IncidentHistory: React.FC<{
               </div>
               {(dateStart || dateEnd) && (
                 <div className="text-[10px] uppercase font-bold text-slate-500 mt-2">
-                  Período: {dateStart ? new Date(dateStart + 'T00:00').toLocaleDateString('pt-BR') : 'Início'} até {dateEnd ? new Date(dateEnd + 'T00:00').toLocaleDateString('pt-BR') : 'Hoje'}
+                  Período: {dateStart ? formatDateBR(dateStart) : 'Início'} até {dateEnd ? formatDateBR(dateEnd) : 'Hoje'}
                 </div>
               )}
             </div>
@@ -495,7 +499,7 @@ const IncidentHistory: React.FC<{
                   <tr key={i.id} style={{ pageBreakInside: 'avoid' }}>
                     <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.raCode}</td>
                     <td className="border border-slate-900 p-2 text-[10px] font-bold uppercase align-middle">{building?.name || '---'}</td>
-                    <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{new Date(i.date).toLocaleDateString('pt-BR')}</td>
+                    <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{formatDateBR(i.date)}</td>
                     <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.startTime}</td>
                     <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.endTime || '--:--'}</td>
                     <td className="border border-slate-900 p-2 text-[9px] font-medium leading-tight align-top whitespace-pre-wrap break-all">{i.description}</td>
@@ -929,6 +933,7 @@ export function App() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [pendingSubTab, setPendingSubTab] = useState<'INCIDENTS' | 'LOANS'>('INCIDENTS');
   const [openMenus, setOpenMenus] = useState<string[]>([]);
+  const [viewHistory, setViewHistory] = useState<ViewState[]>([]);
 
   // Data States
   const [sectors, setSectors] = useState<Sector[]>([]);
@@ -1284,7 +1289,21 @@ export function App() {
 
   useEffect(() => { if (user && !initialDataLoaded) { loadEssentialData(); } }, [user, initialDataLoaded, loadEssentialData]);
 
-  const handleNavigate = (newView: ViewState) => { setView(newView); setSidebarOpen(false); };
+  const handleNavigate = (newView: ViewState, skipHistory = false) => {
+    if (!skipHistory) setViewHistory(prev => [...prev, view]);
+    setView(newView);
+    setSidebarOpen(false);
+  };
+
+  const handleBack = () => {
+    if (viewHistory.length > 0) {
+      const prevView = viewHistory[viewHistory.length - 1];
+      setViewHistory(prev => prev.slice(0, -1));
+      setView(prevView);
+    } else {
+      setView('DASHBOARD');
+    }
+  };
 
   const handleDeleteSector = (id: string) => {
     if (!can('MANAGE_SECTORS')) return showError('Acesso Negado', 'Sem permissão.');
@@ -1646,7 +1665,7 @@ export function App() {
         />;
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
-        return <IncidentForm user={user!} users={users} incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleNavigate('DASHBOARD'); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} />;
+        return <IncidentForm user={user!} users={users} incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleBack(); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} />;
       case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} />;
       case 'PENDING_APPROVALS':
         return (
@@ -1698,25 +1717,25 @@ export function App() {
           </div>
         );
       case 'BUILDINGS': return <BuildingList buildings={buildings} sectors={sectors} onEdit={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} onDelete={handleDeleteBuilding} onAdd={() => { setEditingBuilding(null); handleNavigate('BUILDING_FORM'); }} onRefresh={fetchStaticData} canEdit={can('MANAGE_BUILDINGS')} canDelete={can('MANAGE_BUILDINGS')} />;
-      case 'BUILDING_FORM': return <BuildingForm initialData={editingBuilding} sectors={sectors} onSave={async (b) => { setSaving(true); try { await supabase.from('buildings').upsert(b); fetchStaticData(); handleNavigate('BUILDINGS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={() => handleNavigate('BUILDINGS')} onDelete={handleDeleteBuilding} isLoading={saving} />;
+      case 'BUILDING_FORM': return <BuildingForm initialData={editingBuilding} sectors={sectors} onSave={async (b) => { setSaving(true); try { await supabase.from('buildings').upsert(b); fetchStaticData(); handleNavigate('BUILDINGS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={handleBack} onDelete={handleDeleteBuilding} isLoading={saving} />;
       case 'USERS': return <UserList users={users} jobTitles={jobTitles} onEdit={(u) => { setEditingUser(u); handleNavigate('USER_FORM'); }} onDelete={handleDeleteUser} onAdd={() => { setEditingUser(null); handleNavigate('USER_FORM'); }} onRefresh={fetchUsers} canEdit={can('MANAGE_USERS')} canDelete={can('DELETE_USERS')} />;
-      case 'USER_FORM': return <UserForm initialData={editingUser} jobTitles={jobTitles} onSave={async (u) => { setSaving(true); try { const { userCode, jobTitleId, photoUrl, signatureUrl, ...rest } = u; await supabase.from('users').upsert({ ...rest, user_code: userCode, job_title_id: jobTitleId, photo_url: photoUrl, signature_url: signatureUrl }); fetchUsers(); handleNavigate('USERS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={() => handleNavigate('USERS')} onDelete={handleDeleteUser} isLoading={saving} />;
+      case 'USER_FORM': return <UserForm initialData={editingUser} jobTitles={jobTitles} onSave={async (u) => { setSaving(true); try { const { userCode, jobTitleId, photoUrl, signatureUrl, ...rest } = u; await supabase.from('users').upsert({ ...rest, user_code: userCode, job_title_id: jobTitleId, photo_url: photoUrl, signature_url: signatureUrl }); fetchUsers(); handleNavigate('USERS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={handleBack} onDelete={handleDeleteUser} isLoading={saving} />;
       case 'JOB_TITLES': return <JobTitleList jobTitles={jobTitles} onEdit={(t) => { setEditingJobTitle(t); handleNavigate('JOB_TITLE_FORM'); }} onDelete={handleDeleteJobTitle} onAdd={() => { setEditingJobTitle(null); handleNavigate('JOB_TITLE_FORM'); }} canEdit={can('MANAGE_JOB_TITLES')} canDelete={can('MANAGE_JOB_TITLES')} />;
-      case 'JOB_TITLE_FORM': return <JobTitleForm initialData={editingJobTitle} onSave={handleSaveJobTitle} onCancel={() => handleNavigate('JOB_TITLES')} onDelete={handleDeleteJobTitle} />;
+      case 'JOB_TITLE_FORM': return <JobTitleForm initialData={editingJobTitle} onSave={handleSaveJobTitle} onCancel={handleBack} onDelete={handleDeleteJobTitle} />;
       case 'VEHICLES': return <VehicleList items={vehicles} onAdd={() => { setEditingVehicle(null); handleNavigate('VEHICLE_FORM'); }} onEdit={(i) => { setEditingVehicle(i); handleNavigate('VEHICLE_FORM'); }} onDelete={(id) => handleDeleteAsset('vehicles', id, 'Veículo')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;
-      case 'VEHICLE_FORM': return <VehicleForm initialData={editingVehicle} onSave={(i: any) => handleSaveAsset('vehicles', i, 'VEHICLES', 'Veículo')} onCancel={() => handleNavigate('VEHICLES')} onDelete={() => editingVehicle && handleDeleteAsset('vehicles', editingVehicle.id, 'Veículo')} isLoading={saving} />;
+      case 'VEHICLE_FORM': return <VehicleForm initialData={editingVehicle} onSave={(i: any) => handleSaveAsset('vehicles', i, 'VEHICLES', 'Veículo')} onCancel={handleBack} onDelete={() => editingVehicle && handleDeleteAsset('vehicles', editingVehicle.id, 'Veículo')} isLoading={saving} />;
       case 'VESTS': return <VestList items={vests} onAdd={() => { setEditingVest(null); handleNavigate('VEST_FORM'); }} onEdit={(i) => { setEditingVest(i); handleNavigate('VEST_FORM'); }} onDelete={(id) => handleDeleteAsset('vests', id, 'Colete')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;
-      case 'VEST_FORM': return <VestForm initialData={editingVest} onSave={(i: any) => handleSaveAsset('vests', i, 'VESTS', 'Colete')} onCancel={() => handleNavigate('VESTS')} onDelete={() => editingVest && handleDeleteAsset('vests', editingVest.id, 'Colete')} isLoading={saving} />;
+      case 'VEST_FORM': return <VestForm initialData={editingVest} onSave={(i: any) => handleSaveAsset('vests', i, 'VESTS', 'Colete')} onCancel={handleBack} onDelete={() => editingVest && handleDeleteAsset('vests', editingVest.id, 'Colete')} isLoading={saving} />;
       case 'RADIOS': return <RadioList items={radios} onAdd={() => { setEditingRadio(null); handleNavigate('RADIO_FORM'); }} onEdit={(i) => { setEditingRadio(i); handleNavigate('RADIO_FORM'); }} onDelete={(id) => handleDeleteAsset('radios', id, 'Rádio')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;
-      case 'RADIO_FORM': return <RadioForm initialData={editingRadio} onSave={(i: any) => handleSaveAsset('radios', i, 'RADIOS', 'Rádio')} onCancel={() => handleNavigate('RADIOS')} onDelete={() => editingRadio && handleDeleteAsset('radios', editingRadio.id, 'Rádio')} isLoading={saving} />;
+      case 'RADIO_FORM': return <RadioForm initialData={editingRadio} onSave={(i: any) => handleSaveAsset('radios', i, 'RADIOS', 'Rádio')} onCancel={handleBack} onDelete={() => editingRadio && handleDeleteAsset('radios', editingRadio.id, 'Rádio')} isLoading={saving} />;
       case 'EQUIPMENTS': return <EquipmentList items={equipments} onAdd={() => { setEditingEquipment(null); handleNavigate('EQUIPMENT_FORM'); }} onEdit={(i) => { setEditingEquipment(i); handleNavigate('EQUIPMENT_FORM'); }} onDelete={(id) => handleDeleteAsset('equipments', id, 'Equipamento')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;
-      case 'EQUIPMENT_FORM': return <EquipmentForm initialData={editingEquipment} onSave={(i: any) => handleSaveAsset('equipments', i, 'EQUIPMENTS', 'Equipamento')} onCancel={() => handleNavigate('EQUIPMENTS')} onDelete={() => editingEquipment && handleDeleteAsset('equipments', editingEquipment.id, 'Equipamento')} isLoading={saving} />;
+      case 'EQUIPMENT_FORM': return <EquipmentForm initialData={editingEquipment} onSave={(i: any) => handleSaveAsset('equipments', i, 'EQUIPMENTS', 'Equipamento')} onCancel={handleBack} onDelete={() => editingEquipment && handleDeleteAsset('equipments', editingEquipment.id, 'Equipamento')} isLoading={saving} />;
       case 'LOANS': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} />;
       case 'LOAN_HISTORY': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} initialTab="HISTORY" isReportView={true} loans={loans} onRefresh={() => fetchLoans(false)} hasMore={hasMoreLoans} isLoadingMore={loadingMoreLoans} onLoadMore={() => fetchLoans(true)} onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} />;
       case 'SECTORS': return <SectorList sectors={sectors} onEdit={(s) => { setEditingSector(s); handleNavigate('SECTOR_FORM'); }} onDelete={handleDeleteSector} onAdd={() => { setEditingSector(null); handleNavigate('SECTOR_FORM'); }} canEdit={can('MANAGE_SECTORS')} canDelete={can('MANAGE_SECTORS')} />;
-      case 'SECTOR_FORM': return <SectorForm initialData={editingSector} onSave={handleSaveSector} onCancel={() => handleNavigate('SECTORS')} onDelete={handleDeleteSector} />;
+      case 'SECTOR_FORM': return <SectorForm initialData={editingSector} onSave={handleSaveSector} onCancel={handleBack} onDelete={handleDeleteSector} />;
       case 'ALTERATION_TYPES': return <AlterationTypeManager types={alterationTypes} onAdd={async (name) => { const newType = { id: crypto.randomUUID(), name, order: alterationTypes.length }; await handleSaveAlterationType(newType); }} onEdit={(t) => { setEditingAlterationType(t); setView('ALTERATION_TYPE_FORM'); }} onDelete={handleDeleteAlterationType} onReorder={handleReorderAlterationTypes} canManage={can('MANAGE_ALTERATION_TYPES')} />;
-      case 'ALTERATION_TYPE_FORM': return <AlterationTypeForm initialData={editingAlterationType} onSave={handleSaveAlterationType} onCancel={() => handleNavigate('ALTERATION_TYPES')} onDelete={handleDeleteAlterationType} />;
+      case 'ALTERATION_TYPE_FORM': return <AlterationTypeForm initialData={editingAlterationType} onSave={handleSaveAlterationType} onCancel={handleBack} onDelete={handleDeleteAlterationType} />;
       case 'CHARTS': return <ChartsView incidents={incidents} buildings={buildings} sectors={sectors} />;
       case 'MAP': return <MapView buildings={buildings} onNavigateBuilding={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} />;
       case 'LOGS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} onLogAction={createLog} initialTab='LOGS' />;
@@ -1726,7 +1745,7 @@ export function App() {
       case 'DATABASE_TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} initialTab='DATABASE' onLogAction={createLog} permissions={permissions} onUpdatePermissions={handleUpdatePermissions} />;
       case 'SYSTEM_INFO': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='SYSTEM' />;
 
-      case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} authorRole={users.find(u => u.id === selectedIncident?.userId)?.role} authorJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.id === selectedIncident?.userId)?.jobTitleId)?.name} approverRole={users.find(u => u.name === selectedIncident?.approvedBy)?.role} approverJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.name === selectedIncident?.approvedBy)?.jobTitleId)?.name} onBack={() => handleNavigate('DASHBOARD')} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} currentUser={user!} />;
+      case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} authorRole={users.find(u => u.id === selectedIncident?.userId)?.role} authorJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.id === selectedIncident?.userId)?.jobTitleId)?.name} approverRole={users.find(u => u.name === selectedIncident?.approvedBy)?.role} approverJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.name === selectedIncident?.approvedBy)?.jobTitleId)?.name} onBack={handleBack} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} currentUser={user!} />;
       case 'ANNOUNCEMENTS': return <AnnouncementManager currentUser={user!} users={users} onAnnouncementCreated={fetchAnnouncementsCount} canManage={can('MANAGE_ANNOUNCEMENTS')} />;
       case 'PROFILE': return <ProfileView user={user!} onUpdatePassword={handleUpdatePassword} onUpdateProfile={handleUpdateProfile} jobTitles={jobTitles} />;
       default: return <Dashboard
@@ -1822,31 +1841,31 @@ export function App() {
   };
 
   const menuActions: Record<string, () => void> = {
-    'dashboard': () => handleNavigate('DASHBOARD'),
-    'announcements': () => handleNavigate('ANNOUNCEMENTS'),
-    'new_record': () => { setEditingIncident(null); handleNavigate('NEW_RECORD'); },
-    'loans': () => handleNavigate('LOANS'),
-    'history_incidents': () => handleNavigate('HISTORY'),
-    'history_loans': () => handleNavigate('LOAN_HISTORY'),
-    'pending_incidents': () => { setPendingSubTab('INCIDENTS'); handleNavigate('PENDING_APPROVALS'); },
-    'pending_loans': () => { setPendingSubTab('LOANS'); handleNavigate('PENDING_APPROVALS'); },
-    'map': () => handleNavigate('MAP'),
-    'charts': () => handleNavigate('CHARTS'),
-    'reg_buildings': () => handleNavigate('BUILDINGS'),
-    'reg_types': () => handleNavigate('ALTERATION_TYPES'),
-    'reg_sectors': () => handleNavigate('SECTORS'),
-    'reg_users': () => handleNavigate('USERS'),
-    'reg_job_titles': () => handleNavigate('JOB_TITLES'),
-    'reg_vehicles': () => handleNavigate('VEHICLES'),
-    'reg_vests': () => handleNavigate('VESTS'),
-    'reg_radios': () => handleNavigate('RADIOS'),
-    'reg_equipments': () => handleNavigate('EQUIPMENTS'),
-    'tool_appearance': () => handleNavigate('TOOLS'),
-    'tool_import': () => handleNavigate('IMPORT_EXPORT'),
-    'tool_permissions': () => handleNavigate('PERMISSIONS_TOOLS'),
-    'tool_logs': () => handleNavigate('LOGS'),
-    'tool_database': () => handleNavigate('DATABASE_TOOLS'),
-    'tool_system': () => handleNavigate('SYSTEM_INFO'),
+    'dashboard': () => { setViewHistory([]); handleNavigate('DASHBOARD', true); },
+    'announcements': () => { setViewHistory([]); handleNavigate('ANNOUNCEMENTS', true); },
+    'new_record': () => { setViewHistory([]); setEditingIncident(null); handleNavigate('NEW_RECORD', true); },
+    'loans': () => { setViewHistory([]); handleNavigate('LOANS', true); },
+    'history_incidents': () => { setViewHistory([]); handleNavigate('HISTORY', true); },
+    'history_loans': () => { setViewHistory([]); handleNavigate('LOAN_HISTORY', true); },
+    'pending_incidents': () => { setViewHistory([]); setPendingSubTab('INCIDENTS'); handleNavigate('PENDING_APPROVALS', true); },
+    'pending_loans': () => { setViewHistory([]); setPendingSubTab('LOANS'); handleNavigate('PENDING_APPROVALS', true); },
+    'map': () => { setViewHistory([]); handleNavigate('MAP', true); },
+    'charts': () => { setViewHistory([]); handleNavigate('CHARTS', true); },
+    'reg_buildings': () => { setViewHistory([]); handleNavigate('BUILDINGS', true); },
+    'reg_types': () => { setViewHistory([]); handleNavigate('ALTERATION_TYPES', true); },
+    'reg_sectors': () => { setViewHistory([]); handleNavigate('SECTORS', true); },
+    'reg_users': () => { setViewHistory([]); handleNavigate('USERS', true); },
+    'reg_job_titles': () => { setViewHistory([]); handleNavigate('JOB_TITLES', true); },
+    'reg_vehicles': () => { setViewHistory([]); handleNavigate('VEHICLES', true); },
+    'reg_vests': () => { setViewHistory([]); handleNavigate('VESTS', true); },
+    'reg_radios': () => { setViewHistory([]); handleNavigate('RADIOS', true); },
+    'reg_equipments': () => { setViewHistory([]); handleNavigate('EQUIPMENTS', true); },
+    'tool_appearance': () => { setViewHistory([]); handleNavigate('TOOLS', true); },
+    'tool_import': () => { setViewHistory([]); handleNavigate('IMPORT_EXPORT', true); },
+    'tool_permissions': () => { setViewHistory([]); handleNavigate('PERMISSIONS_TOOLS', true); },
+    'tool_logs': () => { setViewHistory([]); handleNavigate('LOGS', true); },
+    'tool_database': () => { setViewHistory([]); handleNavigate('DATABASE_TOOLS', true); },
+    'tool_system': () => { setViewHistory([]); handleNavigate('SYSTEM_INFO', true); },
   };
 
   const handleMenuClick = (item: MenuItemDef) => {
