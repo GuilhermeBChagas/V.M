@@ -14,6 +14,7 @@ interface IncidentFormProps {
     initialData?: Incident | null;
     isLoading?: boolean;
     preSelectedBuildingId?: string;
+    incidents?: Incident[];
 }
 
 export const IncidentForm: React.FC<IncidentFormProps> = ({
@@ -26,8 +27,37 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
     onCancel,
     initialData,
     isLoading,
-    preSelectedBuildingId
+    preSelectedBuildingId,
+    incidents = []
 }) => {
+    // Suggested Vigilants logic
+    const suggestedVigilantNames = React.useMemo(() => {
+        if (!incidents || incidents.length === 0) return [];
+        // Filtra ocorrências do usuário logado, ordena por data decrescente
+        const userPastVigilants = incidents
+            .filter(i => i.userId === user.id)
+            .sort((a, b) => {
+                const dateA = new Date(a.timestamp || 0).getTime();
+                const dateB = new Date(b.timestamp || 0).getTime();
+                return dateB - dateA;
+            });
+
+        const namesSet = new Set<string>();
+        userPastVigilants.forEach(inc => {
+            if (inc.vigilants) {
+                inc.vigilants.split(',').forEach(v => {
+                    const name = v.trim();
+                    if (name && name !== user.name) {
+                        namesSet.add(name);
+                    }
+                });
+            }
+        });
+
+        // Retorna os top 5 nomes mais recentes
+        return Array.from(namesSet).slice(0, 5);
+    }, [incidents, user.id, user.name]);
+
     // Form State
     const [buildingId, setBuildingId] = useState('');
     const [vigilantsList, setVigilantsList] = useState<string[]>([]);
@@ -245,9 +275,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
         if (!endTime) {
             errors.push("Hora Final");
         }
-        if (!description || description.trim() === '') {
-            errors.push("Relato da Alteração");
-        }
+        // Descrição não é mais obrigatória
 
         // Se houver campos não preenchidos, exibir na interface
         if (errors.length > 0) {
@@ -468,6 +496,40 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                             </div>
                             {isVigilantDropdownOpen && (
                                 <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-64 overflow-y-auto animate-in slide-in-from-top-2">
+                                    {!vigilantSearch && suggestedVigilantNames.length > 0 && (
+                                        <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                <Zap size={12} className="text-amber-500" /> Sugestões Recentes
+                                            </p>
+                                        </div>
+                                    )}
+                                    {!vigilantSearch && suggestedVigilantNames.map(name => {
+                                        const isAlreadyAdded = vigilantsList.includes(name);
+                                        const userObj = users.find(u => u.name === name);
+                                        return (
+                                            <button
+                                                key={`suggested-${name}`}
+                                                type="button"
+                                                onClick={() => isAlreadyAdded ? handleRemoveVigilant(name) : handleAddVigilant(name)}
+                                                className="w-full p-3.5 flex items-center gap-3 text-left hover:bg-amber-50/50 dark:hover:bg-amber-900/10 border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors group"
+                                            >
+                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-black uppercase transition-all ${isAlreadyAdded ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/30'}`}>
+                                                    {isAlreadyAdded ? <Check size={16} /> : name.charAt(0)}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`text-sm font-bold uppercase truncate leading-none ${isAlreadyAdded ? 'text-emerald-600' : 'text-slate-800 dark:text-slate-100'}`}>{name}</p>
+                                                    {userObj && <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Matrícula: {userObj.matricula}</p>}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+
+                                    {(!vigilantSearch && suggestedVigilantNames.length > 0) && (
+                                        <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-y border-slate-100 dark:border-slate-700">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Todos os Usuários</p>
+                                        </div>
+                                    )}
+
                                     {filteredUsers.map(u => {
                                         const isAlreadyAdded = vigilantsList.includes(u.name);
                                         return (
@@ -571,13 +633,12 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                         <span className={`text-[10px] font-bold ${description.length >= 2000 ? 'text-red-500' : 'text-slate-400'}`}>{description.length}/2000</span>
                     </div>
                     <textarea
-                        required
                         value={description}
                         onChange={e => setDescription(e.target.value)}
                         maxLength={2000}
                         rows={6}
                         className="w-full p-6 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-3xl text-sm font-bold outline-none focus:border-blue-500 transition-all resize-none shadow-inner"
-                        placeholder="Descreva a alteração"
+                        placeholder="Descreva a alteração (Opcional)"
                     />
                 </div>
 

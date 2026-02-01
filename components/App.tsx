@@ -1608,7 +1608,15 @@ export function App() {
 
   const handleRegister = async (userData: Omit<User, 'id'>) => {
     try {
-      const { data, error } = await supabase.from('users').insert({ ...userData, status: 'PENDING' }).select().single();
+      const { userCode, jobTitleId, photoUrl, signatureUrl, ...rest } = userData;
+      const { data, error } = await supabase.from('users').insert({
+        ...rest,
+        user_code: userCode,
+        job_title_id: jobTitleId,
+        photo_url: photoUrl,
+        signature_url: signatureUrl,
+        status: 'PENDING'
+      }).select().single();
       if (error) throw error;
       if (data) createLog('USER_REGISTER', `Novo cadastro: ${userData.name}`, data as User);
       showAlert("Sucesso", "Cadastro realizado. Aguarde aprovação.");
@@ -1638,7 +1646,7 @@ export function App() {
         />;
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
-        return <IncidentForm user={user!} users={users} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleNavigate('DASHBOARD'); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} />;
+        return <IncidentForm user={user!} users={users} incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleNavigate('DASHBOARD'); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} />;
       case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} />;
       case 'PENDING_APPROVALS':
         return (
@@ -1692,7 +1700,7 @@ export function App() {
       case 'BUILDINGS': return <BuildingList buildings={buildings} sectors={sectors} onEdit={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} onDelete={handleDeleteBuilding} onAdd={() => { setEditingBuilding(null); handleNavigate('BUILDING_FORM'); }} onRefresh={fetchStaticData} canEdit={can('MANAGE_BUILDINGS')} canDelete={can('MANAGE_BUILDINGS')} />;
       case 'BUILDING_FORM': return <BuildingForm initialData={editingBuilding} sectors={sectors} onSave={async (b) => { setSaving(true); try { await supabase.from('buildings').upsert(b); fetchStaticData(); handleNavigate('BUILDINGS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={() => handleNavigate('BUILDINGS')} onDelete={handleDeleteBuilding} isLoading={saving} />;
       case 'USERS': return <UserList users={users} jobTitles={jobTitles} onEdit={(u) => { setEditingUser(u); handleNavigate('USER_FORM'); }} onDelete={handleDeleteUser} onAdd={() => { setEditingUser(null); handleNavigate('USER_FORM'); }} onRefresh={fetchUsers} canEdit={can('MANAGE_USERS')} canDelete={can('DELETE_USERS')} />;
-      case 'USER_FORM': return <UserForm initialData={editingUser} jobTitles={jobTitles} onSave={async (u) => { setSaving(true); try { const { userCode, jobTitleId, ...rest } = u; await supabase.from('users').upsert({ ...rest, user_code: userCode, job_title_id: jobTitleId }); fetchUsers(); handleNavigate('USERS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={() => handleNavigate('USERS')} onDelete={handleDeleteUser} isLoading={saving} />;
+      case 'USER_FORM': return <UserForm initialData={editingUser} jobTitles={jobTitles} onSave={async (u) => { setSaving(true); try { const { userCode, jobTitleId, photoUrl, signatureUrl, ...rest } = u; await supabase.from('users').upsert({ ...rest, user_code: userCode, job_title_id: jobTitleId, photo_url: photoUrl, signature_url: signatureUrl }); fetchUsers(); handleNavigate('USERS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={() => handleNavigate('USERS')} onDelete={handleDeleteUser} isLoading={saving} />;
       case 'JOB_TITLES': return <JobTitleList jobTitles={jobTitles} onEdit={(t) => { setEditingJobTitle(t); handleNavigate('JOB_TITLE_FORM'); }} onDelete={handleDeleteJobTitle} onAdd={() => { setEditingJobTitle(null); handleNavigate('JOB_TITLE_FORM'); }} canEdit={can('MANAGE_JOB_TITLES')} canDelete={can('MANAGE_JOB_TITLES')} />;
       case 'JOB_TITLE_FORM': return <JobTitleForm initialData={editingJobTitle} onSave={handleSaveJobTitle} onCancel={() => handleNavigate('JOB_TITLES')} onDelete={handleDeleteJobTitle} />;
       case 'VEHICLES': return <VehicleList items={vehicles} onAdd={() => { setEditingVehicle(null); handleNavigate('VEHICLE_FORM'); }} onEdit={(i) => { setEditingVehicle(i); handleNavigate('VEHICLE_FORM'); }} onDelete={(id) => handleDeleteAsset('vehicles', id, 'Veículo')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;

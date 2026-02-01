@@ -50,7 +50,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                 signatureUrl: initialData.signatureUrl || ''
             });
         } else {
-            setFormData(prev => ({ ...prev, id: Date.now().toString() }));
+            setFormData(prev => ({ ...prev, id: crypto.randomUUID() }));
         }
     }, [initialData]);
 
@@ -73,7 +73,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
         // Email não é mais obrigatório na verificação
         if (formData.name && formData.cpf && formData.matricula) {
             onSave({
-                id: formData.id || Date.now().toString(),
+                id: formData.id || crypto.randomUUID(),
                 name: formData.name,
                 cpf: formData.cpf,
                 matricula: formData.matricula,
