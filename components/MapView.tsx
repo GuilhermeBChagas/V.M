@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Building } from '../types';
-import { MapPin, Navigation, Info } from 'lucide-react';
+import { MapPin, Navigation, Info, Crosshair, Loader2 } from 'lucide-react';
 
 // --- Fix for Leaflet default icons in React ---
 // This is necessary because the default icon paths are often broken in bundlers
@@ -33,6 +33,7 @@ const MapController: React.FC = () => {
     return null;
 };
 
+
 // Component to handle auto-fitting bounds
 const MapBounds: React.FC<{ markers: [number, number][], active: boolean }> = ({ markers, active }) => {
     const map = useMap();
@@ -53,7 +54,57 @@ const MapBounds: React.FC<{ markers: [number, number][], active: boolean }> = ({
     return null;
 };
 
+// Component to handle user location marking
+const UserLocationMarker: React.FC<{ position: [number, number] | null }> = ({ position }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        if (position) {
+            map.flyTo(position, 16);
+        }
+    }, [map, position]);
+
+    if (!position) return null;
+
+    const userIcon = L.divIcon({
+        className: 'user-location-icon',
+        html: `<div class="relative w-6 h-6">
+                <div class="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-25"></div>
+                <div class="absolute inset-1.5 bg-blue-600 rounded-full border-2 border-white shadow-lg"></div>
+               </div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+    });
+
+    return <Marker position={position} icon={userIcon} zIndexOffset={1000} />;
+};
+
 export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding }) => {
+    const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
+    const [isLocating, setIsLocating] = useState(false);
+
+    const handleLocateUser = () => {
+        setIsLocating(true);
+        if (!navigator.geolocation) {
+            alert("Seu navegador não suporta geolocalização.");
+            setIsLocating(false);
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setUserPosition([pos.coords.latitude, pos.coords.longitude]);
+                setIsLocating(false);
+            },
+            (err) => {
+                console.error("Erro GPS:", err);
+                alert("Não foi possível obter sua localização atual.");
+                setIsLocating(false);
+            },
+            { enableHighAccuracy: true }
+        );
+    };
+
     // 1. Filter and parse valid coordinates
     const validBuildings = useMemo(() => {
         return buildings.filter(b => {
@@ -102,8 +153,8 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding 
 
     return (
         <div className="space-y-4 animate-fade-in">
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
-                <div className="flex items-center gap-3">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 no-print transition-all">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
                         <MapPin size={22} strokeWidth={2} />
                     </div>
@@ -114,9 +165,20 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding 
                         </p>
                     </div>
                 </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                        onClick={handleLocateUser}
+                        disabled={isLocating}
+                        className="flex-1 sm:flex-none px-4 py-2.5 bg-brand-600 text-white rounded-xl text-xs font-black uppercase hover:bg-brand-700 flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+                    >
+                        {isLocating ? <Loader2 size={16} className="animate-spin" /> : <Crosshair size={16} />}
+                        Minha Localização (GPS)
+                    </button>
+                </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden h-[70vh] md:h-[600px] relative z-0">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden h-[70vh] md:h-[600px] relative z-0 transition-all">
                 <MapContainer
                     center={defaultCenter}
                     zoom={13}
@@ -131,7 +193,8 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding 
                     />
 
                     {/* Auto-fit bounds controller */}
-                    <MapBounds markers={markersPos} active={true} />
+                    <MapBounds markers={markersPos} active={!userPosition} />
+                    <UserLocationMarker position={userPosition} />
                     <MapController />
 
                     {validBuildings.map((b, index) => (
