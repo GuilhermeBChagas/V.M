@@ -10,6 +10,7 @@ export enum UserRole {
 export type PermissionKey =
   // Dashboard & General
   | 'VIEW_DASHBOARD'
+  | 'VIEW_MAP'
   | 'VIEW_CHARTS'
   | 'VIEW_ANNOUNCEMENTS'
 

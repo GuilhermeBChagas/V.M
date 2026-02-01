@@ -13,6 +13,15 @@ interface PermissionsViewProps {
 
 const PERMISSION_GROUPS = [
   {
+    category: 'PAINEL E MONITORAMENTO',
+    items: [
+      { key: 'VIEW_DASHBOARD', label: 'ACESSAR PAINEL PRINCIPAL (DASHBOARD)' },
+      { key: 'VIEW_CHARTS', label: 'ACESSAR ESTATÍSTICAS E GRÁFICOS' },
+      { key: 'VIEW_ANNOUNCEMENTS', label: 'VISUALIZAR MURAL DE AVISOS' },
+      { key: 'VIEW_MAP', label: 'VISUALIZAR MAPA' },
+    ]
+  },
+  {
     category: 'REGISTROS (R.A)',
     items: [
       { key: 'CREATE_INCIDENT', label: 'CRIAR NOVO REGISTRO' },

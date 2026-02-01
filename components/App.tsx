@@ -38,6 +38,7 @@ declare const __BUILD_DATE__: string;
 const DEFAULT_PERMISSIONS: SystemPermissionMap = {
   // Dashboard & General
   VIEW_DASHBOARD: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA, UserRole.OUTROS],
+  VIEW_MAP: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA, UserRole.OUTROS],
   VIEW_CHARTS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   VIEW_ANNOUNCEMENTS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA, UserRole.OUTROS],
 
@@ -874,7 +875,7 @@ export function App() {
   const [saving, setSaving] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [pendingSubTab, setPendingSubTab] = useState<'INCIDENTS' | 'LOANS'>('INCIDENTS');
-  const [openMenus, setOpenMenus] = useState<string[]>(['history_root', 'pending_root', 'registrations_root', 'tools_root']);
+  const [openMenus, setOpenMenus] = useState<string[]>([]);
 
   // Data States
   const [sectors, setSectors] = useState<Sector[]>([]);

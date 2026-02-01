@@ -18,6 +18,21 @@ interface MapViewProps {
     onNavigateBuilding?: (building: Building) => void;
 }
 
+// Component to handle map invalidation and interactions
+const MapController: React.FC = () => {
+    const map = useMap();
+
+    useEffect(() => {
+        // Invalidate size after mount to ensure tiles load correctly
+        const timer = setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [map]);
+
+    return null;
+};
+
 // Component to handle auto-fitting bounds
 const MapBounds: React.FC<{ markers: [number, number][], active: boolean }> = ({ markers, active }) => {
     const map = useMap();
@@ -57,6 +72,11 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding 
     const markersPos = useMemo(() =>
         validBuildings.map(b => [b.parsedLat, b.parsedLng] as [number, number]),
         [validBuildings]);
+
+    // Debug logging
+    useEffect(() => {
+        console.log(`[MapView] Received ${buildings.length} buildings, ${validBuildings.length} valid coordinates.`);
+    }, [buildings, validBuildings]);
 
     // Default center (e.g., city center) if no buildings
     // Using a generic fallback (São Paulo/Brazil) or 0,0 if irrelevant. 
@@ -112,6 +132,7 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding 
 
                     {/* Auto-fit bounds controller */}
                     <MapBounds markers={markersPos} active={true} />
+                    <MapController />
 
                     {validBuildings.map((b, index) => (
                         <Marker
