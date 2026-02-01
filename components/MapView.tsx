@@ -116,7 +116,7 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding 
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden h-[600px] relative z-0">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden h-[70vh] md:h-[600px] relative z-0">
                 <MapContainer
                     center={defaultCenter}
                     zoom={13}
@@ -169,6 +169,7 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding 
                                     {onNavigateBuilding && (
                                         <button
                                             onClick={() => onNavigateBuilding(b)}
+                                            onTouchEnd={() => onNavigateBuilding(b)}
                                             className="mt-3 w-full flex items-center justify-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors"
                                         >
                                             <Navigation size={12} /> Ver Detalhes
