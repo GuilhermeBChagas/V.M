@@ -395,17 +395,17 @@ const IncidentHistory: React.FC<{
           else if (isCancelled) borderClass = 'border-l-4 border-red-500';
           else if (isPending) borderClass = 'border-l-4 border-amber-500';
           return (
-            <div key={incident.id} onClick={() => onView(incident)} className={`bg-white dark:bg-slate-900 p-4 rounded-r-xl ${borderClass} shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-3 cursor-pointer group relative overflow-hidden ${isCancelled ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}>
-              <div className="flex-1 min-w-0 z-10">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="bg-slate-800 text-white text-xs font-black px-2 py-0.5 rounded uppercase tracking-wider">RA {incident.raCode}</span>
-                  {isCancelled && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-black px-2 py-0.5 rounded uppercase flex items-center gap-1"><Ban size={10} /> Cancelado</span>}
-                  {isApproved && <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-black px-2 py-0.5 rounded uppercase flex items-center gap-1"><CheckCircle size={10} /> Validado</span>}
-                  {isPending && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-black px-2 py-0.5 rounded uppercase flex items-center gap-1"><Clock size={10} /> Pendente</span>}
-                  <span className="text-xs font-bold text-slate-400 ml-auto md:ml-2">{new Date(incident.date).toLocaleDateString('pt-BR')} • {incident.startTime}</span>
+            <div key={incident.id} onClick={() => onView(incident)} className={`bg-white dark:bg-slate-900 p-4 rounded-xl ${borderClass} shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer group relative overflow-hidden ${isCancelled ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}>
+              <div className="flex-1 w-full min-w-0 z-10">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="bg-slate-800 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">RA {incident.raCode}</span>
+                  {isCancelled && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Ban size={10} /> Cancelado</span>}
+                  {isApproved && <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><CheckCircle size={10} /> Validado</span>}
+                  {isPending && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Clock size={10} /> Pendente</span>}
+                  <span className="text-[10px] font-bold text-slate-400 ml-auto whitespace-nowrap">{new Date(incident.date).toLocaleDateString('pt-BR')} • {incident.startTime}</span>
                 </div>
-                <h3 className={`font-black text-sm uppercase mb-1 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors ${isCancelled ? 'text-slate-500 line-through decoration-red-500 decoration-2' : 'text-slate-800 dark:text-slate-100'}`}>{building?.name || 'Local Desconhecido'}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate font-medium">{incident.description}</p>
+                <h3 className={`font-black text-sm uppercase mb-1 break-words group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors ${isCancelled ? 'text-slate-500 line-through decoration-red-500 decoration-2' : 'text-slate-800 dark:text-slate-100'}`}>{building?.name || 'Local Desconhecido'}</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium break-words whitespace-normal leading-relaxed">{incident.description}</p>
               </div>
               <div className="w-full md:w-auto mt-2 md:mt-0 flex-shrink-0 z-20" onClick={(e) => e.stopPropagation()}>
                 {isPending && canApprove && (
