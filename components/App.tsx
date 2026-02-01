@@ -1656,8 +1656,7 @@ export function App() {
   const pendingLoansCount = Array.from(new Set(
     loans.filter(l => l.status === 'PENDING' && (
       l.receiverId === user.id ||
-      l.operatorId === user.id ||
-      can('APPROVE_LOAN')
+      l.operatorId === user.id
     )).map(l => l.batchId || l.id)
   )).length;
   // Badge total é a soma
