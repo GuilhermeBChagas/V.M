@@ -72,7 +72,10 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
             setPhotos(initialData.photos || []);
         } else {
             const now = new Date();
-            setDate(now.toISOString().split('T')[0]);
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            setDate(`${year}-${month}-${day}`);
             setStartTime(now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
             setEndTime('');
             setVigilantsList([user.name]);

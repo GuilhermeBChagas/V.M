@@ -133,7 +133,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="space-y-8 animate-fade-in pb-10">
             {/* SAUDAÇÃO E HEADER */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
+                <div className="text-center md:text-left w-full">
                     <h1 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">
                         Olá, {currentUser.name.split(' ')[0]}
                     </h1>
