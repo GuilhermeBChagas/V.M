@@ -219,16 +219,25 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
                                 />
                             </div>
                             <div className="space-y-1.5 pr-1 overflow-y-auto custom-scrollbar max-h-[500px]">
-                                {users.filter(u => normalizeString(u.name || '').includes(normalizeString(userSearch)) || normalizeString(u.matricula || '').includes(normalizeString(userSearch))).map(user => (
-                                    <button
-                                        key={user.id}
-                                        onClick={() => setSelectedUserId(user.id)}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all flex flex-col ${selectedUserId === user.id ? 'bg-purple-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'}`}
-                                    >
-                                        <span className="truncate">{user.name}</span>
-                                        <span className={`text-[8px] ${selectedUserId === user.id ? 'text-purple-200' : 'text-slate-400'}`}>{user.role} {user.matricula && `• ${user.matricula}`}</span>
-                                    </button>
-                                ))}
+                                {userSearch.trim().length > 0 ? (
+                                    users.filter(u => normalizeString(u.name || '').includes(normalizeString(userSearch)) || normalizeString(u.matricula || '').includes(normalizeString(userSearch))).map(user => (
+                                        <button
+                                            key={user.id}
+                                            onClick={() => setSelectedUserId(user.id)}
+                                            className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all flex flex-col ${selectedUserId === user.id ? 'bg-purple-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'}`}
+                                        >
+                                            <span className="truncate">{user.name}</span>
+                                            <span className={`text-[8px] ${selectedUserId === user.id ? 'text-purple-200' : 'text-slate-400'}`}>{user.role} {user.matricula && `• ${user.matricula}`}</span>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                                        <Search size={24} className="text-slate-200 dark:text-slate-700 mb-2" />
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                                            Digite um nome ou matrícula para pesquisar e selecionar um usuário
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

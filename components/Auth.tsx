@@ -130,17 +130,17 @@ export const Auth: React.FC<AuthProps> = ({
          </div>
 
          {/* Main Login Container */}
-         <div className="relative z-10 w-full max-w-[380px] px-6 py-6 md:py-8 animate-in fade-in zoom-in-95 duration-700">
+         <div className="relative z-10 w-full max-w-[380px] px-6 py-4 md:py-8 animate-in fade-in zoom-in-95 duration-700">
 
             {/* Logo and branding area */}
             <div className="flex flex-col items-center mb-4 md:mb-6 text-center">
                <div className="relative group mb-4 md:mb-6">
                   <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full group-hover:bg-blue-400/30 transition-all duration-500"></div>
-                  <div className="relative w-24 h-24 md:w-28 md:h-28 flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
+                  <div className="relative w-20 h-20 md:w-28 md:h-28 flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
                      {customLogo ? (
                         <img src={customLogo} className="w-full h-full object-contain filter drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]" alt="Logo" />
                      ) : (
-                        <Shield size={darkMode ? 60 : 60} strokeWidth={1} className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] md:hidden" />
+                        <Shield size={50} strokeWidth={1} className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] md:hidden" />
                      )}
                      <Shield size={80} strokeWidth={1} className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] hidden md:block" />
                   </div>
@@ -160,16 +160,16 @@ export const Auth: React.FC<AuthProps> = ({
             {/* Glassmorphism Auth Card */}
             <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-[2rem] md:rounded-[2rem] overflow-hidden transform transition-all">
 
-               <div className="p-6 md:p-8">
+               <div className="p-5 md:p-8">
                   {/* Status Indicator for identified users */}
                   {identifiedUser && isLogin && (
-                     <div className="mb-6 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-2">
-                        <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                           <CheckCircle size={16} className="text-white" />
+                     <div className="mb-4 p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-2">
+                        <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                           <CheckCircle size={14} className="text-white" />
                         </div>
                         <div className="flex flex-col">
-                           <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Identificado</span>
-                           <span className="text-xs font-bold text-white uppercase">{identifiedUser.name.split(' ')[0]}</span>
+                           <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest leading-tight">Identificado</span>
+                           <span className="text-xs font-bold text-white uppercase leading-tight">{identifiedUser.name.split(' ')[0]}</span>
                         </div>
                      </div>
                   )}
@@ -185,7 +185,7 @@ export const Auth: React.FC<AuthProps> = ({
                      </div>
                   )}
 
-                  <form className="space-y-6" onSubmit={handleSubmit}>
+                  <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit}>
                      {isLogin ? (
                         <>
                            {/* Credential Access */}
@@ -201,7 +201,7 @@ export const Auth: React.FC<AuthProps> = ({
                                     disabled={isLoading || isCheckingConnection}
                                     value={loginIdentifier}
                                     onChange={handleLoginIdentifierChange}
-                                    className="block w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner"
+                                    className="block w-full pl-12 pr-4 py-3 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner"
                                     placeholder="CPF, Email ou Matrícula"
                                  />
                               </div>
@@ -220,7 +220,7 @@ export const Auth: React.FC<AuthProps> = ({
                                     disabled={isLoading || isCheckingConnection}
                                     value={loginPassword}
                                     onChange={(e) => setLoginPassword(e.target.value)}
-                                    className="block w-full pl-12 pr-12 py-3.5 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner"
+                                    className="block w-full pl-12 pr-12 py-3 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner"
                                     placeholder="••••••••"
                                  />
                                  <button
@@ -295,11 +295,11 @@ export const Auth: React.FC<AuthProps> = ({
                   </form>
 
                   {/* Card Footer Integration */}
-                  <div className="mt-10 text-center">
+                  <div className="mt-6 md:mt-10 text-center">
                      <button
                         type="button"
                         onClick={() => { setIsLogin(!isLogin); setLoginError(null); }}
-                        className="text-[11px] font-bold text-slate-400 hover:text-white uppercase tracking-wider transition-all"
+                        className="text-[10px] font-bold text-slate-400 hover:text-white uppercase tracking-wider transition-all"
                      >
                         {isLogin ? 'Não possui conta ativa? ' : 'Já possui credenciais? '}
                         <span className="text-blue-400 font-black underline underline-offset-4 decoration-2">
@@ -311,12 +311,12 @@ export const Auth: React.FC<AuthProps> = ({
             </div>
 
             {/* External Page Footer */}
-            <div className="mt-8 md:mt-12 text-center animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
-               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4">
+            <div className="mt-4 md:mt-12 text-center animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
+               <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] px-4">
                   Sistema Integrado de Segurança e Vigilância Municipal
                </p>
                {systemVersion && (
-                  <p className="text-[9px] font-mono font-medium text-slate-600 mt-2 opacity-50">
+                  <p className="text-[8px] font-mono font-medium text-slate-600 mt-1 opacity-50">
                      Internal Build: {systemVersion || '1.0.4'}
                   </p>
                )}
