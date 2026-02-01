@@ -18,7 +18,7 @@ const PERMISSION_GROUPS = [
       { key: 'VIEW_DASHBOARD', label: 'ACESSAR PAINEL PRINCIPAL (DASHBOARD)' },
       { key: 'VIEW_CHARTS', label: 'ACESSAR ESTATÍSTICAS E GRÁFICOS' },
       { key: 'VIEW_ANNOUNCEMENTS', label: 'VISUALIZAR MURAL DE AVISOS' },
-      { key: 'VIEW_MAP', label: 'VISUALIZAR MAPA' },
+      { key: 'VIEW_MAP', label: 'VISUALIZAR MAPA (GPS)' },
     ]
   },
   {
@@ -234,8 +234,17 @@ export const PermissionsView: React.FC<PermissionsViewProps> = ({
             placeholder="BUSCAR USUÁRIO..."
             value={userSearch}
             onChange={(e) => setUserSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-blue-500"
           />
+          {userSearch && (
+            <button
+              type="button"
+              onClick={() => setUserSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm divide-y dark:divide-slate-800 overflow-hidden max-h-[500px] overflow-y-auto">
           {filteredUsers.map(u => (

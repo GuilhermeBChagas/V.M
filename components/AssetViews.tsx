@@ -51,8 +51,17 @@ const ListHeader: React.FC<ListHeaderProps> = ({
                     placeholder={searchPlaceholder}
                     value={searchValue}
                     onChange={e => onSearchChange(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+                    className="w-full pl-12 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
                 />
+                {searchValue && (
+                    <button
+                        type="button"
+                        onClick={() => onSearchChange('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+                    >
+                        <X size={18} />
+                    </button>
+                )}
             </div>
 
             {/* Add Button */}

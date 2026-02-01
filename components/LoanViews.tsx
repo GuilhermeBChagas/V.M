@@ -637,8 +637,17 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                             placeholder="Buscar por nome, item ou matrícula..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all shadow-sm"
+                            className="w-full pl-12 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all shadow-sm"
                         />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchTerm('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+                            >
+                                <X size={18} />
+                            </button>
+                        )}
                     </div>
 
                     {/* Action Buttons */}
@@ -1158,10 +1167,11 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                     <button onClick={() => setShowVehicleStartModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
                                     <button
                                         onClick={() => processLoanCreation(vehicleStartData.manualKm)}
-                                        disabled={vehicleStartData.manualKm < vehicleStartData.currentKm}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                        disabled={isSubmitting || vehicleStartData.manualKm < vehicleStartData.currentKm}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                                     >
-                                        Confirmar Saída
+                                        {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : null}
+                                        {isSubmitting ? 'Confirmando...' : 'Confirmar Saída'}
                                     </button>
                                 </div>
                             </div>
@@ -1343,6 +1353,25 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                         <span>• Devolução: {new Date(loan.returnTime).toLocaleTimeString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                                                     )}
                                                 </div>
+                                                {/* Mostra dados de veículo se houver */}
+                                                {loan.assetType === 'VEHICLE' && loan.meta && (
+                                                    <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-700/50 rounded-lg text-[10px] font-mono grid grid-cols-2 gap-2 text-slate-600 dark:text-slate-300">
+                                                        <div>
+                                                            <span className="font-bold block text-slate-400">SAÍDA</span>
+                                                            {loan.meta.kmStart ? `${loan.meta.kmStart} Km` : '-'}
+                                                        </div>
+                                                        <div>
+                                                            <span className="font-bold block text-slate-400">CHEGADA</span>
+                                                            {loan.meta.kmEnd ? `${loan.meta.kmEnd} Km` : '-'}
+                                                        </div>
+                                                        {loan.meta.fuelRefill && (
+                                                            <div className="col-span-2 border-t border-slate-200 dark:border-slate-600 pt-1 mt-1">
+                                                                <span className="font-bold block text-blue-500 flex items-center gap-1"><Fuel size={10} /> ABASTECIMENTO</span>
+                                                                {loan.meta.fuelLiters} L ({loan.meta.fuelType}) @ {loan.meta.fuelKm} Km
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="text-right">
                                                 <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase ${loan.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :

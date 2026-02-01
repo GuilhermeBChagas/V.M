@@ -303,8 +303,17 @@ const IncidentHistory: React.FC<{
               placeholder="Buscar por RA, local ou descrição..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+              className="w-full pl-12 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              >
+                <X size={18} />
+              </button>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -537,8 +546,17 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
               placeholder="Buscar prédio por nome ou número..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+              className="w-full pl-12 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              >
+                <X size={18} />
+              </button>
+            )}
           </div>
           {canEdit && (
             <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
@@ -683,8 +701,17 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
               placeholder="Pesquisar por nome ou matrícula..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+              className="w-full pl-12 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              >
+                <X size={18} />
+              </button>
+            )}
           </div>
           {canEdit && (
             <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
@@ -785,8 +812,17 @@ const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => v
               placeholder="Buscar por nome do cargo..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+              className="w-full pl-12 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              >
+                <X size={18} />
+              </button>
+            )}
           </div>
           <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
             <Plus size={16} strokeWidth={3} />
@@ -837,8 +873,17 @@ const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onD
               placeholder="Buscar por nome do setor..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
+              className="w-full pl-12 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              >
+                <X size={18} />
+              </button>
+            )}
           </div>
           <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
             <Plus size={16} strokeWidth={3} />

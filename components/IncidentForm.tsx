@@ -451,8 +451,20 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                         setIsVigilantDropdownOpen(true);
                                     }}
                                     onFocus={() => setIsVigilantDropdownOpen(true)}
-                                    className="w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-semibold outline-none focus:border-blue-500 transition-all"
+                                    className="w-full pl-10 pr-10 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-semibold outline-none focus:border-blue-500 transition-all"
                                 />
+                                {vigilantSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setVigilantSearch('');
+                                            setIsVigilantDropdownOpen(false);
+                                        }}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                )}
                             </div>
                             {isVigilantDropdownOpen && (
                                 <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-64 overflow-y-auto animate-in slide-in-from-top-2">

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { SystemLog } from '../types';
-import { History, Search, User, Clock, ShieldCheck, FilePlus, LogIn, Trash2, Filter, Calendar, Download, ChevronLeft, ChevronRight, ListFilter, TestTube, LogOut, PackagePlus, Pencil, ArrowRightLeft, CheckCircle, CornerDownLeft, Settings, Shield, Database } from 'lucide-react';
+import { History, Search, User, Clock, ShieldCheck, FilePlus, LogIn, Trash2, Filter, Calendar, Download, ChevronLeft, ChevronRight, ListFilter, TestTube, LogOut, PackagePlus, Pencil, ArrowRightLeft, CheckCircle, CornerDownLeft, Settings, Shield, Database, X } from 'lucide-react';
 import { normalizeString } from '../utils/stringUtils';
 
 interface LogsViewProps {
@@ -113,7 +113,22 @@ export const LogsView: React.FC<LogsViewProps> = ({ logs, onTestLog }) => {
         <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700 shadow-sm flex flex-col md:flex-row gap-3 items-center">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
-            <input type="text" placeholder="Buscar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-lg text-sm outline-none" />
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-10 py-1.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-lg text-sm outline-none"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <button onClick={handleTestClick} disabled={testing} className="flex-1 md:flex-none px-4 py-2 bg-amber-500 text-white rounded-lg text-[10px] font-black uppercase transition-opacity shadow-sm">{testing ? '...' : 'Gerar Log Teste'}</button>
