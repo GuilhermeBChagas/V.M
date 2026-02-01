@@ -83,6 +83,8 @@ export interface User {
   status?: 'ACTIVE' | 'PENDING' | 'BLOCKED';
   email?: string;
   passwordHash?: string;
+  photoUrl?: string; // Foto de perfil
+  signatureUrl?: string; // Assinatura digital (PNG)
 }
 
 export interface Building {

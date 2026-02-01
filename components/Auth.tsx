@@ -130,23 +130,23 @@ export const Auth: React.FC<AuthProps> = ({
          </div>
 
          {/* Main Login Container */}
-         <div className="relative z-10 w-full max-w-[420px] px-6 py-8 md:py-12 animate-in fade-in zoom-in-95 duration-700">
+         <div className="relative z-10 w-full max-w-[380px] px-6 py-6 md:py-8 animate-in fade-in zoom-in-95 duration-700">
 
             {/* Logo and branding area */}
-            <div className="flex flex-col items-center mb-6 md:mb-10 text-center">
-               <div className="relative group mb-6 md:mb-8">
+            <div className="flex flex-col items-center mb-4 md:mb-6 text-center">
+               <div className="relative group mb-4 md:mb-6">
                   <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full group-hover:bg-blue-400/30 transition-all duration-500"></div>
-                  <div className="relative w-28 h-28 md:w-52 md:h-52 flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
+                  <div className="relative w-24 h-24 md:w-28 md:h-28 flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
                      {customLogo ? (
                         <img src={customLogo} className="w-full h-full object-contain filter drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]" alt="Logo" />
                      ) : (
-                        <Shield size={darkMode ? 80 : 80} strokeWidth={1} className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] md:hidden" />
+                        <Shield size={darkMode ? 60 : 60} strokeWidth={1} className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] md:hidden" />
                      )}
-                     <Shield size={120} strokeWidth={1} className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] hidden md:block" />
+                     <Shield size={80} strokeWidth={1} className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] hidden md:block" />
                   </div>
                </div>
 
-               <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase mb-1">
+               <h1 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase mb-1">
                   Vigilante Municipal
                </h1>
 
@@ -158,9 +158,9 @@ export const Auth: React.FC<AuthProps> = ({
             </div>
 
             {/* Glassmorphism Auth Card */}
-            <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-[2rem] md:rounded-[2.5rem] overflow-hidden transform transition-all">
+            <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-[2rem] md:rounded-[2rem] overflow-hidden transform transition-all">
 
-               <div className="p-6 md:p-10">
+               <div className="p-6 md:p-8">
                   {/* Status Indicator for identified users */}
                   {identifiedUser && isLogin && (
                      <div className="mb-6 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-2">
@@ -201,7 +201,7 @@ export const Auth: React.FC<AuthProps> = ({
                                     disabled={isLoading || isCheckingConnection}
                                     value={loginIdentifier}
                                     onChange={handleLoginIdentifierChange}
-                                    className="block w-full pl-12 pr-4 py-4 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner"
+                                    className="block w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner"
                                     placeholder="CPF, Email ou Matrícula"
                                  />
                               </div>
@@ -220,7 +220,7 @@ export const Auth: React.FC<AuthProps> = ({
                                     disabled={isLoading || isCheckingConnection}
                                     value={loginPassword}
                                     onChange={(e) => setLoginPassword(e.target.value)}
-                                    className="block w-full pl-12 pr-12 py-4 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner"
+                                    className="block w-full pl-12 pr-12 py-3.5 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner"
                                     placeholder="••••••••"
                                  />
                                  <button
@@ -251,20 +251,20 @@ export const Auth: React.FC<AuthProps> = ({
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-10 duration-500">
                            <div className="space-y-4">
                               <div className="relative">
-                                 <UserIcon className="absolute left-4 top-4 text-slate-500" size={18} />
-                                 <input type="text" required disabled={isLoading} value={regName} onChange={e => setRegName(e.target.value)} className="w-full pl-12 py-4 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="Nome Completo" />
+                                 <UserIcon className="absolute left-4 top-3 text-slate-500" size={18} />
+                                 <input type="text" required disabled={isLoading} value={regName} onChange={e => setRegName(e.target.value)} className="w-full pl-12 py-3 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="Nome Completo" />
                               </div>
                               <div className="grid grid-cols-2 gap-4">
-                                 <input type="text" disabled={isLoading} value={regCpf} onChange={handleRegCpfChange} maxLength={14} className="w-full p-4 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white text-center outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="CPF" />
-                                 <input type="text" disabled={isLoading} value={regMatricula} onChange={e => setRegMatricula(e.target.value)} className="w-full p-4 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white text-center outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="Matrícula" />
+                                 <input type="text" disabled={isLoading} value={regCpf} onChange={handleRegCpfChange} maxLength={14} className="w-full p-3 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white text-center outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="CPF" />
+                                 <input type="text" disabled={isLoading} value={regMatricula} onChange={e => setRegMatricula(e.target.value)} className="w-full p-3 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white text-center outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="Matrícula" />
                               </div>
                               <div className="relative">
-                                 <Mail className="absolute left-4 top-4 text-slate-500" size={18} />
-                                 <input type="email" disabled={isLoading} value={regEmail} onChange={e => setRegEmail(e.target.value)} className="w-full pl-12 py-4 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="E-mail (Institucional)" />
+                                 <Mail className="absolute left-4 top-3 text-slate-500" size={18} />
+                                 <input type="email" disabled={isLoading} value={regEmail} onChange={e => setRegEmail(e.target.value)} className="w-full pl-12 py-3 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="E-mail (Institucional)" />
                               </div>
                               <div className="relative">
-                                 <Lock className="absolute left-4 top-4 text-slate-500" size={18} />
-                                 <input type="password" required disabled={isLoading} value={regPassword} onChange={e => setRegPassword(e.target.value)} className="w-full pl-12 py-4 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="Criar Senha Forte" />
+                                 <Lock className="absolute left-4 top-3 text-slate-500" size={18} />
+                                 <input type="password" required disabled={isLoading} value={regPassword} onChange={e => setRegPassword(e.target.value)} className="w-full pl-12 py-3 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="Criar Senha Forte" />
                               </div>
                            </div>
                         </div>
@@ -274,18 +274,18 @@ export const Auth: React.FC<AuthProps> = ({
                      <button
                         type="submit"
                         disabled={isLoading || isCheckingConnection}
-                        className="w-full group relative overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-blue-600 to-blue-700 p-5 text-white shadow-xl shadow-blue-500/20 transition-all hover:scale-[1.02] hover:shadow-blue-500/30 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full group relative overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-blue-600 to-blue-700 p-4 text-white shadow-xl shadow-blue-500/20 transition-all hover:scale-[1.02] hover:shadow-blue-500/30 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                      >
-                        <div className="relative z-10 flex items-center justify-center gap-3">
+                        <div className="relative z-10 flex items-center justify-center gap-2">
                            {isLoading || isCheckingConnection ? (
                               <>
-                                 <Loader2 className="animate-spin" size={20} />
-                                 <span className="text-sm font-black uppercase tracking-[0.2em]">{isCheckingConnection ? 'Conectando...' : 'Autenticando...'}</span>
+                                 <Loader2 className="animate-spin" size={18} />
+                                 <span className="text-xs font-black uppercase tracking-[0.2em]">{isCheckingConnection ? 'Conectando...' : 'Autenticando...'}</span>
                               </>
                            ) : (
                               <>
-                                 <span className="text-sm font-black uppercase tracking-[0.2em]">{isLogin ? 'Entrar no Sistema' : 'Finalizar Cadastro'}</span>
-                                 <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform duration-300" />
+                                 <span className="text-xs font-black uppercase tracking-[0.2em]">{isLogin ? 'Entrar no Sistema' : 'Finalizar Cadastro'}</span>
+                                 <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform duration-300" />
                               </>
                            )}
                         </div>

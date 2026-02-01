@@ -22,7 +22,9 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
         email: '',
         jobTitleId: '',
         role: UserRole.OPERADOR,
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        photoUrl: '',
+        signatureUrl: ''
     });
     const [password, setPassword] = useState('');
 
@@ -43,7 +45,9 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                 ...initialData,
                 cpf: initialData.cpf ? maskCPF(initialData.cpf) : '',
                 userCode: initialData.userCode || '',
-                jobTitleId: initialData.jobTitleId || ''
+                jobTitleId: initialData.jobTitleId || '',
+                photoUrl: initialData.photoUrl || '',
+                signatureUrl: initialData.signatureUrl || ''
             });
         } else {
             setFormData(prev => ({ ...prev, id: Date.now().toString() }));
@@ -78,7 +82,9 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                 jobTitleId: formData.jobTitleId || undefined,
                 role: formData.role as UserRole,
                 status: formData.status as 'ACTIVE' | 'PENDING' | 'BLOCKED',
-                passwordHash: password || undefined
+                passwordHash: password || undefined,
+                photoUrl: formData.photoUrl,
+                signatureUrl: formData.signatureUrl
             });
         } else {
             alert("Preencha Nome, CPF e Matrícula.");
@@ -188,6 +194,17 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                                 ))}
                             </select>
                             <Briefcase className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest">Foto de Perfil (Base64/URL)</label>
+                            <input name="photoUrl" value={formData.photoUrl || ''} onChange={handleChange} className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-bold text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="URL da foto ou base64..." />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest">Assinatura Digital (PNG Base64)</label>
+                            <input name="signatureUrl" value={formData.signatureUrl || ''} onChange={handleChange} className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-bold text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Base64 da assinatura..." />
                         </div>
                     </div>
 

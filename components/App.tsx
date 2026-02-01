@@ -741,8 +741,12 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
                 >
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-brand-700 dark:text-brand-400 font-black text-sm uppercase border border-slate-200 dark:border-slate-700 group-hover:bg-brand-600 group-hover:text-white group-hover:border-brand-500 transition-all">
-                        {u.name.charAt(0)}
+                      <div className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-brand-700 dark:text-brand-400 font-black text-sm uppercase border border-slate-200 dark:border-slate-700 group-hover:bg-brand-600 group-hover:text-white group-hover:border-brand-500 transition-all overflow-hidden">
+                        {u.photoUrl ? (
+                          <img src={u.photoUrl} alt={u.name} className="h-full w-full object-cover" />
+                        ) : (
+                          u.name.charAt(0)
+                        )}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase leading-none group-hover:text-brand-700 dark:group-hover:text-brand-400 transition-colors">{u.name}</p>
@@ -1106,7 +1110,13 @@ export function App() {
         .order('name', { ascending: true })
         .limit(200);
       if (error) throw error;
-      const mappedUsers = data ? data.map((u: any) => ({ ...u, userCode: u.user_code, jobTitleId: u.job_title_id })) : [];
+      const mappedUsers = data ? data.map((u: any) => ({
+        ...u,
+        userCode: u.user_code,
+        jobTitleId: u.job_title_id,
+        photoUrl: u.photo_url,
+        signatureUrl: u.signature_url
+      })) : [];
       setUsers(mappedUsers as User[]);
     } catch (error: any) { console.error(error); showError("Erro ao buscar usuários", error.message || "Erro desconhecido"); } finally { setLoading(false); }
   }, []);
@@ -1534,7 +1544,29 @@ export function App() {
     try {
       const { error } = await supabase.from('users').update({ passwordHash: nPass }).eq('id', user.id);
       if (error) throw error;
-      setUser({ ...user, passwordHash: nPass });
+      const updatedUser = { ...user, passwordHash: nPass };
+      setUser(updatedUser);
+      localStorage.setItem('vigilante_session', JSON.stringify(updatedUser));
+    } catch (err: any) { throw new Error(err.message); }
+  };
+
+  const handleUpdateProfile = async (updates: Partial<User>) => {
+    if (!user) return;
+    try {
+      // Mapeamento para snake_case do banco de dados se necessário
+      const dbUpdates: any = { ...updates };
+      if (updates.userCode !== undefined) { dbUpdates.user_code = updates.userCode; delete dbUpdates.userCode; }
+      if (updates.jobTitleId !== undefined) { dbUpdates.job_title_id = updates.jobTitleId; delete dbUpdates.jobTitleId; }
+      if (updates.photoUrl !== undefined) { dbUpdates.photo_url = updates.photoUrl; delete dbUpdates.photoUrl; }
+      if (updates.signatureUrl !== undefined) { dbUpdates.signature_url = updates.signatureUrl; delete dbUpdates.signatureUrl; }
+
+      const { error } = await supabase.from('users').update(dbUpdates).eq('id', user.id);
+      if (error) throw error;
+
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      localStorage.setItem('vigilante_session', JSON.stringify(updatedUser));
+      fetchUsers(); // Atualizar lista global
     } catch (err: any) { throw new Error(err.message); }
   };
 
@@ -1560,6 +1592,8 @@ export function App() {
       ...dbData,
       userCode: dbData.user_code || dbData.userCode,
       jobTitleId: dbData.job_title_id || dbData.jobTitleId,
+      photoUrl: dbData.photo_url || dbData.photoUrl,
+      signatureUrl: dbData.signature_url || dbData.signatureUrl,
       // Garantir que campos obrigatórios existam
       name: dbData.name,
       role: dbData.role,
@@ -1686,7 +1720,7 @@ export function App() {
 
       case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} authorRole={users.find(u => u.id === selectedIncident?.userId)?.role} authorJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.id === selectedIncident?.userId)?.jobTitleId)?.name} approverRole={users.find(u => u.name === selectedIncident?.approvedBy)?.role} approverJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.name === selectedIncident?.approvedBy)?.jobTitleId)?.name} onBack={() => handleNavigate('DASHBOARD')} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} currentUser={user!} />;
       case 'ANNOUNCEMENTS': return <AnnouncementManager currentUser={user!} users={users} onAnnouncementCreated={fetchAnnouncementsCount} canManage={can('MANAGE_ANNOUNCEMENTS')} />;
-      case 'PROFILE': return <ProfileView user={user!} onUpdatePassword={handleUpdatePassword} />;
+      case 'PROFILE': return <ProfileView user={user!} onUpdatePassword={handleUpdatePassword} onUpdateProfile={handleUpdateProfile} jobTitles={jobTitles} />;
       default: return <Dashboard
         incidents={incidents}
         buildings={buildings}
@@ -1905,7 +1939,13 @@ export function App() {
                 <p className="text-sm font-black uppercase text-slate-900 dark:text-slate-100 leading-tight group-hover:text-brand-600 transition-colors">{user.name.split(' ')[0]}</p>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{user.role === 'OPERADOR' ? 'OPERADOR' : user.role}</p>
               </div>
-              <div className="h-10 w-10 bg-brand-900 rounded-full flex items-center justify-center text-white font-bold uppercase border-2 border-white shadow-sm ring-1 ring-brand-100 transition-all">{user.name.charAt(0)}</div>
+              <div className="h-10 w-10 bg-brand-900 rounded-full flex items-center justify-center text-white font-bold uppercase border-2 border-white shadow-sm ring-1 ring-brand-100 transition-all overflow-hidden">
+                {user.photoUrl ? (
+                  <img src={user.photoUrl} alt={user.name} className="h-full w-full object-cover" />
+                ) : (
+                  user.name.charAt(0)
+                )}
+              </div>
             </button>
           </div>
         </header>
