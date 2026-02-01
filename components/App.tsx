@@ -18,6 +18,7 @@ import { AlterationTypeManager } from './AlterationTypeManager';
 import { ProfileView } from './ProfileView';
 import { VehicleList, VehicleForm, VestList, VestForm, RadioList, RadioForm, EquipmentList, EquipmentForm } from './AssetViews';
 import { LoanViews } from './LoanViews';
+import { MapView } from './MapView';
 import AnnouncementManager from './AnnouncementManager';
 import { announcementService } from '../services/announcementService';
 import { User, Building, Incident, ViewState, UserRole, Sector, JobTitle, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides } from '../types';
@@ -1625,6 +1626,7 @@ export function App() {
       case 'ALTERATION_TYPES': return <AlterationTypeManager types={alterationTypes} onAdd={async (name) => { const newType = { id: crypto.randomUUID(), name, order: alterationTypes.length }; await handleSaveAlterationType(newType); }} onEdit={(t) => { setEditingAlterationType(t); setView('ALTERATION_TYPE_FORM'); }} onDelete={handleDeleteAlterationType} onReorder={handleReorderAlterationTypes} />;
       case 'ALTERATION_TYPE_FORM': return <AlterationTypeForm initialData={editingAlterationType} onSave={handleSaveAlterationType} onCancel={() => handleNavigate('ALTERATION_TYPES')} onDelete={handleDeleteAlterationType} />;
       case 'CHARTS': return <ChartsView incidents={incidents} buildings={buildings} sectors={sectors} />;
+      case 'MAP': return <MapView buildings={buildings} onNavigateBuilding={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} />;
       case 'LOGS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} onLogAction={createLog} initialTab='LOGS' />;
       case 'TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='APPEARANCE' />;
       case 'IMPORT_EXPORT': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='IMPORT_EXPORT' />;
@@ -1706,6 +1708,7 @@ export function App() {
       case 'history_loans': return view === 'LOAN_HISTORY';
       case 'pending_incidents': return view === 'PENDING_APPROVALS' && pendingSubTab === 'INCIDENTS';
       case 'pending_loans': return view === 'PENDING_APPROVALS' && pendingSubTab === 'LOANS';
+      case 'map': return view === 'MAP';
       case 'charts': return view === 'CHARTS';
       case 'reg_buildings': return view === 'BUILDINGS' || view === 'BUILDING_FORM';
       case 'reg_types': return view === 'ALTERATION_TYPES' || view === 'ALTERATION_TYPE_FORM';
@@ -1735,6 +1738,7 @@ export function App() {
     'history_loans': () => handleNavigate('LOAN_HISTORY'),
     'pending_incidents': () => { setPendingSubTab('INCIDENTS'); handleNavigate('PENDING_APPROVALS'); },
     'pending_loans': () => { setPendingSubTab('LOANS'); handleNavigate('PENDING_APPROVALS'); },
+    'map': () => handleNavigate('MAP'),
     'charts': () => handleNavigate('CHARTS'),
     'reg_buildings': () => handleNavigate('BUILDINGS'),
     'reg_types': () => handleNavigate('ALTERATION_TYPES'),

@@ -233,4 +233,5 @@ export type ViewState =
   | 'LOANS'
   | 'LOAN_HISTORY'
   | 'ANNOUNCEMENTS'
-  | 'IMPORT_EXPORT';
+  | 'IMPORT_EXPORT'
+  | 'MAP';

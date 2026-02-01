@@ -49,6 +49,7 @@ export const MENU_STRUCTURE: MenuItemDef[] = [
                     { id: 'pending_loans', label: 'Cautelas', iconName: 'ArrowRightLeft', requiredPermissions: ['APPROVE_LOAN', 'RETURN_LOAN'] }
                 ]
             },
+            { id: 'map', label: 'Mapa', iconName: 'Map', requiredPermissions: ['VIEW_DASHBOARD'] },
             { id: 'charts', label: 'Estatísticas', iconName: 'PieChartIcon', requiredPermissions: ['VIEW_CHARTS'] }
         ]
     },
