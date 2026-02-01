@@ -155,12 +155,19 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col min-h-[600px]">
             <div className="p-4 md:p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50 dark:bg-slate-800/20">
                 <div>
-                    <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight flex items-center gap-2">
-                        <Key className="text-blue-600" size={20} /> Controle de Acessos
-                    </h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        Configure permissões funcionais (Menus são automáticos)
-                    </p>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                            <Key size={22} strokeWidth={2} />
+                        </div>
+                        <div className="flex-1">
+                            <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                                Controle de Acessos
+                            </h2>
+                            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                Configure permissões funcionais (Menus são automáticos)
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl w-full md:w-auto">
