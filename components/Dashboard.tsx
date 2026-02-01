@@ -312,16 +312,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     onClick={() => onViewIncident?.(incident)}
                                     className="p-4 rounded-xl border border-slate-50 dark:border-slate-700/50 hover:border-brand-100 dark:hover:border-brand-900/30 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-all cursor-pointer group"
                                 >
-                                    <div className="flex justify-between items-start mb-1">
-                                        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase truncate pr-2">
+                                    <div className="flex justify-between items-start gap-2 mb-1.5">
+                                        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase break-words leading-tight">
                                             {building?.name || 'Local'}
                                         </h4>
-                                        <span className="text-xs font-bold text-slate-400 uppercase">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap pt-0.5">
                                             {new Date(incident.date).toLocaleDateString()}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate mb-2 italic">
-                                        "{incident.description}"
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 break-words whitespace-normal leading-relaxed mb-2.5">
+                                        {incident.description}
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase">
