@@ -157,15 +157,36 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
 
     return (
         <div className="space-y-6 animate-fade-in pb-20">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight flex items-center gap-2">
-                    {activeTab === 'LOGS' && <><History className="text-blue-600" /> Auditoria de Atividades</>}
-                    {activeTab === 'APPEARANCE' && <><Settings className="text-blue-600" /> Personalização Visual</>}
-                    {activeTab === 'DATABASE' && <><Database className="text-blue-600" /> Banco de Dados</>}
-                    {activeTab === 'ACCESS_CONTROL' && <><Key className="text-blue-600" /> Controle de Acessos</>}
-                    {activeTab === 'IMPORT_EXPORT' && <><FileSpreadsheet className="text-emerald-600" /> Dados (Excel)</>}
-                    {activeTab === 'SYSTEM' && <><Info className="text-purple-600" /> Sobre o Sistema</>}
-                </h2>
+            {/* Unified Header Section */}
+            <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl ${activeTab === 'IMPORT_EXPORT' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : activeTab === 'SYSTEM' ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'}`}>
+                        {activeTab === 'LOGS' && <History size={22} strokeWidth={2} />}
+                        {activeTab === 'APPEARANCE' && <Settings size={22} strokeWidth={2} />}
+                        {activeTab === 'DATABASE' && <Database size={22} strokeWidth={2} />}
+                        {activeTab === 'ACCESS_CONTROL' && <Key size={22} strokeWidth={2} />}
+                        {activeTab === 'IMPORT_EXPORT' && <FileSpreadsheet size={22} strokeWidth={2} />}
+                        {activeTab === 'SYSTEM' && <Info size={22} strokeWidth={2} />}
+                    </div>
+                    <div className="flex-1">
+                        <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                            {activeTab === 'LOGS' && 'Auditoria de Atividades'}
+                            {activeTab === 'APPEARANCE' && 'Personalização Visual'}
+                            {activeTab === 'DATABASE' && 'Banco de Dados'}
+                            {activeTab === 'ACCESS_CONTROL' && 'Controle de Acessos'}
+                            {activeTab === 'IMPORT_EXPORT' && 'Dados (Excel)'}
+                            {activeTab === 'SYSTEM' && 'Sobre o Sistema'}
+                        </h2>
+                        <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                            {activeTab === 'LOGS' && 'Registro detalhado de ações e eventos'}
+                            {activeTab === 'APPEARANCE' && 'Ajuste logotipos e identidade visual'}
+                            {activeTab === 'DATABASE' && 'Manutenção e limpeza do banco de dados'}
+                            {activeTab === 'ACCESS_CONTROL' && 'Gerencie permissões e cargos'}
+                            {activeTab === 'IMPORT_EXPORT' && 'Importação e Exportação de arquivos'}
+                            {activeTab === 'SYSTEM' && 'Informações técnicas e Notas de Versão'}
+                        </p>
+                    </div>
+                </div>
             </div>
 
             {activeTab === 'LOGS' && (

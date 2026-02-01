@@ -106,61 +106,61 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
-                        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase font-bold tracking-wider">Nome Completo</label>
-                        <input name="name" value={formData.name} onChange={handleChange} required className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="João da Silva" />
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest">Nome Completo</label>
+                        <input name="name" value={formData.name} onChange={handleChange} required className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="João da Silva" />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase font-bold tracking-wider">CPF</label>
-                        <input name="cpf" value={formData.cpf} onChange={handleChange} required className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="000.000.000-00" maxLength={14} />
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest">CPF</label>
+                        <input name="cpf" value={formData.cpf} onChange={handleChange} required className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="000.000.000-00" maxLength={14} />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase font-bold tracking-wider">Matrícula</label>
-                        <input name="matricula" value={formData.matricula} onChange={handleChange} required className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="MAT-1234" />
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest">Matrícula</label>
+                        <input name="matricula" value={formData.matricula} onChange={handleChange} required className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="MAT-1234" />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex justify-between uppercase text-[10px]">
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1 flex justify-between uppercase tracking-widest">
                             <span>Código de Acesso</span>
-                            <span className="text-xs text-slate-400 uppercase font-black">Login Rápido</span>
+                            <span className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Login Rápido</span>
                         </label>
                         <div className="relative rounded-md shadow-sm">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <Hash className="h-4 w-4 text-slate-400" />
                             </div>
-                            <input name="userCode" type="text" value={formData.userCode} onChange={handleChange} maxLength={2} className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 pl-9 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="01 a 99" />
+                            <input name="userCode" type="text" value={formData.userCode} onChange={handleChange} maxLength={2} className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3 pl-9 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="01 a 99" />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex justify-between uppercase text-[10px]">
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1 flex justify-between uppercase tracking-widest">
                             <span>E-mail</span>
-                            <span className="text-xs text-slate-400 uppercase font-black">Opcional</span>
+                            <span className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Opcional</span>
                         </label>
-                        <div className="mt-1 relative rounded-md shadow-sm">
+                        <div className="relative rounded-md shadow-sm">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <Mail className="h-4 w-4 text-slate-400" />
                             </div>
-                            <input name="email" type="email" value={formData.email} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 pl-9 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@exemplo.com" />
+                            <input name="email" type="email" value={formData.email} onChange={handleChange} className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3 pl-9 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="email@exemplo.com" />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase font-bold tracking-wider">
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest">
                             {initialData ? 'Nova Senha (opcional)' : 'Senha Inicial'}
                         </label>
-                        <input name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required={!initialData} className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required={!initialData} className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase font-bold tracking-wider">Status da Conta</label>
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest">Status da Conta</label>
                         <div className="relative">
                             <select
                                 name="status"
                                 value={formData.status}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 bg-white dark:bg-slate-800 dark:text-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500 appearance-none text-sm"
+                                className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500 appearance-none text-sm font-bold uppercase"
                             >
                                 <option value="ACTIVE">Ativo (Aprovado)</option>
                                 <option value="PENDING">Pendente de Aprovação</option>
@@ -171,16 +171,16 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                     </div>
 
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex justify-between uppercase text-[10px]">
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1 flex justify-between uppercase tracking-widest">
                             <span>Cargo / Função</span>
-                            <span className="text-xs text-slate-400 uppercase font-black">Opcional</span>
+                            <span className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Opcional</span>
                         </label>
                         <div className="relative">
                             <select
                                 name="jobTitleId"
                                 value={formData.jobTitleId}
                                 onChange={handleChange}
-                                className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-2.5 bg-white dark:bg-slate-800 dark:text-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500 appearance-none text-sm pr-10"
+                                className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500 appearance-none text-sm font-bold pr-10 uppercase"
                             >
                                 <option value="">Selecione um Cargo...</option>
                                 {jobTitles.map(t => (
@@ -192,7 +192,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                     </div>
 
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 uppercase text-[10px] font-black tracking-widest">Nível de Permissão</label>
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Nível de Permissão</label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                             <div
                                 onClick={() => setFormData({ ...formData, role: UserRole.OPERADOR })}
@@ -252,10 +252,10 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                         )}
                     </div>
                     <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                        <button type="button" onClick={onCancel} className="w-full sm:w-auto py-3 px-6 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors uppercase">Cancelar</button>
-                        <button type="submit" disabled={isLoading} className="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-md text-sm font-bold rounded-lg text-white bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 transition-all active:scale-95 uppercase disabled:opacity-70 disabled:cursor-not-allowed">
+                        <button type="button" onClick={onCancel} className="w-full sm:w-auto py-3 px-6 border border-slate-300 dark:border-slate-600 rounded-xl shadow-sm text-[11px] font-black uppercase text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">CANCELAR</button>
+                        <button type="submit" disabled={isLoading} className="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-lg text-[11px] font-black rounded-xl text-white bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 transition-all active:scale-95 uppercase disabled:opacity-70 disabled:cursor-not-allowed">
                             {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                            {initialData ? 'Salvar Alterações' : 'Cadastrar Usuário'}
+                            {initialData ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR USUÁRIO'}
                         </button>
                     </div>
                 </div>

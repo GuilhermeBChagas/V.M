@@ -108,23 +108,23 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
                     </div>
 
                     <div>
-                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-wider">Nº do Prédio</label>
-                        <input name="buildingNumber" value={formData.buildingNumber} onChange={handleChange} required className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: 101" />
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-widest">Nº do Prédio</label>
+                        <input name="buildingNumber" value={formData.buildingNumber} onChange={handleChange} required className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3.5 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Ex: 101" />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-wider">Nome da Unidade</label>
-                        <input name="name" value={formData.name} onChange={handleChange} required className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-blue-500" />
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-widest">Nome da Unidade</label>
+                        <input name="name" value={formData.name} onChange={handleChange} required className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3.5 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
                     </div>
 
                     <div className="md:col-span-2">
-                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-wider">Endereço Completo</label>
-                        <input name="address" value={formData.address} onChange={handleChange} required className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-widest">Endereço Completo</label>
+                        <input name="address" value={formData.address} onChange={handleChange} required className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3.5 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-wider">Setor</label>
-                        <select name="sectorId" value={formData.sectorId} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-blue-500">
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-widest">Setor</label>
+                        <select name="sectorId" value={formData.sectorId} onChange={handleChange} className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3.5 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none uppercase">
                             {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                         </select>
                     </div>
@@ -146,12 +146,12 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Latitude</label>
-                                <input name="latitude" value={formData.latitude || ''} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 border p-2 bg-slate-50 dark:bg-slate-800/50 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 text-xs font-mono" placeholder="-23.000000" />
+                                <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-widest">Latitude</label>
+                                <input name="latitude" value={formData.latitude || ''} onChange={handleChange} className="block w-full rounded-lg border-slate-300 dark:border-slate-600 border p-2.5 bg-slate-50 dark:bg-slate-800/50 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 text-xs font-mono font-bold" placeholder="-23.000000" />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Longitude</label>
-                                <input name="longitude" value={formData.longitude || ''} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 border p-2 bg-slate-50 dark:bg-slate-800/50 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 text-xs font-mono" placeholder="-51.000000" />
+                                <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-widest">Longitude</label>
+                                <input name="longitude" value={formData.longitude || ''} onChange={handleChange} className="block w-full rounded-lg border-slate-300 dark:border-slate-600 border p-2.5 bg-slate-50 dark:bg-slate-800/50 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 text-xs font-mono font-bold" placeholder="-51.000000" />
                             </div>
                         </div>
                     </div>
@@ -174,18 +174,18 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
                     </div>
 
                     <div className="md:col-span-2">
-                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1">Nome</label>
-                        <input name="managerName" value={formData.managerName} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 border p-3 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-widest">Nome do Responsável</label>
+                        <input name="managerName" value={formData.managerName} onChange={handleChange} className="block w-full rounded-xl border-slate-300 dark:border-slate-600 border p-3.5 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1">Telefone</label>
-                        <input name="managerPhone" value={formData.managerPhone} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 border p-3 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" placeholder="(00) 00000-0000" />
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-widest">Telefone</label>
+                        <input name="managerPhone" value={formData.managerPhone} onChange={handleChange} className="block w-full rounded-xl border-slate-300 dark:border-slate-600 border p-3.5 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="(00) 00000-0000" />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1">E-mail</label>
-                        <input name="managerEmail" type="email" value={formData.managerEmail} onChange={handleChange} className="block w-full rounded-md border-slate-300 dark:border-slate-600 border p-3 bg-white dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-1 tracking-widest">E-mail</label>
+                        <input name="managerEmail" type="email" value={formData.managerEmail} onChange={handleChange} className="block w-full rounded-xl border-slate-300 dark:border-slate-600 border p-3.5 bg-white dark:bg-slate-800 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
                     </div>
                 </div>
 
@@ -204,10 +204,10 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
                         )}
                     </div>
                     <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                        <button type="button" onClick={onCancel} className="w-full sm:w-auto py-3 px-6 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors uppercase">Cancelar</button>
-                        <button type="submit" disabled={isLoading} className="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-md text-sm font-bold rounded-lg text-white bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 transition-all active:scale-95 uppercase disabled:opacity-70 disabled:cursor-not-allowed">
+                        <button type="button" onClick={onCancel} className="w-full sm:w-auto py-3 px-6 border border-slate-300 dark:border-slate-600 rounded-xl shadow-sm text-[11px] font-black uppercase text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">CANCELAR</button>
+                        <button type="submit" disabled={isLoading} className="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-lg text-[11px] font-black rounded-xl text-white bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 transition-all active:scale-95 uppercase disabled:opacity-70 disabled:cursor-not-allowed">
                             {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                            {initialData ? 'Salvar Alterações' : 'Cadastrar Prédio'}
+                            {initialData ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR PRÉDIO'}
                         </button>
                     </div>
                 </div>

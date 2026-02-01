@@ -301,12 +301,12 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                         <h2 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
                             {initialData ? 'EDITAR R.A' : 'NOVO R.A'}
                         </h2>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1.5">PREENCHA TODOS OS CAMPOS (EXCETO FOTOS)</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">PREENCHA TODOS OS CAMPOS (EXCETO FOTOS)</p>
                     </div>
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 border-2 border-blue-600 px-4 py-2 rounded-xl flex flex-col items-center justify-center min-w-[120px] shadow-sm">
-                    <span className="text-xs font-black text-blue-600 uppercase tracking-widest leading-none mb-1">CÓDIGO R.A</span>
+                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] leading-none mb-1">CÓDIGO R.A</span>
                     <span className="text-lg font-black text-slate-800 dark:text-white leading-none">{currentRa}</span>
                 </div>
             </div>
@@ -381,7 +381,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                         if (buildingId) setBuildingId('');
                                     }}
                                     onFocus={() => setIsBuildingDropdownOpen(true)}
-                                    className={`w-full pl-10 pr-10 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 rounded-2xl text-sm font-semibold outline-none transition-all ${buildingId ? 'border-emerald-500 focus:border-emerald-600 bg-emerald-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500'}`}
+                                    className={`w-full pl-10 pr-10 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 rounded-2xl text-sm font-bold outline-none transition-all ${buildingId ? 'border-emerald-500 focus:border-emerald-600 bg-emerald-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500'}`}
                                 />
                                 {buildingSearch && (
                                     <button
@@ -451,7 +451,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                         setIsVigilantDropdownOpen(true);
                                     }}
                                     onFocus={() => setIsVigilantDropdownOpen(true)}
-                                    className="w-full pl-10 pr-10 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-semibold outline-none focus:border-blue-500 transition-all"
+                                    className="w-full pl-10 pr-10 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none focus:border-blue-500 transition-all"
                                 />
                                 {vigilantSearch && (
                                     <button
@@ -481,8 +481,8 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                                     {isAlreadyAdded ? <Check size={16} /> : u.name.charAt(0)}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className={`text-xs font-black uppercase truncate leading-none ${isAlreadyAdded ? 'text-emerald-600' : 'text-slate-800 dark:text-slate-100'}`}>{u.name}</p>
-                                                    <p className="text-xs font-bold text-slate-400 uppercase mt-1">Matrícula: {u.matricula}</p>
+                                                    <p className={`text-sm font-bold uppercase truncate leading-none ${isAlreadyAdded ? 'text-emerald-600' : 'text-slate-800 dark:text-slate-100'}`}>{u.name}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Matrícula: {u.matricula}</p>
                                                 </div>
                                             </button>
                                         );
@@ -494,7 +494,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                             {vigilantsList.map(v => (
                                 <div key={v} className="inline-flex items-center gap-2 pl-1 pr-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full shadow-sm">
                                     <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-[10px] font-black uppercase">{v.charAt(0)}</div>
-                                    <span className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase">{v}</span>
+                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase">{v}</span>
                                     <button type="button" onClick={() => handleRemoveVigilant(v)} className="p-1 hover:text-red-500 text-slate-400"><X size={12} /></button>
                                 </div>
                             ))}
@@ -511,7 +511,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                 value={alterationType}
                                 onChange={e => setAlterationType(e.target.value)}
                                 required
-                                className="w-full p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-semibold outline-none focus:border-blue-500 transition-all appearance-none pr-10"
+                                className="w-full p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none focus:border-blue-500 transition-all appearance-none pr-10 uppercase"
                             >
                                 <option value="">SELECIONE O TIPO</option>
                                 {alterationTypes.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
@@ -525,7 +525,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                             <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">DATA</label>
                             <div className="relative">
                                 <Calendar className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
-                                <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full pl-11 p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 rounded-2xl text-sm font-semibold outline-none focus:border-blue-500 transition-all" />
+                                <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full pl-11 p-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-blue-500 transition-all" />
                             </div>
                         </div>
                         <div className="space-y-1.5">
@@ -545,7 +545,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">HORA FINAL</label>
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">HORA FINAL</label>
                             <div className="relative">
                                 <Clock className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
                                 <input
@@ -576,7 +576,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                         onChange={e => setDescription(e.target.value)}
                         maxLength={2000}
                         rows={6}
-                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-3xl text-sm font-medium outline-none focus:border-blue-500 transition-all resize-none shadow-inner"
+                        className="w-full p-6 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-3xl text-sm font-bold outline-none focus:border-blue-500 transition-all resize-none shadow-inner"
                         placeholder="Descreva a alteração"
                     />
                 </div>
@@ -585,8 +585,8 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                 <div className="space-y-4">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div className="flex flex-col">
-                            <label className="text-xs font-bold text-slate-400 uppercase ml-1">EVIDÊNCIAS FOTOGRÁFICAS</label>
-                            <span className="text-[9px] font-bold text-slate-400 uppercase ml-1">Máximo de 5 imagens ({photos.length}/5) - Opcional</span>
+                            <label className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">EVIDÊNCIAS FOTOGRÁFICAS</label>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase ml-1">Máximo de 5 imagens ({photos.length}/5) - Opcional</span>
                         </div>
                         <div className="flex gap-2 w-full sm:w-auto">
                             <button
@@ -601,7 +601,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                                 type="button"
                                 disabled={photos.length >= 5}
                                 onClick={() => document.getElementById('camera-input')?.click()}
-                                className="flex-1 sm:flex-none px-4 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 sm:flex-none px-4 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Camera size={16} /> Abrir Câmera
                             </button>

@@ -5,9 +5,9 @@ import { Plus, Pencil, Trash2, Search, Save, X, Car, Shield, Radio as RadioIcon,
 import { normalizeString } from '../utils/stringUtils';
 
 // --- STYLES & UTILS (MATCHING BUILDING FORM) ---
-const inputClass = "block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm";
-const labelClass = "block text-xs font-black text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider";
-const selectClass = "block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none";
+const inputClass = "block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3.5 bg-white dark:bg-slate-800 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm";
+const labelClass = "block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest";
+const selectClass = "block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3.5 bg-white dark:bg-slate-800 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none uppercase transition-all";
 
 
 // Unified List Header Component - Exactly like IncidentHistory design
@@ -35,7 +35,7 @@ const ListHeader: React.FC<ListHeaderProps> = ({
                 <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
                     {title}
                 </h2>
-                <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
                     {subtitle}
                 </p>
             </div>
@@ -122,13 +122,13 @@ const GenericForm: React.FC<GenericFormProps> = ({ title, icon, children, onSubm
                     )}
                 </div>
                 <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                    <button type="button" onClick={onCancel} className="w-full sm:w-auto py-3 px-6 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors uppercase">Cancelar</button>
+                    <button type="button" onClick={onCancel} className="w-full sm:w-auto py-3 px-6 border border-slate-300 dark:border-slate-600 rounded-xl shadow-sm text-[11px] font-black uppercase text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">CANCELAR</button>
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-md text-sm font-bold uppercase rounded-lg text-white bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full sm:w-auto inline-flex justify-center py-3 px-8 border border-transparent shadow-lg text-[11px] font-black uppercase rounded-xl text-white bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Salvar
+                        {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} SALVAR
                     </button>
                 </div>
             </div>
@@ -138,7 +138,7 @@ const GenericForm: React.FC<GenericFormProps> = ({ title, icon, children, onSubm
 
 // --- VEHICLES ---
 
-export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit: (v: Vehicle) => void, onDelete: (id: string) => void }> = ({ items, onAdd, onEdit, onDelete }) => {
+export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit: (v: Vehicle) => void, onDelete: (id: string) => void, canEdit: boolean, canDelete: boolean }> = ({ items, onAdd, onEdit, onDelete, canEdit, canDelete }) => {
     const [search, setSearch] = useState('');
     const filtered = items.filter(i => normalizeString(i.plate).includes(normalizeString(search)) || normalizeString(i.prefix).includes(normalizeString(search)) || normalizeString(i.model).includes(normalizeString(search)));
 
@@ -151,7 +151,7 @@ export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit
                 searchValue={search}
                 onSearchChange={setSearch}
                 searchPlaceholder="Buscar por Prefixo, Placa ou Modelo..."
-                onAdd={onAdd}
+                onAdd={canEdit ? onAdd : undefined}
                 addLabel="Novo Veículo"
             />
 
@@ -167,7 +167,7 @@ export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                         {filtered.map(i => (
-                            <tr key={i.id} onClick={() => onEdit(i)} className="hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors cursor-pointer group border-b dark:border-slate-800">
+                            <tr key={i.id} onClick={() => canEdit && onEdit(i)} className={`${canEdit ? 'hover:bg-brand-50/50 dark:hover:bg-brand-900/10 cursor-pointer' : ''} transition-colors group border-b dark:border-slate-800`}>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center gap-2">
                                         <span className="bg-blue-900 text-white px-2 py-1 rounded text-[10px] font-black uppercase">{i.prefix || '---'}</span>
@@ -195,7 +195,7 @@ export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit
 
             <div className="grid gap-2 md:hidden">
                 {filtered.map(i => (
-                    <div key={i.id} onClick={() => onEdit(i)} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group cursor-pointer hover:bg-brand-50/50 transition-all">
+                    <div key={i.id} onClick={() => canEdit && onEdit(i)} className={`bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group ${canEdit ? 'cursor-pointer hover:bg-brand-50/50' : ''} transition-all`}>
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1.5">
                                 <span className="bg-blue-900 text-white px-1.5 py-0.5 rounded text-[10px] font-black uppercase">{i.prefix || 'S/P'}</span>
@@ -293,7 +293,7 @@ export const VehicleForm: React.FC<any> = ({ initialData, onSave, onCancel, onDe
 
 // --- VESTS ---
 
-export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: Vest) => void, onDelete: (id: string) => void }> = ({ items, onAdd, onEdit, onDelete }) => {
+export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: Vest) => void, onDelete: (id: string) => void, canEdit: boolean, canDelete: boolean }> = ({ items, onAdd, onEdit, onDelete, canEdit, canDelete }) => {
     const [search, setSearch] = useState('');
     const filtered = items.filter(i => normalizeString(i.number).includes(normalizeString(search)));
 
@@ -306,7 +306,7 @@ export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: 
                 searchValue={search}
                 onSearchChange={setSearch}
                 searchPlaceholder="Buscar por Número de Série..."
-                onAdd={onAdd}
+                onAdd={canEdit ? onAdd : undefined}
                 addLabel="Novo Colete"
             />
 
@@ -320,7 +320,7 @@ export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: 
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                         {filtered.map(i => (
-                            <tr key={i.id} onClick={() => onEdit(i)} className="hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors cursor-pointer group border-b dark:border-slate-800">
+                            <tr key={i.id} onClick={() => canEdit && onEdit(i)} className={`${canEdit ? 'hover:bg-brand-50/50 dark:hover:bg-brand-900/10 cursor-pointer' : ''} transition-colors group border-b dark:border-slate-800`}>
                                 <td className="px-6 py-4 whitespace-nowrap font-bold text-sm text-slate-800 dark:text-slate-100 uppercase">{i.number}</td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded text-xs font-black uppercase">{i.size}</span>
@@ -333,7 +333,7 @@ export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: 
 
             <div className="grid gap-2 md:hidden">
                 {filtered.map(i => (
-                    <div key={i.id} onClick={() => onEdit(i)} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group cursor-pointer hover:bg-brand-50/50 transition-all">
+                    <div key={i.id} onClick={() => canEdit && onEdit(i)} className={`bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group ${canEdit ? 'cursor-pointer hover:bg-brand-50/50' : ''} transition-all`}>
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-500 group-hover:bg-brand-600 group-hover:text-white transition-colors"><Shield size={20} /></div>
                             <div>
@@ -376,7 +376,7 @@ export const VestForm: React.FC<any> = ({ initialData, onSave, onCancel, onDelet
 
 // --- RADIOS ---
 
-export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r: Radio) => void, onDelete: (id: string) => void }> = ({ items, onAdd, onEdit, onDelete }) => {
+export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r: Radio) => void, onDelete: (id: string) => void, canEdit: boolean, canDelete: boolean }> = ({ items, onAdd, onEdit, onDelete, canEdit, canDelete }) => {
     const [search, setSearch] = useState('');
     const filtered = items.filter(i => normalizeString(i.number).includes(normalizeString(search)) || normalizeString(i.serialNumber).includes(normalizeString(search)));
 
@@ -389,7 +389,7 @@ export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r
                 searchValue={search}
                 onSearchChange={setSearch}
                 searchPlaceholder="Buscar por Número ou Serial..."
-                onAdd={onAdd}
+                onAdd={canEdit ? onAdd : undefined}
                 addLabel="Novo Rádio"
             />
 
@@ -404,7 +404,7 @@ export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                         {filtered.map(i => (
-                            <tr key={i.id} onClick={() => onEdit(i)} className="hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors cursor-pointer group border-b dark:border-slate-800">
+                            <tr key={i.id} onClick={() => canEdit && onEdit(i)} className={`${canEdit ? 'hover:bg-brand-50/50 dark:hover:bg-brand-900/10 cursor-pointer' : ''} transition-colors group border-b dark:border-slate-800`}>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded text-xs font-black uppercase">HT-{i.number}</span>
                                 </td>
@@ -418,7 +418,7 @@ export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r
 
             <div className="grid gap-2 md:hidden">
                 {filtered.map(i => (
-                    <div key={i.id} onClick={() => onEdit(i)} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group cursor-pointer hover:bg-brand-50/50 transition-all">
+                    <div key={i.id} onClick={() => canEdit && onEdit(i)} className={`bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group ${canEdit ? 'cursor-pointer hover:bg-brand-50/50' : ''} transition-all`}>
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2 mb-1">
                                 <span className="bg-blue-900 text-white px-1.5 py-0.5 rounded text-[10px] font-black uppercase">HT {i.number}</span>
@@ -458,7 +458,7 @@ export const RadioForm: React.FC<any> = ({ initialData, onSave, onCancel, onDele
 
 // --- EQUIPMENT (OTHERS) ---
 
-export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, onEdit: (e: Equipment) => void, onDelete: (id: string) => void }> = ({ items, onAdd, onEdit, onDelete }) => {
+export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, onEdit: (e: Equipment) => void, onDelete: (id: string) => void, canEdit: boolean, canDelete: boolean }> = ({ items, onAdd, onEdit, onDelete, canEdit, canDelete }) => {
     const [search, setSearch] = useState('');
     const filtered = items.filter(i => normalizeString(i.name).includes(normalizeString(search)));
 
@@ -471,7 +471,7 @@ export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, on
                 searchValue={search}
                 onSearchChange={setSearch}
                 searchPlaceholder="Buscar por Nome..."
-                onAdd={onAdd}
+                onAdd={canEdit ? onAdd : undefined}
                 addLabel="Novo Item"
             />
 
@@ -486,7 +486,7 @@ export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, on
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                         {filtered.map(i => (
-                            <tr key={i.id} onClick={() => onEdit(i)} className="hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors cursor-pointer group border-b dark:border-slate-800">
+                            <tr key={i.id} onClick={() => canEdit && onEdit(i)} className={`${canEdit ? 'hover:bg-brand-50/50 dark:hover:bg-brand-900/10 cursor-pointer' : ''} transition-colors group border-b dark:border-slate-800`}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold uppercase text-slate-800 dark:text-slate-100">{i.name}</td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded text-xs font-black uppercase">{i.quantity} UN</span>
@@ -500,7 +500,7 @@ export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, on
 
             <div className="grid gap-2 md:hidden">
                 {filtered.map(i => (
-                    <div key={i.id} onClick={() => onEdit(i)} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group cursor-pointer hover:bg-brand-50/50 transition-all">
+                    <div key={i.id} onClick={() => canEdit && onEdit(i)} className={`bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group ${canEdit ? 'cursor-pointer hover:bg-brand-50/50' : ''} transition-all`}>
                         <div className="flex-1 min-w-0 pr-2">
                             <h3 className="font-bold text-slate-800 dark:text-slate-100 uppercase text-sm truncate group-hover:text-brand-600">{i.name}</h3>
                             <div className="flex items-center gap-3 mt-1">

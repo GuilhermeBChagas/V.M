@@ -1,22 +1,22 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { 
-  Download, 
-  Upload, 
-  FileSpreadsheet, 
-  Loader2, 
-  CheckCircle, 
-  AlertCircle, 
-  ArrowRight, 
-  Building, 
-  Users, 
-  Car, 
-  Shield, 
-  Radio, 
-  Package, 
-  Map, 
-  Tag 
+import {
+  Download,
+  Upload,
+  FileSpreadsheet,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  ArrowRight,
+  Building,
+  Users,
+  Car,
+  Shield,
+  Radio,
+  Package,
+  Map,
+  Tag
 } from 'lucide-react';
 
 declare var XLSX: any;
@@ -57,10 +57,10 @@ export const ImportExportView: React.FC<{ onLogAction: (action: any, details: st
       const worksheet = XLSX.utils.json_to_sheet(data || []);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Dados");
-      
+
       const fileName = `Export_${selectedEntity.id}_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
-      
+
       onLogAction('DATABASE_TOOLS' as any, `Exportou dados da tabela ${selectedEntity.table}`);
       setResult({ type: 'success', message: 'Dados exportados com sucesso!' });
     } catch (err: any) {
@@ -72,7 +72,7 @@ export const ImportExportView: React.FC<{ onLogAction: (action: any, details: st
 
   const handleDownloadTemplate = () => {
     if (!selectedEntity) return;
-    
+
     // Cria um objeto vazio com as colunas definidas
     const templateData = [selectedEntity.columns.reduce((acc: any, col) => {
       acc[col] = "";
@@ -82,7 +82,7 @@ export const ImportExportView: React.FC<{ onLogAction: (action: any, details: st
     const worksheet = XLSX.utils.json_to_sheet(templateData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
-    
+
     XLSX.writeFile(workbook, `Template_${selectedEntity.id}.xlsx`);
   };
 
@@ -123,11 +123,20 @@ export const ImportExportView: React.FC<{ onLogAction: (action: any, details: st
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in pb-12">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight flex items-center gap-2">
-          <FileSpreadsheet className="text-emerald-600" /> Manipulação de Dados em Massa
-        </h2>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Importação e Exportação via Excel (.xlsx)</p>
+      <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
+            <FileSpreadsheet size={22} strokeWidth={2} />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+              Manipulação de Dados em Massa
+            </h2>
+            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
+              Importação e Exportação via Excel (.xlsx)
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -171,12 +180,12 @@ export const ImportExportView: React.FC<{ onLogAction: (action: any, details: st
                   </div>
                   <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase mb-2">Exportar Dados</h4>
                   <p className="text-[10px] text-slate-500 font-bold uppercase mb-6 leading-normal">Baixe todos os registros atuais de {selectedEntity.label} em formato Excel.</p>
-                  <button 
+                  <button
                     onClick={handleExport}
                     disabled={loading}
                     className="w-full py-3 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                   >
-                    {loading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} 
+                    {loading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                     Gerar Planilha Completa
                   </button>
                 </div>
@@ -188,14 +197,14 @@ export const ImportExportView: React.FC<{ onLogAction: (action: any, details: st
                   </div>
                   <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase mb-2">Importar Dados</h4>
                   <p className="text-[10px] text-slate-500 font-bold uppercase mb-6 leading-normal">Carregue novos registros ou atualize os existentes via Excel.</p>
-                  
+
                   <div className="space-y-3">
                     <label className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-lg shadow-emerald-500/20">
-                      <Upload size={16} /> 
+                      <Upload size={16} />
                       Selecionar Arquivo
                       <input type="file" accept=".xlsx, .xls" onChange={handleImport} className="hidden" disabled={loading} />
                     </label>
-                    <button 
+                    <button
                       onClick={handleDownloadTemplate}
                       className="w-full text-center text-[9px] font-black text-slate-400 hover:text-blue-600 uppercase underline transition-colors"
                     >

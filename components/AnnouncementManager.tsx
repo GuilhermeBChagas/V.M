@@ -80,24 +80,34 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
 
     return (
         <div className="space-y-8 animate-fade-in pb-10">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">
-                        {canManage ? 'Gestão do Mural' : 'Mural de Avisos'}
-                    </h1>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
-                        {canManage ? 'Envie avisos para toda a equipe ou indivíduos' : 'Fique por dentro das últimas atualizações'}
-                    </p>
+            {/* Unified Header Section */}
+            <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                {/* Title Row */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400">
+                            <Megaphone size={22} strokeWidth={2} />
+                        </div>
+                        <div className="flex-1">
+                            <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                                {canManage ? 'Gestão do Mural' : 'Mural de Avisos'}
+                            </h2>
+                            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                {canManage ? 'Envie avisos para toda a equipe ou indivíduos' : 'Fique por dentro das últimas atualizações'}
+                            </p>
+                        </div>
+                    </div>
+
+                    {canManage && (
+                        <button
+                            onClick={() => setShowForm(!showForm)}
+                            className="w-full md:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 active:scale-95 transition-all duration-200"
+                        >
+                            {showForm ? <X size={16} /> : <Plus size={16} strokeWidth={3} />}
+                            <span>{showForm ? 'FECHAR MURAL' : 'NOVO AVISO'}</span>
+                        </button>
+                    )}
                 </div>
-                {canManage && (
-                    <button
-                        onClick={() => setShowForm(!showForm)}
-                        className="w-full md:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/25 transition-all active:scale-95"
-                    >
-                        {showForm ? <X size={20} /> : <Plus size={20} />}
-                        <span>{showForm ? 'Fechar Mural' : 'Novo Aviso'}</span>
-                    </button>
-                )}
             </div>
 
             {showForm && (
@@ -129,7 +139,7 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
                                                 : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                                                 }`}
                                         >
-                                            {p}
+                                            {p === 'INFO' ? 'Informativo' : p === 'IMPORTANT' ? 'Importante' : 'Urgente'}
                                         </button>
                                     ))}
                                 </div>
@@ -155,9 +165,9 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
                                     onChange={e => setFormData({ ...formData, targetType: e.target.value as any, targetId: '' })}
                                     className="w-full p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-[1.25rem] outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:text-slate-200 transition-all appearance-none"
                                 >
-                                    <option value="BROADCAST">Todos (Broadcast)</option>
+                                    <option value="BROADCAST">Todos (Mural Público)</option>
                                     <option value="USER">Usuário Específico</option>
-                                    <option value="GROUP">Departamento / Grupo</option>
+                                    <option value="GROUP">Departamento / Cargo</option>
                                 </select>
                             </div>
 
@@ -254,7 +264,7 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
                             </p>
                             <div className="flex flex-wrap items-center gap-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
                                 <span className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800 text-[10px]">
-                                    <Megaphone size={12} /> {ann.targetType}
+                                    <Megaphone size={12} /> {ann.targetType === 'BROADCAST' ? 'Público' : ann.targetType === 'USER' ? 'Individual' : 'Grupo'}
                                 </span>
                                 <span className="text-slate-300 dark:text-slate-700">•</span>
                                 <span className="flex items-center gap-1.5">
@@ -272,6 +282,7 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
                     </div>
                 )}
             </div>
+
         </div>
     );
 };

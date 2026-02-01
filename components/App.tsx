@@ -287,7 +287,7 @@ const IncidentHistory: React.FC<{
             <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
               {filterStatus === 'PENDING' ? 'Atendimentos Pendentes' : 'Histórico de Atendimentos'}
             </h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
+            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
               {filterStatus === 'PENDING' ? 'Aguardando validação ou recebimento' : 'Gestão de registros de atendimento'}
             </p>
           </div>
@@ -531,7 +531,7 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
             <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
               Próprios Municipais
             </h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
+            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
               Total: {buildings.length} prédios cadastrados
             </p>
           </div>
@@ -686,7 +686,7 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
             <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
               Gestão de Usuários
             </h2>
-            <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
               Total: {users.length} Colaboradores
             </p>
           </div>
@@ -780,7 +780,7 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
   );
 }
 
-const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => void, onDelete: (id: string) => void, onAdd: () => void }> = ({ jobTitles, onEdit, onDelete, onAdd }) => {
+const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => void, onDelete: (id: string) => void, onAdd: () => void, canEdit: boolean, canDelete: boolean }> = ({ jobTitles, onEdit, onDelete, onAdd, canEdit, canDelete }) => {
   const [search, setSearch] = useState('');
   const filtered = jobTitles.filter(j => normalizeString(j.name).includes(normalizeString(search)));
 
@@ -797,7 +797,7 @@ const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => v
             <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
               Gestão de Cargos
             </h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
+            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
               Total: {jobTitles.length} cargos cadastrados
             </p>
           </div>
@@ -824,16 +824,18 @@ const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => v
               </button>
             )}
           </div>
-          <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
-            <Plus size={16} strokeWidth={3} />
-            <span className="hidden sm:inline">Novo Cargo</span>
-          </button>
+          {canEdit && (
+            <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
+              <Plus size={16} strokeWidth={3} />
+              <span className="hidden sm:inline">Novo Cargo</span>
+            </button>
+          )}
         </div>
       </div>
       <div className="grid grid-cols-1 gap-2">
         {filtered.map(j => (
-          <div key={j.id} onClick={() => onEdit(j)} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center cursor-pointer hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors group">
-            <span className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase group-hover:text-brand-600 dark:group-hover:text-brand-400">{j.name}</span>
+          <div key={j.id} onClick={() => canEdit && onEdit(j)} className={`bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center ${canEdit ? 'cursor-pointer hover:bg-brand-50/50 dark:hover:bg-brand-900/10' : ''} transition-colors group`}>
+            <span className={`text-sm font-bold text-slate-800 dark:text-slate-100 uppercase ${canEdit ? 'group-hover:text-brand-600 dark:group-hover:text-brand-400' : ''}`}>{j.name}</span>
           </div>
         ))}
       </div>
@@ -841,7 +843,7 @@ const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => v
   );
 }
 
-const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onDelete: (id: string) => void, onAdd: () => void }> = ({ sectors, onEdit, onDelete, onAdd }) => {
+const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onDelete: (id: string) => void, onAdd: () => void, canEdit: boolean, canDelete: boolean }> = ({ sectors, onEdit, onDelete, onAdd, canEdit, canDelete }) => {
   const [search, setSearch] = useState('');
   const filtered = sectors.filter(s => normalizeString(s.name).includes(normalizeString(search)));
 
@@ -858,7 +860,7 @@ const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onD
             <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
               Setores Operacionais
             </h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
+            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
               Total: {sectors.length} setores cadastrados
             </p>
           </div>
@@ -885,16 +887,18 @@ const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onD
               </button>
             )}
           </div>
-          <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
-            <Plus size={16} strokeWidth={3} />
-            <span className="hidden sm:inline">Novo Setor</span>
-          </button>
+          {canEdit && (
+            <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200">
+              <Plus size={16} strokeWidth={3} />
+              <span className="hidden sm:inline">Novo Setor</span>
+            </button>
+          )}
         </div>
       </div>
       <div className="grid grid-cols-1 gap-2">
         {filtered.map(s => (
-          <div key={s.id} onClick={() => onEdit(s)} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center cursor-pointer hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors group">
-            <span className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase group-hover:text-brand-600 dark:group-hover:text-brand-400">{s.name}</span>
+          <div key={s.id} onClick={() => canEdit && onEdit(s)} className={`bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center ${canEdit ? 'cursor-pointer hover:bg-brand-50/50 dark:hover:bg-brand-900/10' : ''} transition-colors group`}>
+            <span className={`text-sm font-bold text-slate-800 dark:text-slate-100 uppercase ${canEdit ? 'group-hover:text-brand-600 dark:group-hover:text-brand-400' : ''}`}>{s.name}</span>
           </div>
         ))}
       </div>
@@ -1655,21 +1659,21 @@ export function App() {
       case 'BUILDING_FORM': return <BuildingForm initialData={editingBuilding} sectors={sectors} onSave={async (b) => { setSaving(true); try { await supabase.from('buildings').upsert(b); fetchStaticData(); handleNavigate('BUILDINGS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={() => handleNavigate('BUILDINGS')} onDelete={handleDeleteBuilding} isLoading={saving} />;
       case 'USERS': return <UserList users={users} jobTitles={jobTitles} onEdit={(u) => { setEditingUser(u); handleNavigate('USER_FORM'); }} onDelete={handleDeleteUser} onAdd={() => { setEditingUser(null); handleNavigate('USER_FORM'); }} onRefresh={fetchUsers} canEdit={can('MANAGE_USERS')} canDelete={can('DELETE_USERS')} />;
       case 'USER_FORM': return <UserForm initialData={editingUser} jobTitles={jobTitles} onSave={async (u) => { setSaving(true); try { const { userCode, jobTitleId, ...rest } = u; await supabase.from('users').upsert({ ...rest, user_code: userCode, job_title_id: jobTitleId }); fetchUsers(); handleNavigate('USERS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={() => handleNavigate('USERS')} onDelete={handleDeleteUser} isLoading={saving} />;
-      case 'JOB_TITLES': return <JobTitleList jobTitles={jobTitles} onEdit={(t) => { setEditingJobTitle(t); handleNavigate('JOB_TITLE_FORM'); }} onDelete={handleDeleteJobTitle} onAdd={() => { setEditingJobTitle(null); handleNavigate('JOB_TITLE_FORM'); }} />;
+      case 'JOB_TITLES': return <JobTitleList jobTitles={jobTitles} onEdit={(t) => { setEditingJobTitle(t); handleNavigate('JOB_TITLE_FORM'); }} onDelete={handleDeleteJobTitle} onAdd={() => { setEditingJobTitle(null); handleNavigate('JOB_TITLE_FORM'); }} canEdit={can('MANAGE_JOB_TITLES')} canDelete={can('MANAGE_JOB_TITLES')} />;
       case 'JOB_TITLE_FORM': return <JobTitleForm initialData={editingJobTitle} onSave={handleSaveJobTitle} onCancel={() => handleNavigate('JOB_TITLES')} onDelete={handleDeleteJobTitle} />;
-      case 'VEHICLES': return <VehicleList items={vehicles} onAdd={() => { setEditingVehicle(null); handleNavigate('VEHICLE_FORM'); }} onEdit={(i) => { setEditingVehicle(i); handleNavigate('VEHICLE_FORM'); }} onDelete={(id) => handleDeleteAsset('vehicles', id, 'Veículo')} />;
+      case 'VEHICLES': return <VehicleList items={vehicles} onAdd={() => { setEditingVehicle(null); handleNavigate('VEHICLE_FORM'); }} onEdit={(i) => { setEditingVehicle(i); handleNavigate('VEHICLE_FORM'); }} onDelete={(id) => handleDeleteAsset('vehicles', id, 'Veículo')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;
       case 'VEHICLE_FORM': return <VehicleForm initialData={editingVehicle} onSave={(i: any) => handleSaveAsset('vehicles', i, 'VEHICLES', 'Veículo')} onCancel={() => handleNavigate('VEHICLES')} onDelete={() => editingVehicle && handleDeleteAsset('vehicles', editingVehicle.id, 'Veículo')} isLoading={saving} />;
-      case 'VESTS': return <VestList items={vests} onAdd={() => { setEditingVest(null); handleNavigate('VEST_FORM'); }} onEdit={(i) => { setEditingVest(i); handleNavigate('VEST_FORM'); }} onDelete={(id) => handleDeleteAsset('vests', id, 'Colete')} />;
+      case 'VESTS': return <VestList items={vests} onAdd={() => { setEditingVest(null); handleNavigate('VEST_FORM'); }} onEdit={(i) => { setEditingVest(i); handleNavigate('VEST_FORM'); }} onDelete={(id) => handleDeleteAsset('vests', id, 'Colete')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;
       case 'VEST_FORM': return <VestForm initialData={editingVest} onSave={(i: any) => handleSaveAsset('vests', i, 'VESTS', 'Colete')} onCancel={() => handleNavigate('VESTS')} onDelete={() => editingVest && handleDeleteAsset('vests', editingVest.id, 'Colete')} isLoading={saving} />;
-      case 'RADIOS': return <RadioList items={radios} onAdd={() => { setEditingRadio(null); handleNavigate('RADIO_FORM'); }} onEdit={(i) => { setEditingRadio(i); handleNavigate('RADIO_FORM'); }} onDelete={(id) => handleDeleteAsset('radios', id, 'Rádio')} />;
+      case 'RADIOS': return <RadioList items={radios} onAdd={() => { setEditingRadio(null); handleNavigate('RADIO_FORM'); }} onEdit={(i) => { setEditingRadio(i); handleNavigate('RADIO_FORM'); }} onDelete={(id) => handleDeleteAsset('radios', id, 'Rádio')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;
       case 'RADIO_FORM': return <RadioForm initialData={editingRadio} onSave={(i: any) => handleSaveAsset('radios', i, 'RADIOS', 'Rádio')} onCancel={() => handleNavigate('RADIOS')} onDelete={() => editingRadio && handleDeleteAsset('radios', editingRadio.id, 'Rádio')} isLoading={saving} />;
-      case 'EQUIPMENTS': return <EquipmentList items={equipments} onAdd={() => { setEditingEquipment(null); handleNavigate('EQUIPMENT_FORM'); }} onEdit={(i) => { setEditingEquipment(i); handleNavigate('EQUIPMENT_FORM'); }} onDelete={(id) => handleDeleteAsset('equipments', id, 'Equipamento')} />;
+      case 'EQUIPMENTS': return <EquipmentList items={equipments} onAdd={() => { setEditingEquipment(null); handleNavigate('EQUIPMENT_FORM'); }} onEdit={(i) => { setEditingEquipment(i); handleNavigate('EQUIPMENT_FORM'); }} onDelete={(id) => handleDeleteAsset('equipments', id, 'Equipamento')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;
       case 'EQUIPMENT_FORM': return <EquipmentForm initialData={editingEquipment} onSave={(i: any) => handleSaveAsset('equipments', i, 'EQUIPMENTS', 'Equipamento')} onCancel={() => handleNavigate('EQUIPMENTS')} onDelete={() => editingEquipment && handleDeleteAsset('equipments', editingEquipment.id, 'Equipamento')} isLoading={saving} />;
       case 'LOANS': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} />;
       case 'LOAN_HISTORY': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} initialTab="HISTORY" isReportView={true} loans={loans} onRefresh={() => fetchLoans(false)} hasMore={hasMoreLoans} isLoadingMore={loadingMoreLoans} onLoadMore={() => fetchLoans(true)} onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} />;
-      case 'SECTORS': return <SectorList sectors={sectors} onEdit={(s) => { setEditingSector(s); handleNavigate('SECTOR_FORM'); }} onDelete={handleDeleteSector} onAdd={() => { setEditingSector(null); handleNavigate('SECTOR_FORM'); }} />;
+      case 'SECTORS': return <SectorList sectors={sectors} onEdit={(s) => { setEditingSector(s); handleNavigate('SECTOR_FORM'); }} onDelete={handleDeleteSector} onAdd={() => { setEditingSector(null); handleNavigate('SECTOR_FORM'); }} canEdit={can('MANAGE_SECTORS')} canDelete={can('MANAGE_SECTORS')} />;
       case 'SECTOR_FORM': return <SectorForm initialData={editingSector} onSave={handleSaveSector} onCancel={() => handleNavigate('SECTORS')} onDelete={handleDeleteSector} />;
-      case 'ALTERATION_TYPES': return <AlterationTypeManager types={alterationTypes} onAdd={async (name) => { const newType = { id: crypto.randomUUID(), name, order: alterationTypes.length }; await handleSaveAlterationType(newType); }} onEdit={(t) => { setEditingAlterationType(t); setView('ALTERATION_TYPE_FORM'); }} onDelete={handleDeleteAlterationType} onReorder={handleReorderAlterationTypes} />;
+      case 'ALTERATION_TYPES': return <AlterationTypeManager types={alterationTypes} onAdd={async (name) => { const newType = { id: crypto.randomUUID(), name, order: alterationTypes.length }; await handleSaveAlterationType(newType); }} onEdit={(t) => { setEditingAlterationType(t); setView('ALTERATION_TYPE_FORM'); }} onDelete={handleDeleteAlterationType} onReorder={handleReorderAlterationTypes} canManage={can('MANAGE_ALTERATION_TYPES')} />;
       case 'ALTERATION_TYPE_FORM': return <AlterationTypeForm initialData={editingAlterationType} onSave={handleSaveAlterationType} onCancel={() => handleNavigate('ALTERATION_TYPES')} onDelete={handleDeleteAlterationType} />;
       case 'CHARTS': return <ChartsView incidents={incidents} buildings={buildings} sectors={sectors} />;
       case 'MAP': return <MapView buildings={buildings} onNavigateBuilding={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} />;
@@ -1891,7 +1895,7 @@ export function App() {
         <header className="h-16 bg-white dark:bg-slate-900 border-b dark:border-slate-800 flex items-center px-4 md:px-8 justify-between shadow-sm z-30 transition-colors duration-200">
           <div className="flex items-center gap-4">
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2"><Menu /></button>
-            <h2 className="hidden md:block text-xs font-black uppercase text-slate-400 tracking-widest">Gestão Municipal</h2>
+            <h2 className="hidden md:block text-xs font-black uppercase text-slate-400 tracking-widest">Gestão de Alterações</h2>
             {isLocalMode && <span className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded text-xs font-black uppercase animate-pulse"><CloudOff size={12} /> Offline Ativado</span>}
           </div>
           <div className="flex items-center gap-3">

@@ -106,7 +106,9 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ currentUser, onVi
                                     <span className={`text-xs font-bold uppercase tracking-widest px-2 py-1 rounded ${selectedAnnouncement.priority === 'URGENT' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
                                         selectedAnnouncement.priority === 'IMPORTANT' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
                                         }`}>
-                                        {selectedAnnouncement.priority}
+                                        {selectedAnnouncement.priority === 'URGENT' ? 'Urgente' :
+                                            selectedAnnouncement.priority === 'IMPORTANT' ? 'Importante' : 'Informativo'
+                                        }
                                     </span>
                                     <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-2">{selectedAnnouncement.title}</h2>
                                 </div>

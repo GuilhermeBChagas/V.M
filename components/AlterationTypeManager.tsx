@@ -10,9 +10,10 @@ interface AlterationTypeManagerProps {
     onDelete: (id: string) => void;
     onEdit?: (type: AlterationType) => void;
     onReorder?: (newOrder: AlterationType[]) => void;
+    canManage?: boolean;
 }
 
-export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ types, onAdd, onDelete, onEdit, onReorder }) => {
+export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ types, onAdd, onDelete, onEdit, onReorder, canManage }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [newTypeName, setNewTypeName] = useState('');
 
@@ -40,7 +41,7 @@ export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ ty
                         <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
                             Tipos de Alteração
                         </h2>
-                        <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                        <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
                             Total: {types.length} tipos cadastrados
                         </p>
                     </div>
@@ -58,7 +59,7 @@ export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ ty
                             className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
                         />
                     </div>
-                    {!isAdding && (
+                    {canManage && !isAdding && (
                         <button
                             onClick={() => setIsAdding(true)}
                             className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95 transition-all duration-200"
@@ -106,12 +107,12 @@ export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ ty
                     filteredTypes.map((t) => (
                         <div
                             key={t.id}
-                            onClick={() => onEdit && onEdit(t)}
-                            className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group transition-all cursor-pointer hover:bg-brand-50/50 dark:hover:bg-brand-900/10"
+                            onClick={() => canManage && onEdit && onEdit(t)}
+                            className={`bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center group transition-all ${canManage ? 'cursor-pointer hover:bg-brand-50/50 dark:hover:bg-brand-900/10' : ''}`}
                         >
                             <div className="flex items-center gap-3 overflow-hidden">
                                 <div className="w-1.5 h-6 bg-brand-500 rounded-full flex-shrink-0"></div>
-                                <span className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate uppercase tracking-tight group-hover:text-brand-600">{t.name}</span>
+                                <span className={`font-bold text-slate-800 dark:text-slate-100 text-sm truncate uppercase tracking-tight ${canManage ? 'group-hover:text-brand-600' : ''}`}>{t.name}</span>
                             </div>
                         </div>
                     ))

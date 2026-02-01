@@ -621,7 +621,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                         <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
                             {getPageTitle()}
                         </h2>
-                        <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                        <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
                             {getPageSubtitle()}
                         </p>
                     </div>
