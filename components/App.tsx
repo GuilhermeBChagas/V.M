@@ -1358,9 +1358,14 @@ export function App() {
           if (error) throw error;
           setUnsyncedIncidents(prev => prev.filter(i => i.id !== inc.id));
         } catch (err: any) {
+          console.error("Erro ao salvar no Supabase:", err);
           const offlineData = { ...inc, raCode: payload.ra_code, isLocal: true };
           setUnsyncedIncidents(prev => [offlineData, ...prev.filter(i => i.id !== inc.id)]);
           savedLocally = true;
+          // Se não for um erro de rede (offline), avisa o usuário do erro técnico
+          if (navigator.onLine && err.message) {
+            console.warn("Falha técnica detectada (online):", err.message);
+          }
         }
       }
       await fetchIncidents();
@@ -1398,7 +1403,12 @@ export function App() {
           edited_by: inc.editedBy
         };
         const { error } = await supabase.from('incidents').upsert(payload);
-        if (!error) { setUnsyncedIncidents(prev => prev.filter(i => i.id !== inc.id)); }
+        if (!error) {
+          setUnsyncedIncidents(prev => prev.filter(i => i.id !== inc.id));
+        } else {
+          console.error("Erro na sincronização do item:", error);
+          throw error;
+        }
       }
       await fetchIncidents();
       showAlert("Sincronização", "Processamento finalizado.");
