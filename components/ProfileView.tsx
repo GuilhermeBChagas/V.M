@@ -92,10 +92,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, jobTitles, onUpd
             const base64String = reader.result as string;
             setIsSavingProfile(true);
             try {
+                // Import dinâmico ou garantir que esteja disponível
+                const { compressImage } = await import('../utils/imageUtils');
+
                 if (type === 'photo') {
-                    await onUpdateProfile({ photoUrl: base64String });
+                    // Perfil: 400px é mais que o suficiente para o círculo de perfil
+                    const compressed = await compressImage(base64String, 400, 0.7);
+                    await onUpdateProfile({ photoUrl: compressed });
                 } else {
-                    await onUpdateProfile({ signatureUrl: base64String });
+                    // Assinatura: 800px para manter nitidez no PDF
+                    const compressed = await compressImage(base64String, 800, 0.8);
+                    await onUpdateProfile({ signatureUrl: compressed });
                 }
             } catch (err) {
                 console.error("Erro ao fazer upload:", err);

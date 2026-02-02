@@ -8,16 +8,17 @@ interface AnnouncementBoardProps {
     currentUser: User;
     onViewAll?: () => void;
     onUnreadChange?: () => void;
+    revision?: number;
 }
 
-const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ currentUser, onViewAll, onUnreadChange }) => {
+const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ currentUser, onViewAll, onUnreadChange, revision = 0 }) => {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
 
     useEffect(() => {
         loadAnnouncements();
-    }, [currentUser.id]);
+    }, [currentUser.id, revision]);
 
     const loadAnnouncements = async () => {
         setLoading(true);

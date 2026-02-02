@@ -967,6 +967,8 @@ export function App() {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [loans, setLoans] = useState<LoanRecord[]>([]);
   const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0);
+  const [announcementsRevision, setAnnouncementsRevision] = useState(0);
+  const [lastAnnouncementUpdate, setLastAnnouncementUpdate] = useState<string | null>(null);
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -1309,11 +1311,34 @@ export function App() {
   }, [fetchStaticData, fetchIncidents, fetchAssets, fetchLoans, fetchLogs, fetchUsers]);
 
   useEffect(() => {
-    if (user) {
-      fetchAnnouncementsCount();
-      const interval = setInterval(fetchAnnouncementsCount, 30000); // Polling a cada 30s
-      return () => clearInterval(interval);
-    }
+    if (!user) return;
+
+    fetchAnnouncementsCount();
+
+    // Configuração do Realtime para Avisos
+    // 1. Escuta novos avisos ou avisos alterados/deletados
+    const channel = supabase
+      .channel('announcements_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+        console.log('Realtime: Mudança nos avisos, atualizando contagem...');
+        fetchAnnouncementsCount();
+        setAnnouncementsRevision(prev => prev + 1);
+      })
+      // 2. Escuta quando O PRÓPRIO USUÁRIO marca algo como lido
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'announcement_reads',
+        filter: `user_id=eq.${user.id}`
+      }, () => {
+        fetchAnnouncementsCount();
+        setAnnouncementsRevision(prev => prev + 1);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, fetchAnnouncementsCount]);
 
   useEffect(() => { if (user && !initialDataLoaded) { loadEssentialData(); } }, [user, initialDataLoaded, loadEssentialData]);
@@ -1765,7 +1790,7 @@ export function App() {
       // Mapeamento inverso para manter compatibilidade com lógica abaixo (que espera snake_case do banco em alguns casos)
       if (dbData) {
         // Se veio do cache (já mapeado), ajusta para parecer o retorno bruto se necessário, ou ajusta o código abaixo
-        // O código abaixo espera propriedades snake_case para re-mapear. 
+        // O código abaixo espera propriedades snake_case para re-mapear.
         // Como o cache já está mapeado (camelCase), precisamos garantir que o dbUser seja montado corretamente.
       }
     }
@@ -1832,7 +1857,8 @@ export function App() {
           pendingIncidentsCount={pendingIncidentsCount}
           pendingLoansCount={pendingLoansCount}
           unreadAnnouncementsCount={unreadAnnouncementsCount}
-          isAnnouncementsVisible={MENU_STRUCTURE.some(s => s.children?.some(c => c.id === 'announcements' && isMenuVisible(c)))}
+          announcementsRevision={announcementsRevision}
+          isAnnouncementsVisible={can('VIEW_ANNOUNCEMENTS')}
         />;
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;

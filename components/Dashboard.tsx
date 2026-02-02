@@ -22,6 +22,7 @@ interface DashboardProps {
     pendingIncidentsCount: number;
     pendingLoansCount: number;
     unreadAnnouncementsCount: number;
+    announcementsRevision?: number;
     isAnnouncementsVisible?: boolean;
 }
 
@@ -38,6 +39,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     pendingIncidentsCount,
     pendingLoansCount,
     unreadAnnouncementsCount,
+    announcementsRevision = 0,
     isAnnouncementsVisible = true
 }) => {
     // Estados da Pesquisa de Prédios
@@ -301,6 +303,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             currentUser={currentUser}
                             onViewAll={() => onNavigate('ANNOUNCEMENTS')}
                             onUnreadChange={onUnreadChange}
+                            revision={announcementsRevision}
                         />
                     </div>
                 )}
