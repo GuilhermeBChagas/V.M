@@ -1,18 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Database, X, CheckCircle, Server, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { Database, X, CheckCircle, Server, AlertCircle, RefreshCw, Loader2, Cloud, Zap, Check, Copy } from 'lucide-react';
 import { checkSupabaseConnection } from '../services/supabaseClient';
 
 interface DatabaseSetupProps {
     onClose?: () => void;
     mode?: 'modal' | 'inline';
+    onSync?: () => Promise<void>;
+    unsyncedCount?: number;
 }
 
-export const DatabaseSetup: React.FC<DatabaseSetupProps> = ({ onClose, mode = 'modal' }) => {
+export const DatabaseSetup: React.FC<DatabaseSetupProps> = ({ onClose, mode = 'modal', onSync, unsyncedCount = 0 }) => {
     const [status, setStatus] = useState<{ loading: boolean; success: boolean; message: string; code?: string }>({
         loading: true,
         success: false,
         message: ''
     });
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [copySuccess, setCopySuccess] = useState(false);
+
+    const repairSQL = `-- Adiciona a coluna timestamp na tabela de ocorrências
+ALTER TABLE incidents ADD COLUMN IF NOT EXISTS timestamp TIMESTAMPTZ;
+
+-- Garante que a coluna de operador também exista
+ALTER TABLE incidents ADD COLUMN IF NOT EXISTS operator_name TEXT;`;
+
+    const handleCopySQL = () => {
+        navigator.clipboard.writeText(repairSQL);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+    };
 
     const checkConnection = async () => {
         setStatus(prev => ({ ...prev, loading: true }));
@@ -23,6 +39,16 @@ export const DatabaseSetup: React.FC<DatabaseSetupProps> = ({ onClose, mode = 'm
             message: result.message,
             code: result.code
         });
+    };
+
+    const handleForceSync = async () => {
+        if (!onSync) return;
+        setIsSyncing(true);
+        try {
+            await onSync();
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
     useEffect(() => {
@@ -83,12 +109,44 @@ export const DatabaseSetup: React.FC<DatabaseSetupProps> = ({ onClose, mode = 'm
                     <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-opacity duration-300" style={{ opacity: status.success ? 1 : 0.5 }}>
                         <div className="flex items-center gap-2 mb-3">
                             <Database className="text-blue-600" size={20} />
-                            <h4 className="text-xs font-black uppercase text-slate-500 tracking-widest">Manutenção</h4>
+                            <h4 className="text-xs font-black uppercase text-slate-500 tracking-widest">Sincronização</h4>
                         </div>
                         <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                            {status.success ? 'Backup Automático Ativo' : 'Indisponível'}
+                            {unsyncedCount > 0 ? `${unsyncedCount} Registros Pendentes` : 'Tudo Sincronizado'}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">Gerenciado pela plataforma Supabase.</p>
+                        <button
+                            onClick={handleForceSync}
+                            disabled={!onSync || unsyncedCount === 0 || isSyncing}
+                            className="mt-3 w-full bg-blue-600 text-white py-2 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-50 transition-all"
+                        >
+                            {isSyncing ? <Loader2 size={12} className="animate-spin" /> : <Cloud className="text-white" size={12} />}
+                            Forçar Sincronização
+                        </button>
+                    </div>
+                </div>
+
+                {/* Seção de Reparo */}
+                <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-xl p-5">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg text-amber-600">
+                            <Zap size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-black text-amber-900 dark:text-amber-400 uppercase">Reparo de Estrutura</h3>
+                            <p className="text-[10px] font-bold text-amber-700 dark:text-amber-500 uppercase mt-0.5">Clique para copiar e execute no SQL Editor do Supabase</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-900 rounded-lg p-3 relative group">
+                        <pre className="text-[10px] font-mono text-blue-400 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                            {repairSQL}
+                        </pre>
+                        <button
+                            onClick={handleCopySQL}
+                            className={`absolute top-2 right-2 p-2 rounded-md transition-all ${copySuccess ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                        >
+                            {copySuccess ? <Check size={14} /> : <Copy size={14} />}
+                        </button>
                     </div>
                 </div>
 

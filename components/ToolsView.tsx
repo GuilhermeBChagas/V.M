@@ -197,7 +197,7 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
 
             {activeTab === 'DATABASE' && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border dark:border-slate-700 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-300">
-                    <DatabaseSetup mode="inline" />
+                    <DatabaseSetup mode="inline" onSync={onSync} unsyncedCount={unsyncedCount} />
                 </div>
             )}
 
