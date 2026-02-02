@@ -1342,6 +1342,7 @@ export function App() {
         description: inc.description,
         photos: inc.photos,
         status: (inc.status || 'PENDING').toUpperCase(),
+        timestamp: inc.timestamp, // Preserva o timestamp original
         is_edited: !isNew,
         last_edited_at: !isNew ? new Date().toISOString() : null,
         edited_by: !isNew ? user?.name : null
@@ -1387,10 +1388,14 @@ export function App() {
           date: inc.date,
           start_time: inc.startTime,
           end_time: inc.endTime,
-          alteration_type: inc.alteration_type,
+          alteration_type: inc.alterationType,
           description: inc.description,
           photos: inc.photos,
-          status: inc.status
+          status: inc.status,
+          timestamp: inc.timestamp,
+          is_edited: inc.isEdited,
+          last_edited_at: inc.lastEditedAt,
+          edited_by: inc.editedBy
         };
         const { error } = await supabase.from('incidents').upsert(payload);
         if (!error) { setUnsyncedIncidents(prev => prev.filter(i => i.id !== inc.id)); }
