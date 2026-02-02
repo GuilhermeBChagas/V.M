@@ -329,33 +329,45 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <div
                                     key={incident.id}
                                     onClick={() => onViewIncident?.(incident)}
-                                    className="p-4 rounded-xl border border-slate-50 dark:border-slate-700/50 hover:border-brand-100 dark:hover:border-brand-900/30 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-all cursor-pointer group"
+                                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/60 hover:shadow-md hover:scale-[1.01] transition-all cursor-pointer group"
                                 >
-                                    <div className="flex justify-between items-start gap-2 mb-1.5">
-                                        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase break-words leading-tight">
-                                            {building?.name || 'Local'}
+                                    {/* Header: Local e Data */}
+                                    <div className="flex justify-between items-start mb-3">
+                                        <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide leading-tight group-hover:text-brand-600 transition-colors">
+                                            {building?.name || 'Local Não Identificado'}
                                         </h4>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap pt-0.5">
+                                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase whitespace-nowrap bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded-lg">
                                             {formatDateBR(incident.date)}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 break-words whitespace-normal leading-relaxed mb-2.5">
-                                        {incident.description}
+
+                                    {/* Description (Short) */}
+                                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-4 line-clamp-1">
+                                        {incident.description || "Registro de rotina sem observações detalhadas."}
                                     </p>
-                                    <div className="flex items-center gap-2">
-                                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase">
+
+                                    {/* Tags Layout */}
+                                    <div className="flex items-center flex-wrap gap-2">
+                                        {/* Tag RA */}
+                                        <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-md text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                                             RA {incident.raCode}
                                         </span>
-                                        <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${incident.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+
+                                        {/* Tag Status */}
+                                        <span className={`px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider flex items-center gap-1 ${incident.status === 'APPROVED' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
+                                                incident.status === 'REJECTED' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400' :
+                                                    'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                                             }`}>
-                                            {incident.status}
+                                            {incident.status === 'APPROVED' ? 'Aprovado' : incident.status === 'REJECTED' ? 'Rejeitado' : 'Pendente'}
                                         </span>
+
+                                        {/* Tag Sync Status */}
                                         {incident.isLocal ? (
-                                            <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-600 rounded text-[9px] font-black uppercase border border-amber-500/20">
-                                                <WifiOff size={10} /> Local
+                                            <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-500 rounded-md text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                                                <WifiOff size={10} className="mb-0.5" /> Aguardando Sync
                                             </span>
                                         ) : (
-                                            <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 text-blue-600 rounded text-[9px] font-black uppercase border border-blue-500/20">
+                                            <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-md text-[9px] font-black uppercase tracking-wider">
                                                 Sincronizado
                                             </span>
                                         )}
@@ -364,9 +376,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             );
                         })}
                         {recentIncidents.length === 0 && (
-                            <div className="h-40 flex flex-col items-center justify-center text-slate-400 opacity-50">
-                                <FileText size={40} className="mb-2" />
-                                <p className="text-sm font-bold uppercase">Nenhum registro</p>
+                            <div className="h-40 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600">
+                                <Activity size={32} className="mb-2 opacity-50" />
+                                <p className="text-xs font-black uppercase tracking-widest">Nenhuma atividade recente</p>
                             </div>
                         )}
                     </div>

@@ -43,8 +43,15 @@ export const Auth: React.FC<AuthProps> = ({
 
    useEffect(() => {
       const savedIdentifier = localStorage.getItem('vigilante_saved_id');
+      const savedPwd = localStorage.getItem('vigilante_saved_pwd');
+
       if (savedIdentifier) {
          setLoginIdentifier(savedIdentifier);
+         if (savedPwd) {
+            try {
+               setLoginPassword(atob(savedPwd));
+            } catch (e) { /* Ignore invalid base64 */ }
+         }
          setRememberMe(true);
       }
       if (isSupabaseConfigured) {
@@ -94,8 +101,14 @@ export const Auth: React.FC<AuthProps> = ({
       }
 
       if (isLogin) {
-         if (rememberMe) localStorage.setItem('vigilante_saved_id', loginIdentifier);
-         else localStorage.removeItem('vigilante_saved_id');
+         if (rememberMe) {
+            localStorage.setItem('vigilante_saved_id', loginIdentifier);
+            // Basic obfuscation for UX convenience (Note: Not secure for high-value targets)
+            localStorage.setItem('vigilante_saved_pwd', btoa(loginPassword));
+         } else {
+            localStorage.removeItem('vigilante_saved_id');
+            localStorage.removeItem('vigilante_saved_pwd');
+         }
          try {
             await onLogin(loginIdentifier, loginPassword);
          } catch (err: any) {
@@ -190,10 +203,10 @@ export const Auth: React.FC<AuthProps> = ({
                         <>
                            {/* Credential Access */}
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] ml-2">Credencial de Acesso</label>
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] ml-2">Identificação</label>
                               <div className="relative group">
                                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-blue-400 transition-colors">
-                                    <UserIcon size={20} strokeWidth={1.5} />
+                                    <UserIcon size={18} strokeWidth={2} />
                                  </div>
                                  <input
                                     type="text"
@@ -201,7 +214,7 @@ export const Auth: React.FC<AuthProps> = ({
                                     disabled={isLoading || isCheckingConnection}
                                     value={loginIdentifier}
                                     onChange={handleLoginIdentifierChange}
-                                    className="block w-full pl-12 pr-4 py-3 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner"
+                                    className="block w-full pl-11 pr-4 py-3.5 bg-black/30 border border-white/5 rounded-xl text-sm font-bold text-white placeholder-slate-500 outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner"
                                     placeholder="CPF, Email ou Matrícula"
                                  />
                               </div>
@@ -209,10 +222,10 @@ export const Auth: React.FC<AuthProps> = ({
 
                            {/* Password Field with reveal toggle */}
                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] ml-2">Senha de Segurança</label>
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] ml-2">Senha de Acesso</label>
                               <div className="relative group">
                                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-blue-400 transition-colors">
-                                    <Lock size={20} strokeWidth={1.5} />
+                                    <Lock size={18} strokeWidth={2} />
                                  </div>
                                  <input
                                     type={showPassword ? "text" : "password"}
@@ -220,7 +233,7 @@ export const Auth: React.FC<AuthProps> = ({
                                     disabled={isLoading || isCheckingConnection}
                                     value={loginPassword}
                                     onChange={(e) => setLoginPassword(e.target.value)}
-                                    className="block w-full pl-12 pr-12 py-3 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner"
+                                    className="block w-full pl-11 pr-12 py-3.5 bg-black/30 border border-white/5 rounded-xl text-sm font-bold text-white placeholder-slate-500 outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner"
                                     placeholder="••••••••"
                                  />
                                  <button
@@ -228,7 +241,7 @@ export const Auth: React.FC<AuthProps> = ({
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-white transition-colors"
                                  >
-                                    {showPassword ? <EyeOff size={18} strokeWidth={1.5} /> : <Eye size={18} strokeWidth={1.5} />}
+                                    {showPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
                                  </button>
                               </div>
                            </div>
