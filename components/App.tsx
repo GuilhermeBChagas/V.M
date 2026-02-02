@@ -1140,7 +1140,12 @@ export function App() {
         signatureUrl: u.signature_url
       })) : [];
       setUsers(mappedUsers as User[]);
-    } catch (error: any) { console.error(error); showError("Erro ao buscar usuários", error.message || "Erro desconhecido"); } finally { setLoading(false); }
+      localStorage.setItem('cached_users', JSON.stringify(mappedUsers));
+    } catch (error: any) {
+      console.warn("Offline: Carregando usuários do cache.");
+      const cached = localStorage.getItem('cached_users');
+      if (cached) setUsers(JSON.parse(cached));
+    } finally { setLoading(false); }
   }, []);
 
   const createLog = async (action: SystemLog['action'], details: string, logUser?: User | null) => {
@@ -1692,15 +1697,44 @@ export function App() {
         return;
       } else { throw new Error("Senha de contingência incorreta."); }
     }
-    // Busca direta no banco para garantir login mesmo sem lista carregada
-    const { data: dbData, error } = await supabase.from('users')
-      .select('*')
-      .or(`email.eq.${identifier},cpf.eq.${identifier},matricula.eq.${identifier},user_code.eq.${identifier}`)
-      .single();
 
-    if (error || !dbData) throw new Error("Usuário não cadastrado.");
+
+    // Busca user no banco (Online) ou Cache (Offline)
+    let dbData = null;
+    let isOfflineLogin = false;
+
+    try {
+      if (!navigator.onLine) throw new Error("Offline");
+      const { data, error } = await supabase.from('users')
+        .select('*')
+        .or(`email.eq.${identifier},cpf.eq.${identifier},matricula.eq.${identifier},user_code.eq.${identifier}`)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error; // Se erro não for "Not found", lança
+      dbData = data;
+    } catch (err) {
+      // Fallback para cache local
+      isOfflineLogin = true;
+      const cachedUsers = JSON.parse(localStorage.getItem('cached_users') || '[]');
+      const val = identifier.trim().toLowerCase();
+      dbData = cachedUsers.find((u: any) =>
+        (u.email || '').trim().toLowerCase() === val ||
+        (u.cpf || '').trim().toLowerCase() === val ||
+        (u.matricula || '').trim().toLowerCase() === val ||
+        (u.userCode || '').trim().toLowerCase() === val
+      );
+      // Mapeamento inverso para manter compatibilidade com lógica abaixo (que espera snake_case do banco em alguns casos)
+      if (dbData) {
+        // Se veio do cache (já mapeado), ajusta para parecer o retorno bruto se necessário, ou ajusta o código abaixo
+        // O código abaixo espera propriedades snake_case para re-mapear. 
+        // Como o cache já está mapeado (camelCase), precisamos garantir que o dbUser seja montado corretamente.
+      }
+    }
+
+    if (!dbData) throw new Error(isOfflineLogin ? "Usuário não encontrado localmente (verifique a internet)." : "Usuário não cadastrado.");
 
     // Mapeamento manual para garantir compatibilidade com a interface User
+    // Se isOfflineLogin = true, dbData já pode estar em camelCase se veio do fetchUsers->cache
     const dbUser: User = {
       ...dbData,
       userCode: dbData.user_code || dbData.userCode,
@@ -1710,11 +1744,15 @@ export function App() {
       // Garantir que campos obrigatórios existam
       name: dbData.name,
       role: dbData.role,
-      id: dbData.id
+      id: dbData.id,
+      passwordHash: dbData.passwordHash || dbData.password_hash // Suporte a ambos
     };
     if (dbUser.passwordHash && dbUser.passwordHash !== password) throw new Error("Senha incorreta.");
-    setUser(dbUser); localStorage.setItem('vigilante_session', JSON.stringify(dbUser)); localStorage.setItem('app_version', APP_VERSION);
-    createLog('LOGIN', 'Acesso realizado via credenciais', dbUser);
+    setUser(dbUser);
+    localStorage.setItem('vigilante_session', JSON.stringify(dbUser));
+    localStorage.setItem('app_version', APP_VERSION);
+    createLog('LOGIN', isOfflineLogin ? 'Acesso Offline (Cache)' : 'Acesso realizado via credenciais', dbUser);
+    if (isOfflineLogin) showAlert("Modo Offline", "Login realizado com credenciais em cache.");
   };
 
   const handleLogout = async () => { if (user) await createLog('LOGOUT', 'Saiu do sistema'); setUser(null); localStorage.removeItem('vigilante_session'); handleNavigate('DASHBOARD'); };
