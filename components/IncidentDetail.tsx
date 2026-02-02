@@ -347,12 +347,14 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                         </h3>
                     </div>
 
-                    {/* CORPO DO TEXTO */}
+                    {/* CORPO DO TEXTO - LIMITADO A 10 LINHAS */}
                     <div
-                        className="text-justify text-[11px] md:text-[13px] leading-relaxed mb-3 whitespace-pre-wrap break-words px-2 text-slate-900 overflow-hidden"
+                        className="text-justify text-[11px] md:text-[13px] leading-relaxed mb-6 whitespace-pre-wrap break-words px-2 text-slate-900 overflow-hidden"
                         style={{
                             fontFamily: "'Inter', 'Segoe UI', sans-serif",
-                            maxHeight: incident.photos && incident.photos.length > 0 ? '300px' : 'none'
+                            display: '-webkit-box',
+                            WebkitLineClamp: 10,
+                            WebkitBoxOrient: 'vertical'
                         }}
                     >
                         {incident.description}
@@ -371,28 +373,29 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                         </div>
                     )}
 
-                    {/* FOTOS DE EVIDÊNCIA */}
+                    {/* FOTOS DE EVIDÊNCIA - DYNAMIC RESIZING */}
                     {incident.photos && incident.photos.length > 0 && (
-                        <div className="mb-6 break-inside-avoid">
+                        <div className="mb-6 break-inside-avoid page-break-inside-avoid">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="h-px flex-1 bg-slate-200"></div>
                                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">Registros Fotográficos</span>
                                 <div className="h-px flex-1 bg-slate-200"></div>
                             </div>
-                            <div className={`grid ${incident.photos.length === 1 ? 'grid-cols-1 max-w-xl mx-auto' : 'grid-cols-2'} gap-4`}>
+
+                            {/* Forced 5 Columns Layout, 3:4 Aspect Ratio (Horizontal Strip) */}
+                            <div className="grid grid-cols-5 gap-2 w-full">
                                 {incident.photos.map((p, idx) => (
-                                    <div key={idx} className="flex flex-col">
-                                        <div className="border-2 border-slate-300 p-1 bg-white shadow-md w-full h-[280px] md:h-[380px] flex items-center justify-center overflow-hidden rounded-xl">
+                                    <div key={idx} className="flex flex-col break-inside-avoid">
+                                        <div className="border border-slate-300 p-0.5 bg-white shadow-sm w-full aspect-[3/4] flex items-center justify-center overflow-hidden rounded-md relative">
                                             <img
                                                 src={p}
-                                                className="w-full h-full object-cover bg-slate-100 hover:object-contain transition-all duration-500"
+                                                className="absolute inset-0 w-full h-full object-contain bg-slate-100"
                                                 alt={`Evidência ${idx + 1}`}
                                                 loading="lazy"
                                             />
                                         </div>
-                                        <div className="mt-2 flex justify-between items-center px-1">
-                                            <span className="text-[8px] md:text-[10px] uppercase font-black text-slate-500">Foto {idx + 1}</span>
-                                            <span className="text-[7px] md:text-[9px] italic text-slate-400 font-bold uppercase">ANEXO RA {incident.raCode}</span>
+                                        <div className="mt-1 flex justify-between items-center px-0.5">
+                                            <span className="text-[6px] uppercase font-black text-slate-500 truncate">Foto {idx + 1}</span>
                                         </div>
                                     </div>
                                 ))}
@@ -492,6 +495,6 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
