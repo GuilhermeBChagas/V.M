@@ -364,20 +364,29 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                         </div>
                     )}
 
-                    {/* FOTOS */}
+                    {/* FOTOS DE EVIDÊNCIA */}
                     {incident.photos && incident.photos.length > 0 && (
-                        <div className="mb-8 break-inside-avoid">
-                            <div className="grid grid-cols-5 gap-2 md:gap-4 justify-center">
+                        <div className="mb-10 break-inside-avoid">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="h-px flex-1 bg-slate-200"></div>
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Registro Fotográfico</span>
+                                <div className="h-px flex-1 bg-slate-200"></div>
+                            </div>
+                            <div className={`grid ${incident.photos.length === 1 ? 'grid-cols-1 max-w-md mx-auto' : 'grid-cols-2'} gap-4`}>
                                 {incident.photos.map((p, idx) => (
-                                    <div key={idx} className="flex flex-col items-center">
-                                        <div className="border border-slate-400 p-1 bg-white shadow-sm w-full aspect-[3/4] flex items-center justify-center overflow-hidden rounded-sm">
+                                    <div key={idx} className="flex flex-col">
+                                        <div className="border border-slate-300 p-1 bg-white shadow-sm w-full h-[200px] md:h-[260px] flex items-center justify-center overflow-hidden rounded-md">
                                             <img
                                                 src={p}
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-contain bg-slate-50"
                                                 alt={`Evidência ${idx + 1}`}
+                                                loading="lazy"
                                             />
                                         </div>
-                                        <span className="text-[6px] md:text-[8px] uppercase font-black text-slate-500 mt-1.5">FOTO {idx + 1}</span>
+                                        <div className="mt-2 flex justify-between items-center px-1">
+                                            <span className="text-[7px] md:text-[9px] uppercase font-black text-slate-500">Foto {idx + 1}</span>
+                                            <span className="text-[6px] md:text-[8px] italic text-slate-400 font-bold uppercase">Anexo RA {incident.raCode}</span>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

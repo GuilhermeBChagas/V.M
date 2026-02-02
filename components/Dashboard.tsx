@@ -211,22 +211,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {/* SELEÇÃO ATIVA */}
             {selectedBuilding && (
                 <div className="bg-brand-900 dark:bg-slate-800 rounded-3xl p-6 text-white shadow-2xl animate-in slide-in-from-top-4 fade-in">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
+                    <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
+                        <div className="flex items-center gap-4 flex-1 min-w-0 w-full lg:w-auto text-center lg:text-left">
+                            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 flex-shrink-0 mx-auto lg:mx-0">
                                 <span className="text-3xl font-black">{selectedBuilding.buildingNumber}</span>
                             </div>
-                            <div>
-                                <h3 className="text-xl font-black uppercase leading-none">{selectedBuilding.name}</h3>
-                                <p className="text-xs text-white/60 font-medium uppercase mt-1">{selectedBuilding.address}</p>
+                            <div className="min-w-0 flex-1">
+                                <h3 className="text-xl font-black uppercase leading-none truncate">{selectedBuilding.name}</h3>
+                                <p className="text-xs text-white/60 font-medium uppercase mt-1 truncate">{selectedBuilding.address}</p>
                             </div>
                         </div>
-                        <button
-                            onClick={() => onNewIncidentWithBuilding?.(selectedBuilding.id)}
-                            className="w-full md:w-auto px-10 py-4 bg-brand-500 hover:bg-brand-400 text-white rounded-2xl font-black text-xs uppercase shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2"
-                        >
-                            <Plus size={20} /> Iniciar Registro Aqui
-                        </button>
+
+                        <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full lg:w-auto justify-center lg:justify-end">
+                            <button
+                                onClick={() => {
+                                    if (selectedBuilding.latitude && selectedBuilding.longitude) {
+                                        const lat = selectedBuilding.latitude.toString().replace(',', '.');
+                                        const lng = selectedBuilding.longitude.toString().replace(',', '.');
+                                        window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+                                    } else {
+                                        alert("Este prédio não possui coordenadas cadastradas.");
+                                    }
+                                }}
+                                className="flex-1 lg:flex-none whitespace-nowrap px-6 py-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-black text-xs uppercase border border-white/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <Navigation size={18} /> Seguir Rota
+                            </button>
+
+                            <button
+                                onClick={() => onNewIncidentWithBuilding?.(selectedBuilding.id)}
+                                className="flex-1 lg:flex-none whitespace-nowrap px-10 py-4 bg-brand-500 hover:bg-brand-400 text-white rounded-2xl font-black text-xs uppercase shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <Plus size={20} /> Iniciar Registro
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
