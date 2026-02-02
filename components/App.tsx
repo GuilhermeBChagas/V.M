@@ -1023,10 +1023,13 @@ export function App() {
     const to = from + PAGE_SIZE - 1;
     try {
       let finalData: Incident[] = [];
+      // Columns for LIST view - exclude heavy description and photos
+      const listColumns = 'id, ra_code, building_id, user_id, operator_name, date, start_time, end_time, alteration_type, status, timestamp, is_edited, last_edited_at, edited_by';
+
       if (!isLoadMore) {
         const [pendingRes, historyRes] = await Promise.all([
-          supabase.from('incidents').select('*').eq('status', 'PENDING'),
-          supabase.from('incidents').select('*').neq('status', 'PENDING').order('created_at', { ascending: false }).range(0, PAGE_SIZE - 1)
+          supabase.from('incidents').select(listColumns).eq('status', 'PENDING'),
+          supabase.from('incidents').select(listColumns).neq('status', 'PENDING').order('created_at', { ascending: false }).range(0, PAGE_SIZE - 1)
         ]);
         if (pendingRes.error) throw pendingRes.error;
         if (historyRes.error) throw historyRes.error;
@@ -1035,7 +1038,7 @@ export function App() {
         finalData = [...mappedPending, ...mappedHistory];
         if ((historyRes.data?.length || 0) < PAGE_SIZE) setHasMore(false);
       } else {
-        const { data, error } = await supabase.from('incidents').select('*').neq('status', 'PENDING').order('created_at', { ascending: false }).range(from, to);
+        const { data, error } = await supabase.from('incidents').select(listColumns).neq('status', 'PENDING').order('created_at', { ascending: false }).range(from, to);
         if (error) throw error;
         finalData = (data || []).map(mapIncident);
         if (finalData.length < PAGE_SIZE) setHasMore(false);
@@ -1061,10 +1064,13 @@ export function App() {
     const to = from + PAGE_SIZE - 1;
     try {
       let finalData: LoanRecord[] = [];
+      // Columns for LIST view
+      const loanListColumns = 'id, status, loan_time, return_time, building_id, operator_id, receiver_id, receiver_name, batch_id';
+
       if (!isLoadMore) {
         const [activeRes, completedRes] = await Promise.all([
-          supabase.from('loan_records').select('*').in('status', ['PENDING', 'ACTIVE']),
-          supabase.from('loan_records').select('*').in('status', ['COMPLETED', 'REJECTED']).order('return_time', { ascending: false }).range(0, PAGE_SIZE - 1)
+          supabase.from('loan_records').select(loanListColumns).in('status', ['PENDING', 'ACTIVE']),
+          supabase.from('loan_records').select(loanListColumns).in('status', ['COMPLETED', 'REJECTED']).order('return_time', { ascending: false }).range(0, PAGE_SIZE - 1)
         ]);
         if (activeRes.error) throw activeRes.error;
         if (completedRes.error) throw completedRes.error;
@@ -1073,7 +1079,7 @@ export function App() {
         finalData = [...mappedActive, ...mappedCompleted];
         if ((completedRes.data?.length || 0) < PAGE_SIZE) setHasMoreLoans(false);
       } else {
-        const { data, error } = await supabase.from('loan_records').select('*').in('status', ['COMPLETED', 'REJECTED']).order('return_time', { ascending: false }).range(from, to);
+        const { data, error } = await supabase.from('loan_records').select(loanListColumns).in('status', ['COMPLETED', 'REJECTED']).order('return_time', { ascending: false }).range(from, to);
         if (error) throw error;
         finalData = (data || []).map(mapLoan);
         if (finalData.length < PAGE_SIZE) setHasMoreLoans(false);
@@ -1090,7 +1096,7 @@ export function App() {
 
   const fetchLogs = useCallback(async () => {
     try {
-      const { data, error } = await supabase.from('system_logs').select('*').order('timestamp', { ascending: false }).limit(100);
+      const { data, error } = await supabase.from('system_logs').select('id, userId, userName, action, details, timestamp').order('timestamp', { ascending: false }).limit(100);
       if (error) throw error;
       if (data) setLogs(data);
     } catch (e) { console.error("Error fetching logs", e); }
@@ -1129,7 +1135,7 @@ export function App() {
   const fetchUsers = useCallback(async () => {
     try {
       const { data, error } = await supabase.from('users')
-        .select('*')
+        .select('id, name, role, user_code, job_title_id, photo_url, status, email, cpf, matricula')
         .order('name', { ascending: true })
         .limit(200);
       if (error) throw error;

@@ -10,7 +10,7 @@ export const announcementService = {
             // Conta RLS para filtrar
             const { data, error } = await supabase
                 .from('announcements')
-                .select('*')
+                .select('id, title, priority, target_data, created_at, request_confirmation, sender_id, expires_at, is_archived, content')
                 .eq('is_archived', false)
                 .order('priority', { ascending: false }) // Urgent > Important > Info
                 .order('created_at', { ascending: false });
@@ -60,8 +60,24 @@ export const announcementService = {
      */
     async getUnreadCount(userId: string, userRole?: string): Promise<number> {
         try {
-            const announcements = await this.getActiveAnnouncements(userId, userRole);
-            return announcements.filter(a => !a.isRead).length;
+            // Obtém todos os IDs de avisos ativos (leves)
+            const { data: activeAnns, error: annError } = await supabase
+                .from('announcements')
+                .select('id')
+                .eq('is_archived', false);
+
+            if (annError || !activeAnns) return 0;
+            const activeIds = activeAnns.map(a => a.id);
+
+            // Conta quantos destes o usuário já leu
+            const { count, error: countError } = await supabase
+                .from('announcement_reads')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .in('announcement_id', activeIds);
+
+            if (countError) return 0;
+            return Math.max(0, activeIds.length - (count || 0));
         } catch (error) {
             return 0;
         }
@@ -121,7 +137,7 @@ export const announcementService = {
      */
     async getReadingReport(announcementId: string): Promise<{ userId: string, readAt: string | null, userName: string, role: string, jobTitleId?: string }[]> {
         try {
-            // 1. Get all users
+            // 1. Get all users (lightweight)
             const { data: users, error: usersError } = await supabase
                 .from('users')
                 .select('id, name, role, job_title_id');
