@@ -1424,7 +1424,7 @@ export function App() {
   };
 
   const handleSyncData = async () => {
-    if (unsyncedIncidents.length === 0) return;
+    if (saving || unsyncedIncidents.length === 0) return;
     setSaving(true);
     let syncedCount = 0;
 
@@ -1506,6 +1506,22 @@ export function App() {
       setSaving(false);
     }
   };
+
+  // Force Sync on Mount & Network Recovery
+  useEffect(() => {
+    const autoSync = () => {
+      if (navigator.onLine && unsyncedIncidents.length > 0 && !saving) {
+        handleSyncData();
+      }
+    };
+
+    window.addEventListener('online', autoSync);
+    // Attempt sync implicitly via unsyncedIncidents change or mount
+    autoSync();
+
+    return () => window.removeEventListener('online', autoSync);
+  }, [unsyncedIncidents]);
+
 
   const handleConfirmLoanBatch = async (batchId: string) => {
     if (saving) return;
