@@ -166,7 +166,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                                     </span>
                                 )}
                             </p>
-                            <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tight">{isCancelled ? 'ESTE DOCUMENTO NÃO POSSUI VALIDADE LEGAL' : isPending ? 'REVISE OS DADOS ANTES DE CARIMBAR' : 'DOCUMENTO OFICIAL VALIDADADO E CARIMBADO'}</p>
+                            <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tight">{isCancelled ? 'ESTE DOCUMENTO NÃO POSSUI VALIDADE LEGAL' : isPending ? 'REGISTRO GRAVADO (AGUARDANDO VALIDAÇÃO)' : 'DOCUMENTO OFICIAL VALIDADADO E CARIMBADO'}</p>
                         </div>
                     </div>
 

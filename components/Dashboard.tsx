@@ -355,10 +355,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                                         {/* Tag Status */}
                                         <span className={`px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider flex items-center gap-1 ${incident.status === 'APPROVED' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
-                                                incident.status === 'REJECTED' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400' :
-                                                    'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                            incident.status === 'REJECTED' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400' :
+                                                'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                                             }`}>
-                                            {incident.status === 'APPROVED' ? 'Aprovado' : incident.status === 'REJECTED' ? 'Rejeitado' : 'Pendente'}
+                                            {incident.status === 'APPROVED' ? 'Aprovado' : incident.status === 'REJECTED' ? 'Rejeitado' : 'Registro Gravado'}
                                         </span>
 
                                         {/* Tag Sync Status */}
@@ -368,7 +368,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                             </span>
                                         ) : (
                                             <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-md text-[9px] font-black uppercase tracking-wider">
-                                                Sincronizado
+                                                Registro Gravado
                                             </span>
                                         )}
                                     </div>
