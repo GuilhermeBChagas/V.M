@@ -23,7 +23,7 @@ import AnnouncementManager from './AnnouncementManager';
 import { announcementService } from '../services/announcementService';
 import { User, Building, Incident, ViewState, UserRole, Sector, JobTitle, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides } from '../types';
 import { MENU_STRUCTURE, MenuItemDef } from '../constants/menuStructure';
-import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone } from 'lucide-react';
+import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, WifiOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
 import { formatDateBR } from '../utils/dateUtils';
@@ -113,6 +113,22 @@ const mapLoan = (l: any): LoanRecord => ({
   checkoutTime: l.checkout_time || l.checkoutTime,
   returnTime: l.return_time || l.returnTime,
 });
+
+// Helper for sequential integrity
+const calculateNextRaCode = (currentIncidents: any[]) => {
+  const currentYear = new Date().getFullYear();
+  const yearIncidents = currentIncidents.filter(i => {
+    const ra = i.raCode || i.ra_code || '';
+    return ra.endsWith(currentYear.toString());
+  });
+  let maxNum = 0;
+  yearIncidents.forEach(i => {
+    const ra = i.raCode || i.ra_code || '';
+    const num = parseInt(ra.split('/')[0]);
+    if (!isNaN(num) && num > maxNum) maxNum = num;
+  });
+  return `${maxNum + 1}/${currentYear}`;
+};
 
 // --- INLINE COMPONENTS DEFINITIONS ---
 
@@ -403,6 +419,7 @@ const IncidentHistory: React.FC<{
               <div className="flex-1 w-full min-w-0 z-10">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="bg-slate-800 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">RA {incident.raCode}</span>
+                  {incident.isLocal && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><WifiOff size={10} /> Local</span>}
                   {isCancelled && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Ban size={10} /> Cancelado</span>}
                   {isApproved && <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><CheckCircle size={10} /> Validado</span>}
                   {isPending && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Clock size={10} /> Pendente</span>}
@@ -1323,14 +1340,26 @@ export function App() {
     });
   };
 
+  const generateNextRaCode = () => {
+    const currentYear = new Date().getFullYear();
+    const yearIncidents = incidents.filter(i => i.raCode && i.raCode.endsWith(currentYear.toString()));
+    let maxNum = 0;
+    yearIncidents.forEach(i => { const num = parseInt(i.raCode.split('/')[0]); if (!isNaN(num) && num > maxNum) maxNum = num; });
+    return `${maxNum + 1}/${currentYear}`;
+  };
+
   const handleSaveIncident = async (inc: Incident) => {
     setSaving(true);
     try {
       const existing = incidents.find(i => i.id === inc.id);
       const isNew = !existing;
+      // Provisory ID and Tentative Sequence
+      const tempId = inc.id || (isNew ? crypto.randomUUID() : inc.id);
+      const tentativeRa = inc.raCode || generateNextRaCode();
+
       const payload = {
-        id: inc.id,
-        ra_code: inc.raCode || generateNextRaCode(),
+        id: tempId,
+        ra_code: tentativeRa,
         building_id: inc.buildingId,
         user_id: inc.userId,
         operator_name: inc.operatorName,
@@ -1342,77 +1371,135 @@ export function App() {
         description: inc.description,
         photos: inc.photos,
         status: (inc.status || 'PENDING').toUpperCase(),
-        timestamp: inc.timestamp, // Preserva o timestamp original
+        timestamp: inc.timestamp || new Date().toISOString(), // Persistent record creation time
         is_edited: !isNew,
         last_edited_at: !isNew ? new Date().toISOString() : null,
         edited_by: !isNew ? user?.name : null
       };
+
       let savedLocally = false;
+
+      // Offline-First: Always ensure local integrity
+      const localData = { ...inc, id: tempId, raCode: payload.ra_code, timestamp: payload.timestamp, isLocal: true };
+
       if (isLocalMode) {
-        const localInc = { ...inc, raCode: payload.ra_code, isLocal: true };
-        setUnsyncedIncidents(prev => [localInc, ...prev.filter(i => i.id !== inc.id)]);
+        setUnsyncedIncidents(prev => [localData, ...prev.filter(i => i.id !== tempId)]);
         savedLocally = true;
       } else {
         try {
+          // Attempt immediate sync
           const { error } = await supabase.from('incidents').upsert(payload);
           if (error) throw error;
-          setUnsyncedIncidents(prev => prev.filter(i => i.id !== inc.id));
+
+          // If success, remove from unsynced in case it was there
+          setUnsyncedIncidents(prev => prev.filter(i => i.id !== tempId));
         } catch (err: any) {
-          console.error("Erro ao salvar no Supabase:", err);
-          const offlineData = { ...inc, raCode: payload.ra_code, isLocal: true };
-          setUnsyncedIncidents(prev => [offlineData, ...prev.filter(i => i.id !== inc.id)]);
+          console.warn("Rede instável. Salvando na fila de sincronização (Outbox).", err.message);
+          setUnsyncedIncidents(prev => [localData, ...prev.filter(i => i.id !== tempId)]);
           savedLocally = true;
-          // Se não for um erro de rede (offline), avisa o usuário do erro técnico
-          if (navigator.onLine && err.message) {
-            console.warn("Falha técnica detectada (online):", err.message);
-          }
         }
       }
+
       await fetchIncidents();
       createLog(isNew ? 'CREATE_INCIDENT' : 'UPDATE_INCIDENT', `RA ${payload.ra_code} em ${buildings.find(b => b.id === inc.buildingId)?.name}`);
       handleNavigate('DASHBOARD');
       setEditingIncident(null);
       setPreSelectedBuildingId(undefined);
-      showAlert("Registro Salvo", savedLocally ? "Dados salvos localmente." : "Registro enviado com sucesso.");
-    } catch (err: any) { showError("Erro ao processar", err.message); } finally { setSaving(false); }
+
+      if (savedLocally) {
+        showAlert("Integridade Local", "Registro salvo no dispositivo. Será sincronizado automaticamente ao detectar conexão.");
+      } else {
+        showAlert("Sincronizado", "Registro validado e enviado com sucesso.");
+      }
+    } catch (err: any) {
+      showError("Erro Crítico de Armazenamento", err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSyncData = async () => {
     if (unsyncedIncidents.length === 0) return;
     setSaving(true);
+    let syncedCount = 0;
+
     try {
-      const toSync = [...unsyncedIncidents];
-      for (const inc of toSync) {
-        const payload = {
-          id: inc.id,
-          ra_code: inc.raCode,
-          building_id: inc.buildingId,
-          user_id: inc.userId,
-          operator_name: inc.operatorName,
-          vigilants: inc.vigilants,
-          date: inc.date,
-          start_time: inc.startTime,
-          end_time: inc.endTime,
-          alteration_type: inc.alterationType,
-          description: inc.description,
-          photos: inc.photos,
-          status: inc.status,
-          timestamp: inc.timestamp,
-          is_edited: inc.isEdited,
-          last_edited_at: inc.lastEditedAt,
-          edited_by: inc.editedBy
-        };
-        const { error } = await supabase.from('incidents').upsert(payload);
-        if (!error) {
+      // 1. Estrita Ordem Sequencial (FIFO) baseada no momento da criação real
+      const queue = [...unsyncedIncidents].sort((a, b) =>
+        new Date(a.timestamp || 0).getTime() - new Date(b.timestamp || 0).getTime()
+      );
+
+      for (const inc of queue) {
+        if (!navigator.onLine) break; // Pausa se a conexão cair durante o processamento
+
+        try {
+          let finalRaCode = inc.raCode;
+
+          // 2. Verificação de Conflito de Sequência (Server Check)
+          const { data: serverExisting } = await supabase
+            .from('incidents')
+            .select('ra_code')
+            .eq('ra_code', inc.raCode)
+            .maybeSingle();
+
+          if (serverExisting) {
+            console.warn(`Colisão de RA detectada: ${inc.raCode}. Aplicando re-sequenciamento.`);
+            // Busca dados diretos do servidor para garantir o próximo número correto
+            const currentYear = new Date().getFullYear();
+            const { data: serverYearData } = await supabase
+              .from('incidents')
+              .select('ra_code')
+              .ilike('ra_code', `%/${currentYear}`);
+
+            // Re-calcula baseado no estado global (local + servidor)
+            const allRecords = [...incidents, ...(serverYearData || []).map(r => ({ raCode: r.ra_code }))];
+            finalRaCode = calculateNextRaCode(allRecords);
+
+            // Log do re-sequenciamento
+            await createLog('DATABASE_TOOLS', `Re-sequenciamento: RA ${inc.raCode} -> ${finalRaCode} (Conflito de Sincronia)`);
+          }
+
+          const payload = {
+            id: inc.id,
+            ra_code: finalRaCode,
+            building_id: inc.buildingId,
+            user_id: inc.userId,
+            operator_name: inc.operatorName,
+            vigilants: inc.vigilants,
+            date: inc.date,
+            start_time: inc.startTime,
+            end_time: inc.endTime,
+            alteration_type: inc.alterationType,
+            description: inc.description,
+            photos: inc.photos,
+            status: inc.status,
+            timestamp: inc.timestamp,
+            is_edited: inc.isEdited,
+            last_edited_at: inc.lastEditedAt,
+            edited_by: inc.editedBy
+          };
+
+          const { error } = await supabase.from('incidents').upsert(payload);
+          if (error) throw error;
+
+          // Remove da fila somente após confirmação do servidor
           setUnsyncedIncidents(prev => prev.filter(i => i.id !== inc.id));
-        } else {
-          console.error("Erro na sincronização do item:", error);
-          throw error;
+          syncedCount++;
+        } catch (itemError: any) {
+          console.error(`Erro ao processar registro ${inc.id}:`, itemError);
+          // Não remove da fila para permitir nova tentativa na próxima sync
         }
       }
+
       await fetchIncidents();
-      showAlert("Sincronização", "Processamento finalizado.");
-    } catch (err: any) { showError("Erro na sincronização", err.message); } finally { setSaving(false); }
+      if (syncedCount > 0) {
+        showAlert("Sincronização Finalizada", `${syncedCount} registros integrados com sucesso.`);
+      }
+    } catch (err: any) {
+      showError("Erro na Fila de Sincronização", err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleConfirmLoanBatch = async (batchId: string) => {
@@ -1427,14 +1514,6 @@ export function App() {
       fetchLoans();
       showAlert("Sucesso", "Recebimento confirmado.");
     } catch (err: any) { showError("Erro", "Falha ao confirmar: " + err.message); } finally { setSaving(false); }
-  };
-
-  const generateNextRaCode = () => {
-    const currentYear = new Date().getFullYear();
-    const yearIncidents = incidents.filter(i => i.raCode && i.raCode.endsWith(currentYear.toString()));
-    let maxNum = 0;
-    yearIncidents.forEach(i => { const num = parseInt(i.raCode.split('/')[0]); if (!isNaN(num) && num > maxNum) maxNum = num; });
-    return `${maxNum + 1}/${currentYear}`;
   };
 
   const handleToggleLocalMode = (enabled: boolean) => { setIsLocalMode(enabled); localStorage.setItem('is_local_mode', enabled.toString()); };

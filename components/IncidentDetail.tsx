@@ -1,7 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import { Incident, Building, User } from '../types';
-import { ArrowLeft, Pencil, CheckCircle, XCircle, Download, Loader2, Ban, ShieldCheck, Printer } from 'lucide-react';
+import { ArrowLeft, Pencil, CheckCircle, XCircle, Download, Loader2, Ban, ShieldCheck, Printer, WifiOff } from 'lucide-react';
 import { formatDateBR } from '../utils/dateUtils';
 
 declare var html2pdf: any;
@@ -158,7 +158,14 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                             {isCancelled ? <Ban className="text-red-600" /> : <ShieldCheck className={isPending ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'} />}
                         </div>
                         <div>
-                            <p className="font-black uppercase text-[10px] md:text-xs text-slate-800 dark:text-slate-200">{isCancelled ? 'REGISTRO CANCELADO' : isPending ? 'VALIDAR DOCUMENTO RA ' + incident.raCode : 'GERENCIAR REGISTRO PUBLICADO'}</p>
+                            <p className="font-black uppercase text-[10px] md:text-xs text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                {isCancelled ? 'REGISTRO CANCELADO' : isPending ? 'VALIDAR DOCUMENTO RA ' + incident.raCode : 'GERENCIAR REGISTRO PUBLICADO'}
+                                {incident.isLocal && (
+                                    <span className="px-2 py-0.5 bg-amber-500 text-white text-[9px] font-black rounded flex items-center gap-1 shadow-sm">
+                                        <WifiOff size={10} /> DADOS LOCAIS
+                                    </span>
+                                )}
+                            </p>
                             <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tight">{isCancelled ? 'ESTE DOCUMENTO NÃO POSSUI VALIDADE LEGAL' : isPending ? 'REVISE OS DADOS ANTES DE CARIMBAR' : 'DOCUMENTO OFICIAL VALIDADADO E CARIMBADO'}</p>
                         </div>
                     </div>

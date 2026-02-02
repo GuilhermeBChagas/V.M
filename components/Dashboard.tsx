@@ -2,7 +2,7 @@
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { Incident, Building, Sector, ViewState } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { CheckCircle, Clock, Activity, Zap, Plus, ArrowRight, CalendarClock, FileText, Search, MapPin, Loader2, Navigation, AlertTriangle, X } from 'lucide-react';
+import { CheckCircle, Clock, Activity, Zap, Plus, ArrowRight, CalendarClock, FileText, Search, MapPin, Loader2, Navigation, AlertTriangle, X, WifiOff } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
 import { formatDateBR } from '../utils/dateUtils';
@@ -346,10 +346,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase">
                                             RA {incident.raCode}
                                         </span>
-                                        <span className={`px-2 py-0.5 rounded text-xs font-black uppercase ${incident.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                        <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${incident.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
                                             }`}>
                                             {incident.status}
                                         </span>
+                                        {incident.isLocal ? (
+                                            <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-600 rounded text-[9px] font-black uppercase border border-amber-500/20">
+                                                <WifiOff size={10} /> Local
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 text-blue-600 rounded text-[9px] font-black uppercase border border-blue-500/20">
+                                                Sincronizado
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             );
