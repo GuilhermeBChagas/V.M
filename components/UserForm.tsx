@@ -212,11 +212,11 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                         <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Nível de Permissão</label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                             <div
-                                onClick={() => setFormData({ ...formData, role: UserRole.OPERADOR })}
-                                className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.OPERADOR ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 ring-1 ring-brand-500' : 'border-slate-200 dark:border-slate-700'}`}
+                                onClick={() => setFormData({ ...formData, role: UserRole.OUTROS })}
+                                className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.OUTROS ? 'border-slate-500 bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-500' : 'border-slate-200 dark:border-slate-700'}`}
                             >
-                                <UserIcon className={`w-6 h-6 mb-2 ${formData.role === UserRole.OPERADOR ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Operador</p>
+                                <MoreHorizontal className={`w-6 h-6 mb-2 ${formData.role === UserRole.OUTROS ? 'text-slate-600 dark:text-slate-300' : 'text-slate-400'}`} />
+                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Nível 1</p>
                             </div>
 
                             <div
@@ -224,7 +224,15 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                                 className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.RONDA ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-500' : 'border-slate-200 dark:border-slate-700'}`}
                             >
                                 <Eye className={`w-6 h-6 mb-2 ${formData.role === UserRole.RONDA ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
-                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Ronda</p>
+                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Nível 2</p>
+                            </div>
+
+                            <div
+                                onClick={() => setFormData({ ...formData, role: UserRole.OPERADOR })}
+                                className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.OPERADOR ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 ring-1 ring-brand-500' : 'border-slate-200 dark:border-slate-700'}`}
+                            >
+                                <UserIcon className={`w-6 h-6 mb-2 ${formData.role === UserRole.OPERADOR ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Nível 3</p>
                             </div>
 
                             <div
@@ -232,7 +240,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                                 className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.SUPERVISOR ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 ring-1 ring-amber-500' : 'border-slate-200 dark:border-slate-700'}`}
                             >
                                 <UserCheck className={`w-6 h-6 mb-2 ${formData.role === UserRole.SUPERVISOR ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
-                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Supervisor</p>
+                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Nível 4</p>
                             </div>
 
                             <div
@@ -240,15 +248,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                                 className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.ADMIN ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-500' : 'border-slate-200 dark:border-slate-700'}`}
                             >
                                 <Shield className={`w-6 h-6 mb-2 ${formData.role === UserRole.ADMIN ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400'}`} />
-                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Admin</p>
-                            </div>
-
-                            <div
-                                onClick={() => setFormData({ ...formData, role: UserRole.OUTROS })}
-                                className={`cursor-pointer border rounded-lg p-3 flex flex-col justify-center items-center text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${formData.role === UserRole.OUTROS ? 'border-slate-500 bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-500' : 'border-slate-200 dark:border-slate-700'}`}
-                            >
-                                <MoreHorizontal className={`w-6 h-6 mb-2 ${formData.role === UserRole.OUTROS ? 'text-slate-600 dark:text-slate-300' : 'text-slate-400'}`} />
-                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Outros</p>
+                                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">Nível 5</p>
                             </div>
                         </div>
                     </div>

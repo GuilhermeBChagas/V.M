@@ -66,7 +66,7 @@ const PERMISSION_GROUPS = [
   }
 ];
 
-const ROLES: UserRole[] = [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA, UserRole.OUTROS];
+const ROLES: UserRole[] = [UserRole.OUTROS, UserRole.RONDA, UserRole.OPERADOR, UserRole.SUPERVISOR, UserRole.ADMIN];
 
 export const PermissionsView: React.FC<PermissionsViewProps> = ({
   currentPermissions, userOverrides, users, onUpdatePermissions, onUpdateOverrides

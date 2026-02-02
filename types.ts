@@ -1,10 +1,10 @@
 
 export enum UserRole {
-  ADMIN = 'ADMIN',
-  SUPERVISOR = 'SUPERVISOR',
-  OPERADOR = 'OPERADOR',
-  RONDA = 'RONDA',
-  OUTROS = 'OUTROS'
+  OUTROS = 'Nível 1',
+  RONDA = 'Nível 2',
+  OPERADOR = 'Nível 3',
+  SUPERVISOR = 'Nível 4',
+  ADMIN = 'Nível 5'
 }
 
 export type PermissionKey =

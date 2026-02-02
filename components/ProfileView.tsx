@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef } from 'react';
-import { User, JobTitle } from '../types';
+import { User, JobTitle, UserRole } from '../types';
 import {
     User as UserIcon,
     Lock,
@@ -204,7 +204,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, jobTitles, onUpd
 
                             {/* Badge de Cargo no Rodapé do Nome */}
                             <div className="mt-3 inline-flex px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg text-[10px] font-black uppercase tracking-wide border border-slate-200 dark:border-slate-700">
-                                {user.role === 'ADMIN' ? 'Acesso Total' : 'Operacional'}
+                                {user.role === UserRole.ADMIN ? 'Acesso Total' : 'Operacional'}
                             </div>
                         </div>
 
