@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Building } from '../types';
-import { MapPin, Navigation, Info, Crosshair, Loader2 } from 'lucide-react';
+import { MapPin, Navigation, Info, Crosshair, Loader2, Key, Siren } from 'lucide-react';
 
 // --- Fix for Leaflet default icons in React ---
 // This is necessary because the default icon paths are often broken in bundlers
@@ -229,15 +229,23 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding 
                                         )}
                                     </div>
 
-                                    {onNavigateBuilding && (
-                                        <button
-                                            onClick={() => onNavigateBuilding(b)}
-                                            onTouchEnd={() => onNavigateBuilding(b)}
-                                            className="mt-3 w-full flex items-center justify-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors"
-                                        >
-                                            <Navigation size={12} /> Ver Detalhes
-                                        </button>
-                                    )}
+                                    <div className="flex flex-wrap gap-2 mt-3">
+                                        {b.hasKey && (
+                                            <span className="bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-black px-2 py-1 rounded-md uppercase flex items-center gap-1">
+                                                <Key size={10} /> Chave
+                                            </span>
+                                        )}
+                                        {b.hasAlarm && (
+                                            <span className="bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-black px-2 py-1 rounded-md uppercase flex items-center gap-1">
+                                                <Siren size={10} /> Alarme
+                                            </span>
+                                        )}
+                                        {!b.hasKey && !b.hasAlarm && (
+                                            <span className="text-slate-400 text-[10px] font-bold uppercase italic">
+                                                Sem observações
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </Popup>
                         </Marker>

@@ -62,7 +62,7 @@ const AnnouncementCard: React.FC<AnnouncementCardProps> = ({ announcement, onRea
                         )}
                     </div>
                     <p className={`text-xs line-clamp-2 leading-relaxed mb-3 ${announcement.isRead ? 'text-slate-500 dark:text-slate-500 font-medium' : 'text-slate-700 dark:text-slate-300 font-semibold'}`}>
-                        {announcement.content}
+                        {announcement.content.replace(/<[^>]*>?/gm, '')}
                     </p>
                     <div className="flex justify-between items-center text-[10px] uppercase tracking-widest font-black opacity-70 border-t border-black/5 dark:border-white/5 pt-2">
                         <span className="truncate max-w-[120px]">De: {announcement.senderName}</span>

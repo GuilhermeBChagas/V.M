@@ -204,14 +204,24 @@ export interface Announcement {
   content: string;
   senderId: string;
   senderName?: string;
-  targetType: 'USER' | 'GROUP' | 'BROADCAST';
-  targetId?: string; // Para USER: userId, Para GROUP: string da Role (ADMIN, OPERADOR, etc)
+  targetType: 'USER' | 'GROUP' | 'BROADCAST'; // Deprecated in favor of targetData but kept for compat
+  targetId?: string; // Deprecated
+  targetData?: {
+    type: 'BROADCAST' | 'SELECTION';
+    groups: string[];
+    users: string[];
+    jobTitles?: string[];
+  };
+  requestConfirmation: boolean;
   priority: 'INFO' | 'IMPORTANT' | 'URGENT';
   expiresAt?: string;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
-  isRead?: boolean;
+  isRead?: boolean; // Computado no frontend/query
+  attachments?: { name: string; url: string; type: 'image' | 'file' }[];
+  readCount?: number; // Contagem de leituras para o dashboard
+  totalRecipients?: number; // Total de destinatários estimados
 }
 
 export interface AnnouncementRead {

@@ -18,6 +18,7 @@ const PERMISSION_GROUPS = [
         title: 'Painel e Monitoramento',
         permissions: [
             { key: 'VIEW_DASHBOARD', label: 'Acessar Painel Principal (Dashboard)' },
+            { key: 'VIEW_MAP', label: 'Acessar Mapa de Monitoramento' },
             { key: 'VIEW_CHARTS', label: 'Acessar Estatísticas e Gráficos' },
             { key: 'VIEW_ANNOUNCEMENTS', label: 'Visualizar Mural de Avisos' },
         ]
@@ -224,10 +225,19 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
                                         <button
                                             key={user.id}
                                             onClick={() => setSelectedUserId(user.id)}
-                                            className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all flex flex-col ${selectedUserId === user.id ? 'bg-purple-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'}`}
+                                            className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-3 ${selectedUserId === user.id ? 'bg-purple-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'}`}
                                         >
-                                            <span className="truncate">{user.name}</span>
-                                            <span className={`text-[8px] ${selectedUserId === user.id ? 'text-purple-200' : 'text-slate-400'}`}>{user.role} {user.matricula && `• ${user.matricula}`}</span>
+                                            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex flex-shrink-0 items-center justify-center overflow-hidden border border-white/20">
+                                                {user.photoUrl ? (
+                                                    <img src={user.photoUrl} alt={user.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span className="text-[10px] font-black">{user.name.charAt(0)}</span>
+                                                )}
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="truncate">{user.name}</span>
+                                                <span className={`text-[8px] ${selectedUserId === user.id ? 'text-purple-200' : 'text-slate-400'}`}>{user.role} {user.matricula && `• ${user.matricula}`}</span>
+                                            </div>
                                         </button>
                                     ))
                                 ) : (

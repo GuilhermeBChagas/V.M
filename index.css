@@ -24,6 +24,15 @@ body {
     @apply bg-slate-300 dark:bg-slate-700;
 }
 
+@keyframes wiggle {
+    0%, 100% { transform: rotate(-10deg); }
+    50% { transform: rotate(10deg); }
+}
+
+.animate-wiggle {
+    animation: wiggle 0.3s ease-in-out infinite;
+}
+
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }

@@ -159,11 +159,11 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
                     <div className="flex flex-wrap gap-4 py-2 mt-2 md:col-span-2">
                         <label className={`inline-flex items-center cursor-pointer p-4 rounded-xl border transition-all ${formData.hasKey ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
                             <input type="checkbox" name="hasKey" checked={formData.hasKey} onChange={handleChange} className="h-5 w-5 text-amber-600 rounded border-slate-300 dark:border-slate-600" />
-                            <span className="ml-3 text-sm font-black uppercase text-amber-900 dark:text-amber-500"><Key className="inline w-4 h-4 mr-1" /> Chave na Portaria</span>
+                            <span className="ml-3 text-sm font-black uppercase text-amber-900 dark:text-amber-500"><Key className="inline w-4 h-4 mr-1" /> Chave</span>
                         </label>
                         <label className={`inline-flex items-center cursor-pointer p-4 rounded-xl border transition-all ${formData.hasAlarm ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
                             <input type="checkbox" name="hasAlarm" checked={formData.hasAlarm} onChange={handleChange} className="h-5 w-5 text-red-600 rounded border-slate-300 dark:border-slate-600" />
-                            <span className="ml-3 text-sm font-black uppercase text-red-900 dark:text-red-500"><Bell className="inline w-4 h-4 mr-1" /> Alarme Monitorado</span>
+                            <span className="ml-3 text-sm font-black uppercase text-red-900 dark:text-red-500"><Bell className="inline w-4 h-4 mr-1" /> Alarme</span>
                         </label>
                     </div>
 

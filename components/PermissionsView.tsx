@@ -16,9 +16,9 @@ const PERMISSION_GROUPS = [
     category: 'PAINEL E MONITORAMENTO',
     items: [
       { key: 'VIEW_DASHBOARD', label: 'ACESSAR PAINEL PRINCIPAL (DASHBOARD)' },
+      { key: 'VIEW_MAP', label: 'ACESSAR MAPA DE MONITORAMENTO' },
       { key: 'VIEW_CHARTS', label: 'ACESSAR ESTATÍSTICAS E GRÁFICOS' },
       { key: 'VIEW_ANNOUNCEMENTS', label: 'VISUALIZAR MURAL DE AVISOS' },
-      { key: 'VIEW_MAP', label: 'VISUALIZAR MAPA (GPS)' },
     ]
   },
   {
@@ -253,8 +253,12 @@ export const PermissionsView: React.FC<PermissionsViewProps> = ({
               onClick={() => setSelectedUserId(u.id)}
               className={`w-full flex items-center gap-3 p-4 text-left transition-colors ${selectedUserId === u.id ? 'bg-blue-50 dark:bg-blue-900/20 ring-1 ring-inset ring-blue-500' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
             >
-              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black uppercase text-slate-500">
-                {u.name.charAt(0)}
+              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black uppercase text-slate-500 overflow-hidden border border-slate-200 dark:border-slate-700">
+                {u.photoUrl ? (
+                  <img src={u.photoUrl} alt={u.name} className="w-full h-full object-cover" />
+                ) : (
+                  u.name.charAt(0)
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase truncate leading-none">{u.name}</p>

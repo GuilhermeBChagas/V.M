@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { NotificationCenter } from './NotificationCenter';
 import { Auth } from './Auth';
 import { Dashboard } from './Dashboard';
 import { IncidentForm } from './IncidentForm';
@@ -1901,7 +1902,9 @@ export function App() {
       case 'ALTERATION_TYPES': return <AlterationTypeManager types={alterationTypes} onAdd={async (name) => { const newType = { id: crypto.randomUUID(), name, order: alterationTypes.length }; await handleSaveAlterationType(newType); }} onEdit={(t) => { setEditingAlterationType(t); setView('ALTERATION_TYPE_FORM'); }} onDelete={handleDeleteAlterationType} onReorder={handleReorderAlterationTypes} canManage={can('MANAGE_ALTERATION_TYPES')} />;
       case 'ALTERATION_TYPE_FORM': return <AlterationTypeForm initialData={editingAlterationType} onSave={handleSaveAlterationType} onCancel={handleBack} onDelete={handleDeleteAlterationType} />;
       case 'CHARTS': return <ChartsView incidents={incidents} buildings={buildings} sectors={sectors} />;
-      case 'MAP': return <MapView buildings={buildings} onNavigateBuilding={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} />;
+      case 'MAP':
+        if (!can('VIEW_MAP')) return <div className="flex flex-col items-center justify-center h-full text-slate-400 font-bold uppercase tracking-widest p-8">Acesso não autorizado</div>;
+        return <MapView buildings={buildings} onNavigateBuilding={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} />;
       case 'LOGS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} onLogAction={createLog} initialTab='LOGS' />;
       case 'TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='APPEARANCE' />;
       case 'IMPORT_EXPORT': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='IMPORT_EXPORT' />;
@@ -1910,7 +1913,7 @@ export function App() {
       case 'SYSTEM_INFO': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='SYSTEM' />;
 
       case 'INCIDENT_DETAIL': return <IncidentDetail incident={selectedIncident!} building={buildings.find(b => b.id === selectedIncident?.buildingId)} author={users.find(u => u.id === selectedIncident?.userId)} authorRole={users.find(u => u.id === selectedIncident?.userId)?.role} authorJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.id === selectedIncident?.userId)?.jobTitleId)?.name} approverRole={users.find(u => u.name === selectedIncident?.approvedBy)?.role} approverJobTitle={jobTitles.find(jt => jt.id === users.find(u => u.name === selectedIncident?.approvedBy)?.jobTitleId)?.name} onBack={handleBack} onApprove={handleApproveIncident} onEdit={() => { setEditingIncident(selectedIncident); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} customLogo={customLogoRight} customLogoLeft={customLogoLeft} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} currentUser={user!} />;
-      case 'ANNOUNCEMENTS': return <AnnouncementManager currentUser={user!} users={users} onAnnouncementCreated={fetchAnnouncementsCount} canManage={can('MANAGE_ANNOUNCEMENTS')} />;
+      case 'ANNOUNCEMENTS': return <AnnouncementManager currentUser={user!} users={users} jobTitles={jobTitles} onAnnouncementCreated={fetchAnnouncementsCount} canManage={can('MANAGE_ANNOUNCEMENTS')} onShowConfirm={showConfirm} />;
       case 'PROFILE': return <ProfileView user={user!} onUpdatePassword={handleUpdatePassword} onUpdateProfile={handleUpdateProfile} jobTitles={jobTitles} />;
       default: return <Dashboard
         incidents={incidents}
@@ -2124,18 +2127,43 @@ export function App() {
             {isLocalMode && <span className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded text-xs font-black uppercase animate-pulse"><CloudOff size={12} /> Offline Ativado</span>}
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
-            <button onClick={() => handleNavigate('PROFILE')} className="flex items-center gap-3 border-l pl-3 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg p-1 transition-colors group">
-              <div className="hidden sm:block text-right">
-                <p className="text-sm font-black uppercase text-slate-900 dark:text-slate-100 leading-tight group-hover:text-brand-600 transition-colors">{user.name.split(' ')[0]}</p>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{user.role === 'OPERADOR' ? 'OPERADOR' : user.role}</p>
-              </div>
-              <div className="h-10 w-10 bg-brand-900 rounded-full flex items-center justify-center text-white font-bold uppercase border-2 border-white shadow-sm ring-1 ring-brand-100 transition-all overflow-hidden">
+            <NotificationCenter
+              currentUser={user}
+              incidents={incidents}
+              loans={loans}
+              onNavigate={(viewName, data) => {
+                if (viewName === 'PENDING_APPROVALS' && data?.tab) {
+                  setPendingSubTab(data.tab);
+                }
+                handleNavigate(viewName as ViewState, data ? false : true);
+              }}
+              onAnnouncementRead={fetchAnnouncementsCount}
+            />
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 flex items-center justify-center"
+            >
+              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
+            <button
+              onClick={() => handleNavigate('PROFILE')}
+              className="flex items-center gap-3 p-1.5 pr-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95 group ml-1"
+            >
+              <div className="h-9 w-9 bg-brand-900 rounded-full flex items-center justify-center text-white font-bold uppercase transition-all overflow-hidden">
                 {user.photoUrl ? (
                   <img src={user.photoUrl} alt={user.name} className="h-full w-full object-cover" />
                 ) : (
                   user.name.charAt(0)
                 )}
+              </div>
+              <div className="hidden sm:block text-right">
+                <p className="text-xs font-black uppercase text-slate-900 dark:text-slate-100 leading-tight group-hover:text-blue-600 transition-colors">
+                  {user.name.split(' ')[0]}
+                </p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                  {user.role}
+                </p>
               </div>
             </button>
           </div>
