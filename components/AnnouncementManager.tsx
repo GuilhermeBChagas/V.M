@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Announcement, User, UserRole } from '../types';
 import { announcementService } from '../services/announcementService';
-import { Plus, Trash2, Megaphone, Info, AlertCircle, Flame, Users, User as UserIcon, Globe, X } from 'lucide-react';
+import { Plus, Trash2, Megaphone, Info, AlertCircle, Flame, Users, User as UserIcon, Globe, X, Search, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
 interface AnnouncementManagerProps {
@@ -16,6 +16,8 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [userSearchTerm, setUserSearchTerm] = useState('');
+    const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
         content: '',
@@ -160,48 +162,97 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             <div className="space-y-3">
                                 <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Destinatário</label>
-                                <select
-                                    value={formData.targetType}
-                                    onChange={e => setFormData({ ...formData, targetType: e.target.value as any, targetId: '' })}
-                                    className="w-full p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-[1.25rem] outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:text-slate-200 transition-all appearance-none"
-                                >
-                                    <option value="BROADCAST">Todos (Mural Público)</option>
-                                    <option value="USER">Usuário Específico</option>
-                                    <option value="GROUP">Departamento / Cargo</option>
-                                </select>
+                                <div className="relative">
+                                    <select
+                                        value={formData.targetType}
+                                        onChange={e => setFormData({ ...formData, targetType: e.target.value as any, targetId: '' })}
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 font-bold text-slate-700 dark:text-slate-200 transition-all appearance-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    >
+                                        <option value="BROADCAST">Todos (Mural Público)</option>
+                                        <option value="USER">Usuário Específico</option>
+                                        <option value="GROUP">Departamento / Cargo</option>
+                                    </select>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                        <Users size={18} />
+                                    </div>
+                                </div>
                             </div>
 
                             {formData.targetType === 'USER' && (
-                                <div className="space-y-3 animate-in fade-in zoom-in-95">
+                                <div className="space-y-3 animate-in fade-in zoom-in-95 relative">
                                     <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Selecionar Usuário</label>
-                                    <select
-                                        value={formData.targetId}
-                                        onChange={e => setFormData({ ...formData, targetId: e.target.value })}
-                                        className="w-full p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-[1.25rem] outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:text-slate-200 transition-all"
-                                        required
-                                    >
-                                        <option value="">Selecione o Usuário...</option>
-                                        {users.map(u => (
-                                            <option key={u.id} value={u.id}>{u.name} ({u.matricula})</option>
-                                        ))}
-                                    </select>
+                                    <div className="relative group">
+                                        <Search className="absolute left-4 top-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
+                                        <input
+                                            type="text"
+                                            value={userSearchTerm}
+                                            onChange={e => {
+                                                setUserSearchTerm(e.target.value);
+                                                setIsUserDropdownOpen(true);
+                                                if (formData.targetId) setFormData({ ...formData, targetId: '' });
+                                            }}
+                                            onFocus={() => setIsUserDropdownOpen(true)}
+                                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-[1.25rem] outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:text-slate-200 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 uppercase"
+                                            placeholder="Buscar pelo nome..."
+                                        />
+                                        {formData.targetId && (
+                                            <div className="absolute right-4 top-4 text-xs font-black text-emerald-500 flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-lg uppercase tracking-wider">
+                                                <CheckCircle2 size={12} /> Selecionado
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {isUserDropdownOpen && (
+                                        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto animate-in slide-in-from-top-2">
+                                            {users.filter(u => u.name.toLowerCase().includes(userSearchTerm.toLowerCase())).length === 0 ? (
+                                                <div className="p-4 text-center text-slate-400 text-xs font-bold uppercase">Nenhum usuário encontrado</div>
+                                            ) : (
+                                                users.filter(u => u.name.toLowerCase().includes(userSearchTerm.toLowerCase())).map(u => (
+                                                    <button
+                                                        key={u.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setFormData({ ...formData, targetId: u.id });
+                                                            setUserSearchTerm(u.name);
+                                                            setIsUserDropdownOpen(false);
+                                                        }}
+                                                        className="w-full p-3 flex items-center gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors group"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-xs text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                                                            {u.name.charAt(0)}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase truncate">{u.name}</p>
+                                                            <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Matrícula: {u.matricula}</p>
+                                                        </div>
+                                                        {formData.targetId === u.id && <CheckCircle2 size={16} className="text-emerald-500" />}
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
                             {formData.targetType === 'GROUP' && (
                                 <div className="space-y-3 animate-in fade-in zoom-in-95">
                                     <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Selecionar Grupo</label>
-                                    <select
-                                        value={formData.targetId}
-                                        onChange={e => setFormData({ ...formData, targetId: e.target.value })}
-                                        className="w-full p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-[1.25rem] outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:text-slate-200 transition-all"
-                                        required
-                                    >
-                                        <option value="">Selecione a Role...</option>
-                                        {Object.values(UserRole).map(role => (
-                                            <option key={role} value={role}>{role}</option>
-                                        ))}
-                                    </select>
+                                    <div className="relative">
+                                        <select
+                                            value={formData.targetId}
+                                            onChange={e => setFormData({ ...formData, targetId: e.target.value })}
+                                            className="w-full p-4 bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 font-bold text-slate-700 dark:text-slate-200 transition-all appearance-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                                            required
+                                        >
+                                            <option value="">Selecione o Cargo...</option>
+                                            {Object.values(UserRole).map(role => (
+                                                <option key={role} value={role}>{role}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                            <Users size={18} />
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 

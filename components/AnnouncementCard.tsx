@@ -35,31 +35,38 @@ const AnnouncementCard: React.FC<AnnouncementCardProps> = ({ announcement, onRea
 
     return (
         <div
-            className={`relative p-4 rounded-xl border-2 transition-all duration-300 ${getPriorityStyles()} ${!announcement.isRead ? 'shadow-md scale-[1.02] border-opacity-100' : 'opacity-80 grayscale-[20%] border-opacity-40'
+            className={`relative p-5 rounded-2xl border transition-all duration-300 group ${getPriorityStyles()} ${!announcement.isRead
+                ? 'shadow-md translate-x-1 border-opacity-100'
+                : 'opacity-75 grayscale-[10%] border-opacity-40 hover:opacity-100 hover:grayscale-0'
                 } hover:shadow-lg cursor-pointer`}
             onClick={() => onRead(announcement.id)}
         >
             {!announcement.isRead && (
-                <span className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-indigo-500 border-2 border-white dark:border-slate-800"></span>
+                </span>
             )}
 
-            <div className="flex items-start gap-3">
-                <div className="mt-1">{getPriorityIcon()}</div>
-                <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                        <h4 className={`font-bold ${announcement.isRead ? 'font-medium' : 'font-black'} ${announcement.isRead ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-slate-100'}`}>
+            <div className="flex items-start gap-4">
+                <div className={`mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/50 dark:bg-black/10 backdrop-blur-sm shadow-sm`}>
+                    {getPriorityIcon()}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-4">
+                        <h4 className={`text-sm font-black uppercase tracking-tight leading-tight mb-1 truncate ${announcement.isRead ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-slate-100'}`}>
                             {announcement.title}
                         </h4>
                         {announcement.isRead && (
-                            <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                         )}
                     </div>
-                    <p className={`text-sm mt-1 line-clamp-2 leading-relaxed ${announcement.isRead ? 'text-slate-500 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}`}>
+                    <p className={`text-xs line-clamp-2 leading-relaxed mb-3 ${announcement.isRead ? 'text-slate-500 dark:text-slate-500 font-medium' : 'text-slate-700 dark:text-slate-300 font-semibold'}`}>
                         {announcement.content}
                     </p>
-                    <div className="flex justify-between items-center mt-3 text-xs uppercase tracking-wider font-bold opacity-80">
-                        <span className="dark:text-slate-400">De: {announcement.senderName}</span>
-                        <span className="dark:text-slate-500">{new Date(announcement.createdAt).toLocaleDateString('pt-BR')}</span>
+                    <div className="flex justify-between items-center text-[10px] uppercase tracking-widest font-black opacity-70 border-t border-black/5 dark:border-white/5 pt-2">
+                        <span className="truncate max-w-[120px]">De: {announcement.senderName}</span>
+                        <span>{new Date(announcement.createdAt).toLocaleDateString('pt-BR')}</span>
                     </div>
                 </div>
             </div>

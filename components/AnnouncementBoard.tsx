@@ -54,34 +54,39 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ currentUser, onVi
     }
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 h-full flex flex-col">
             <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2">
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400 relative">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-indigo-600 dark:text-indigo-400 relative">
                         <Megaphone className="w-5 h-5" />
                         {announcements.some(a => !a.isRead) && (
-                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 border-2 border-white dark:border-slate-900 rounded-full shadow-sm animate-pulse" />
+                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 border-2 border-white dark:border-slate-800 rounded-full shadow-sm animate-pulse" />
                         )}
                     </div>
-                    <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">Mural de Avisos</h3>
+                    <div>
+                        <h3 className="font-bold text-slate-800 dark:text-white text-lg leading-tight">Mural Digital</h3>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Comunicados Oficiais</p>
+                    </div>
                 </div>
                 {onViewAll && (
                     <button
                         onClick={onViewAll}
-                        className="text-indigo-600 dark:text-indigo-400 text-sm font-semibold flex items-center gap-1 hover:underline"
+                        className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-xs font-black uppercase tracking-wider flex items-center gap-1 transition-colors group"
                     >
-                        Ver todos <ChevronRight className="w-4 h-4" />
+                        Ver todos <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                     </button>
                 )}
             </div>
 
             {announcements.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-10">
-                    <Megaphone className="w-12 h-12 mb-3 opacity-20" />
-                    <p className="text-sm">Nenhum aviso no momento.</p>
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-12 border-2 border-dashed border-slate-100 dark:border-slate-700/50 rounded-2xl">
+                    <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                        <Megaphone className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Nenhum comunicado ativo</p>
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 flex-1 overflow-y-auto max-h-[400px] pr-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
                     {announcements.slice(0, 5).map(ann => (
                         <AnnouncementCard
                             key={ann.id}
