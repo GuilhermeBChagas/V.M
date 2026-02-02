@@ -1507,20 +1507,36 @@ export function App() {
     }
   };
 
-  // Force Sync on Mount & Network Recovery
+  // --- SYNC ENGINE (SENIOR ARCHITECTURE) ---
+  // Triggers: Boot (1), Event (2), Heartbeat (3)
   useEffect(() => {
-    const autoSync = () => {
+    const trySync = () => {
+      // Logic for triggers 1 and 2: Immediate check
       if (navigator.onLine && unsyncedIncidents.length > 0 && !saving) {
         handleSyncData();
       }
     };
 
-    window.addEventListener('online', autoSync);
-    // Attempt sync implicitly via unsyncedIncidents change or mount
-    autoSync();
+    // Trigger 2: OS/Browser Network Event
+    window.addEventListener('online', trySync);
 
-    return () => window.removeEventListener('online', autoSync);
-  }, [unsyncedIncidents]);
+    // Trigger 1: Boot/Mount (Immediate flush attempt)
+    trySync();
+
+    // Trigger 3: Heartbeat (Recurring "Pulse" Check)
+    // Solves "False Positive" WiFi connections by attempting sync periodically
+    const heartbeat = setInterval(() => {
+      if (unsyncedIncidents.length > 0 && !saving) {
+        console.log("Heartbeat: Attempting sync verify...");
+        handleSyncData();
+      }
+    }, 15000); // Checks every 15 seconds if items are pending
+
+    return () => {
+      window.removeEventListener('online', trySync);
+      clearInterval(heartbeat);
+    };
+  }, [unsyncedIncidents, saving]);
 
 
   const handleConfirmLoanBatch = async (batchId: string) => {
