@@ -341,24 +341,24 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     </div>
 
                     {/* CORPO DO TEXTO */}
-                    <div className="text-justify text-[11px] md:text-[13px] leading-relaxed mb-8 whitespace-pre-wrap break-words break-all px-2 min-h-[6rem] text-slate-900" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+                    <div
+                        className="text-justify text-[11px] md:text-[13px] leading-relaxed mb-3 whitespace-pre-wrap break-words px-2 text-slate-900 overflow-hidden"
+                        style={{
+                            fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                            maxHeight: incident.photos && incident.photos.length > 0 ? '300px' : 'none'
+                        }}
+                    >
                         {incident.description}
                     </div>
 
                     {/* MOTIVO DO CANCELAMENTO - APENAS ADMIN */}
-                    {isCancelled && incident.cancellationReason && currentUser?.role === 'ADMIN' && (
-                        <div className="mb-8 border border-red-200 bg-red-50 p-4 rounded-sm text-center">
+                    {isCancelled && incident.cancellationReason && currentUser?.role === 'Nível 5' && (
+                        <div className="mb-6 border border-red-200 bg-red-50 p-3 rounded-sm text-center">
                             <h4 className="text-[10px] font-black uppercase text-red-700 mb-1">MOTIVO DO CANCELAMENTO</h4>
-                            <p className="text-[10px] uppercase text-red-900 font-bold mb-2">{incident.cancellationReason}</p>
-
+                            <p className="text-[10px] uppercase text-red-900 font-bold mb-1">{incident.cancellationReason}</p>
                             {incident.cancelledBy && (
-                                <div className="text-[9px] uppercase text-red-800 font-medium border-t border-red-200 pt-2 mt-2 inline-block px-4">
+                                <div className="text-[8px] uppercase text-red-800 font-medium border-t border-red-100 pt-1 mt-1 inline-block">
                                     <span className="font-bold">CANCELADO POR:</span> {incident.cancelledBy}
-                                    {incident.cancelledAt && (
-                                        <span className="block text-[8px] text-red-600 mt-0.5">
-                                            EM {new Date(incident.cancelledAt).toLocaleDateString('pt-BR')} ÀS {new Date(incident.cancelledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    )}
                                 </div>
                             )}
                         </div>
@@ -366,26 +366,26 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
 
                     {/* FOTOS DE EVIDÊNCIA */}
                     {incident.photos && incident.photos.length > 0 && (
-                        <div className="mb-10 break-inside-avoid">
-                            <div className="flex items-center gap-3 mb-4">
+                        <div className="mb-6 break-inside-avoid">
+                            <div className="flex items-center gap-3 mb-2">
                                 <div className="h-px flex-1 bg-slate-200"></div>
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Registro Fotográfico</span>
+                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">Registros Fotográficos</span>
                                 <div className="h-px flex-1 bg-slate-200"></div>
                             </div>
-                            <div className={`grid ${incident.photos.length === 1 ? 'grid-cols-1 max-w-md mx-auto' : 'grid-cols-2'} gap-4`}>
+                            <div className={`grid ${incident.photos.length === 1 ? 'grid-cols-1 max-w-xl mx-auto' : 'grid-cols-2'} gap-4`}>
                                 {incident.photos.map((p, idx) => (
                                     <div key={idx} className="flex flex-col">
-                                        <div className="border border-slate-300 p-1 bg-white shadow-sm w-full h-[200px] md:h-[260px] flex items-center justify-center overflow-hidden rounded-md">
+                                        <div className="border-2 border-slate-300 p-1 bg-white shadow-md w-full h-[280px] md:h-[380px] flex items-center justify-center overflow-hidden rounded-xl">
                                             <img
                                                 src={p}
-                                                className="w-full h-full object-contain bg-slate-50"
+                                                className="w-full h-full object-cover bg-slate-100 hover:object-contain transition-all duration-500"
                                                 alt={`Evidência ${idx + 1}`}
                                                 loading="lazy"
                                             />
                                         </div>
                                         <div className="mt-2 flex justify-between items-center px-1">
-                                            <span className="text-[7px] md:text-[9px] uppercase font-black text-slate-500">Foto {idx + 1}</span>
-                                            <span className="text-[6px] md:text-[8px] italic text-slate-400 font-bold uppercase">Anexo RA {incident.raCode}</span>
+                                            <span className="text-[8px] md:text-[10px] uppercase font-black text-slate-500">Foto {idx + 1}</span>
+                                            <span className="text-[7px] md:text-[9px] italic text-slate-400 font-bold uppercase">ANEXO RA {incident.raCode}</span>
                                         </div>
                                     </div>
                                 ))}

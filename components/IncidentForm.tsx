@@ -3,6 +3,7 @@ import { Incident, Building, User, AlterationType } from '../types';
 import { Save, X, Clock, MapPin, FileText, Loader2, Search, Users, Navigation, Check, AlertTriangle, Plus, UserPlus, UserMinus, Calendar, ChevronDown, Send, Camera, ImagePlus, Trash2, Zap } from 'lucide-react';
 import { normalizeString } from '../utils/stringUtils';
 import { getTodayLocalDate } from '../utils/dateUtils';
+import { compressImage } from '../utils/imageUtils';
 
 interface IncidentFormProps {
     user: User;
@@ -209,7 +210,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
 
     // --- Image Handling ---
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files) return;
 
@@ -219,17 +220,21 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
             return;
         }
 
-        // Explicitly cast FileList to File[] and slice to limit to 5 total
-        (Array.from(files) as File[]).slice(0, remainingSlots).forEach(file => {
+        const filesToProcess = Array.from(files).slice(0, remainingSlots) as File[];
+
+        for (const file of filesToProcess) {
             const reader = new FileReader();
-            reader.onloadend = () => {
+            reader.onloadend = async () => {
+                const base64 = reader.result as string;
+                // Comprime a imagem antes de salvar no estado
+                const compressed = await compressImage(base64, 1200, 0.6);
                 setPhotos(prev => {
                     if (prev.length >= 5) return prev;
-                    return [...prev, reader.result as string];
+                    return [...prev, compressed];
                 });
             };
             reader.readAsDataURL(file);
-        });
+        }
     };
 
 
@@ -282,13 +287,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
             return;
         }
 
-        // Validação de Tempo: Hora Final deve ser MAIOR que Hora Inicial
-        // Formato HH:MM permite comparação direta de string
-        if (endTime <= startTime) {
-            setTimeError(`A Hora Final (${endTime}) deve ser maior que a Hora Inicial (${startTime}).`);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            return;
-        }
+
 
         const incident: Incident = {
             id: initialData?.id || Date.now().toString(),
