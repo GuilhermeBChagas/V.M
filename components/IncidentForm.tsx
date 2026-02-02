@@ -287,6 +287,45 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
             return;
         }
 
+        // --- LÓGICA DE ARQUITETURA: VALIDAÇÃO CRONOLÓGICA (VIRADA DE DIA) ---
+
+        // 1. Construção do Momento Inicial (Timestamp A)
+        // Usamos o formato ISO local (YYYY-MM-DDTHH:MM)
+        const timestampA = new Date(`${date}T${startTime}`);
+
+        // 2. Construção do Momento Final (Timestamp B)
+        let timestampB = new Date(`${date}T${endTime}`);
+
+        // Comparação de horários para detectar travessia de meia-noite
+        const [hStart, mStart] = startTime.split(':').map(Number);
+        const [hEnd, mEnd] = endTime.split(':').map(Number);
+        const totalMinutesStart = hStart * 60 + mStart;
+        const totalMinutesEnd = hEnd * 60 + mEnd;
+
+        // Se o horário final for numericamente menor, interpretamos como o dia seguinte
+        if (totalMinutesEnd < totalMinutesStart) {
+            timestampB.setDate(timestampB.getDate() + 1);
+        }
+
+        // 3. Validação de Consistência
+        const durationInMinutes = (timestampB.getTime() - timestampA.getTime()) / (1000 * 60);
+
+        if (durationInMinutes <= 0) {
+            setTimeError("Inconsistência Temporal: O momento final deve ser estritamente posterior ao inicial.");
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+
+        // 4. Alerta de Verificação (> 24h)
+        if (durationInMinutes > 1440) {
+            const hours = Math.floor(durationInMinutes / 60);
+            const minutes = durationInMinutes % 60;
+            const confirmExtraLong = window.confirm(
+                `Alerta de Verificação: A duração calculada é de ${hours}h ${minutes}min (superior a 24 horas).\n\nConfirma que este intervalo está correto?`
+            );
+            if (!confirmExtraLong) return;
+        }
+
 
 
         const incident: Incident = {
