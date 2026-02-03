@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Bold, Italic, List, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
 
 interface RichTextEditorProps {
@@ -10,6 +10,7 @@ interface RichTextEditorProps {
 
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeholder, className }) => {
     const editorRef = useRef<HTMLDivElement>(null);
+    const [isFocused, setIsFocused] = useState(false);
 
     const execCommand = (command: string, value: string | undefined = undefined) => {
         document.execCommand(command, false, value);
@@ -64,10 +65,12 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
                     ref={editorRef}
                     contentEditable
                     onInput={handleInput}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
                     className="p-4 min-h-[150px] outline-none text-slate-700 dark:text-slate-200 prose dark:prose-invert max-w-none"
                     style={{ whiteSpace: 'pre-wrap' }}
                 />
-                {(!value || value === '<br>') && placeholder && (
+                {!isFocused && (!value || value === '<br>') && placeholder && (
                     <div className="absolute top-4 left-4 text-slate-400 pointer-events-none">
                         {placeholder}
                     </div>
