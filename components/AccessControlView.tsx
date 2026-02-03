@@ -19,48 +19,53 @@ const PERMISSION_GROUPS = [
         permissions: [
             { key: 'VIEW_DASHBOARD', label: 'Acessar Painel Principal (Dashboard)' },
             { key: 'VIEW_MAP', label: 'Acessar Mapa de Monitoramento' },
-            { key: 'VIEW_CHARTS', label: 'Acessar Estatísticas e Gráficos' },
             { key: 'VIEW_ANNOUNCEMENTS', label: 'Visualizar Mural de Avisos' },
         ]
     },
     {
-        title: 'Gestão de Incidentes (R.A)',
+        title: 'GESTÃO DE INCIDENTES (R.A)',
         permissions: [
-            { key: 'CREATE_INCIDENT', label: 'Criar Novos Registros' },
-            { key: 'VIEW_MY_INCIDENTS', label: 'Ver Meus Registros (Histórico Próprio)' },
-            { key: 'VIEW_ALL_INCIDENTS', label: 'Ver Todos os Registros (Histórico Global)' },
-            { key: 'EDIT_INCIDENT', label: 'Editar Registros Existentes' },
-            { key: 'APPROVE_INCIDENT', label: 'Validar / Aprovar Registros' },
-            { key: 'DELETE_INCIDENT', label: 'Cancelar / Excluir Registros' },
+            { key: 'CREATE_INCIDENT', label: 'CRIAR NOVOS REGISTROS' },
+            { key: 'VIEW_MY_INCIDENTS', label: 'MEUS REGISTROS (HISTÓRICO PRÓPRIO)' },
+            { key: 'VIEW_ALL_INCIDENTS', label: 'TODOS OS REGISTROS (HISTÓRICO GLOBAL)' },
+            { key: 'VIEW_MY_PENDING_INCIDENTS', label: 'ATENDIMENTOS PENDENTES (HISTÓRICO PRÓPRIO)' },
+            { key: 'VIEW_ALL_PENDING_INCIDENTS', label: 'ATENDIMENTOS PENDENTES (HISTÓRICO GLOBAL)' },
+            { key: 'EDIT_INCIDENT', label: 'EDITAR REGISTROS EXISTENTES' },
+            { key: 'APPROVE_INCIDENT', label: 'VALIDAR REGISTROS' },
+            { key: 'DELETE_INCIDENT', label: 'CANCELAR REGISTROS' },
         ]
     },
     {
-        title: 'Gestão de Cautelas',
+        title: 'GESTÃO DE CAUTELAS',
         permissions: [
-            { key: 'CREATE_LOAN', label: 'Iniciar/Saída de Cautelas' },
-            { key: 'APPROVE_LOAN', label: 'Aceitar/Confirmar Cautelas (Recebimento)' },
-            { key: 'RETURN_LOAN', label: 'Realizar Devolução de Itens' },
-            { key: 'VIEW_MY_LOANS', label: 'Ver Minhas Cautelas (Histórico Próprio)' },
-            { key: 'VIEW_ALL_LOANS', label: 'Ver Todas as Cautelas (Histórico Global)' },
+            { key: 'CREATE_LOAN', label: 'Iniciar de Cautelas' },
+            { key: 'APPROVE_LOAN', label: 'Confirmar Cautelas (Recebimento)' },
+            { key: 'RETURN_LOAN', label: 'REALIZAR DEVOLUÇÃO DE ITENS' },
+            { key: 'VIEW_MY_PENDING_LOANS', label: 'CAUTELAS PENDENTES (HISTÓRICO PRÓPRIO)' },
+            { key: 'VIEW_ALL_PENDING_LOANS', label: 'CAUTELAS PENDENTES (HISTÓRICO GLOBAL)' },
+            { key: 'VIEW_MY_LOANS', label: 'MINHAS CAUTELAS (HISTÓRICO PRÓPRIO)' },
+            { key: 'VIEW_ALL_LOANS', label: 'TODAS AS CAUTELAS (HISTÓRICO GLOBAL)' },
         ]
     },
     {
-        title: 'Gestão de Ativos (Inventário)',
-        permissions: [
-            { key: 'VIEW_ASSETS', label: 'Visualizar Lista de Ativos' },
-            { key: 'MANAGE_ASSETS', label: 'Cadastrar / Editar Ativos' },
-            { key: 'DELETE_ASSETS', label: 'Excluir Ativos' },
-        ]
-    },
-    {
-        title: 'Administração e Ferramentas',
+        title: 'CADASTROS',
         permissions: [
             { key: 'MANAGE_USERS', label: 'Gerenciar Usuários' },
-            { key: 'DELETE_USERS', label: 'Excluir Usuários' },
-            { key: 'MANAGE_BUILDINGS', label: 'Gerenciar Prédios/Locais' },
+            { key: 'MANAGE_BUILDINGS', label: 'Gerenciar Prédios' },
             { key: 'MANAGE_SECTORS', label: 'Gerenciar Setores' },
+            { key: 'MANAGE_JOB_TITLES', label: 'Gerenciar Cargos e Funções' },
             { key: 'MANAGE_ALTERATION_TYPES', label: 'Gerenciar Tipos de Alteração' },
+            { key: 'MANAGE_VEHICLES', label: 'Gerenciar Veículos' },
+            { key: 'MANAGE_VESTS', label: 'Gerenciar Coletes' },
+            { key: 'MANAGE_RADIOS', label: 'Gerenciar Rádios' },
+            { key: 'MANAGE_EQUIPMENTS', label: 'Gerenciar Outros Ativos' },
+        ]
+    },
+    {
+        title: 'ADMINISTRAÇÃO E FERRAMENTAS',
+        permissions: [
             { key: 'MANAGE_ANNOUNCEMENTS', label: 'Administrar Mural de Avisos' },
+            { key: 'VIEW_CHARTS', label: 'Acessar Estatísticas e Gráficos' },
             { key: 'ACCESS_TOOLS', label: 'Acesso total a Ferramentas Avançadas' },
             { key: 'EXPORT_REPORTS', label: 'Exportar Relatórios (PDF/Excel)' },
         ]

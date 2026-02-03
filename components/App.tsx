@@ -48,6 +48,8 @@ const DEFAULT_PERMISSIONS: SystemPermissionMap = {
   CREATE_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA],
   VIEW_MY_INCIDENTS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA],
   VIEW_ALL_INCIDENTS: [UserRole.ADMIN, UserRole.SUPERVISOR],
+  VIEW_MY_PENDING_INCIDENTS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA],
+  VIEW_ALL_PENDING_INCIDENTS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   EDIT_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR],
   APPROVE_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR],
   DELETE_INCIDENT: [UserRole.ADMIN, UserRole.SUPERVISOR],
@@ -56,17 +58,20 @@ const DEFAULT_PERMISSIONS: SystemPermissionMap = {
   CREATE_LOAN: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
   APPROVE_LOAN: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
   RETURN_LOAN: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
-  VIEW_MY_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
+  VIEW_MY_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA],
   VIEW_ALL_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR],
+  VIEW_MY_PENDING_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR, UserRole.RONDA],
+  VIEW_ALL_PENDING_LOANS: [UserRole.ADMIN, UserRole.SUPERVISOR],
 
   // Assets
   VIEW_ASSETS: [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERADOR],
-  MANAGE_ASSETS: [UserRole.ADMIN, UserRole.SUPERVISOR],
-  DELETE_ASSETS: [UserRole.ADMIN],
+  MANAGE_VEHICLES: [UserRole.ADMIN, UserRole.SUPERVISOR],
+  MANAGE_VESTS: [UserRole.ADMIN, UserRole.SUPERVISOR],
+  MANAGE_RADIOS: [UserRole.ADMIN, UserRole.SUPERVISOR],
+  MANAGE_EQUIPMENTS: [UserRole.ADMIN, UserRole.SUPERVISOR],
 
   // Administration
   MANAGE_USERS: [UserRole.ADMIN],
-  DELETE_USERS: [UserRole.ADMIN],
   MANAGE_BUILDINGS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   MANAGE_SECTORS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   MANAGE_JOB_TITLES: [UserRole.ADMIN, UserRole.SUPERVISOR],
@@ -1663,7 +1668,15 @@ export function App() {
   };
 
   const handleDeleteAsset = (table: string, id: string, logName: string) => {
-    if (!can('DELETE_ASSETS')) return showError('Acesso Negado', 'Você não tem permissão para excluir ativos.');
+    // Determine the required permission based on the table name
+    const permissionMap: Record<string, PermissionKey> = {
+      'vehicles': 'MANAGE_VEHICLES',
+      'vests': 'MANAGE_VESTS',
+      'radios': 'MANAGE_RADIOS',
+      'equipments': 'MANAGE_EQUIPMENTS'
+    };
+    const requiredPermission = permissionMap[table] || 'VIEW_ASSETS';
+    if (!can(requiredPermission)) return showError('Acesso Negado', 'Você não tem permissão para excluir ativos.');
     if (saving) return;
     showConfirm("Excluir Item", "Tem certeza?", async () => {
       setSaving(true);
@@ -1696,7 +1709,7 @@ export function App() {
   };
 
   const handleDeleteUser = (id: string) => {
-    if (!can('DELETE_USERS')) return showError('Acesso Negado', 'Você não tem permissão para excluir usuários.');
+    if (!can('MANAGE_USERS')) return showError('Acesso Negado', 'Você não tem permissão para excluir usuários.');
     if (saving) return;
     showConfirm("Remover Usuário", "Deseja realmente remover?", async () => {
       setSaving(true);
@@ -1887,7 +1900,7 @@ export function App() {
                   canDelete={can('DELETE_INCIDENT')}
                   canApprove={can('APPROVE_INCIDENT')}
                   canExport={can('EXPORT_REPORTS')}
-                  canViewAll={can('VIEW_ALL_INCIDENTS')}
+                  canViewAll={can('VIEW_ALL_PENDING_INCIDENTS') || can('APPROVE_INCIDENT')}
                 />
               ) : (
                 <LoanViews
@@ -1907,7 +1920,7 @@ export function App() {
                   canApprove={can('APPROVE_LOAN')}
                   canReturn={can('RETURN_LOAN')}
                   canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')}
-                  canViewAll={can('VIEW_ALL_LOANS')}
+                  canViewAll={can('VIEW_ALL_PENDING_LOANS') || can('APPROVE_LOAN') || can('RETURN_LOAN')}
                 />
               )}
             </div>
@@ -1915,17 +1928,17 @@ export function App() {
         );
       case 'BUILDINGS': return <BuildingList buildings={buildings} sectors={sectors} onEdit={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} onDelete={handleDeleteBuilding} onAdd={() => { setEditingBuilding(null); handleNavigate('BUILDING_FORM'); }} onRefresh={fetchStaticData} canEdit={can('MANAGE_BUILDINGS')} canDelete={can('MANAGE_BUILDINGS')} />;
       case 'BUILDING_FORM': return <BuildingForm initialData={editingBuilding} sectors={sectors} onSave={async (b) => { setSaving(true); try { await supabase.from('buildings').upsert(b); fetchStaticData(); handleNavigate('BUILDINGS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={handleBack} onDelete={handleDeleteBuilding} isLoading={saving} />;
-      case 'USERS': return <UserList users={users} jobTitles={jobTitles} onEdit={(u) => { setEditingUser(u); handleNavigate('USER_FORM'); }} onDelete={handleDeleteUser} onAdd={() => { setEditingUser(null); handleNavigate('USER_FORM'); }} onRefresh={fetchUsers} canEdit={can('MANAGE_USERS')} canDelete={can('DELETE_USERS')} />;
+      case 'USERS': return <UserList users={users} jobTitles={jobTitles} onEdit={(u) => { setEditingUser(u); handleNavigate('USER_FORM'); }} onDelete={handleDeleteUser} onAdd={() => { setEditingUser(null); handleNavigate('USER_FORM'); }} onRefresh={fetchUsers} canEdit={can('MANAGE_USERS')} canDelete={can('MANAGE_USERS')} />;
       case 'USER_FORM': return <UserForm initialData={editingUser} jobTitles={jobTitles} onSave={async (u) => { setSaving(true); try { const { userCode, jobTitleId, photoUrl, signatureUrl, ...rest } = u; await supabase.from('users').upsert({ ...rest, user_code: userCode, job_title_id: jobTitleId, photo_url: photoUrl, signature_url: signatureUrl }); fetchUsers(); handleNavigate('USERS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={handleBack} onDelete={handleDeleteUser} isLoading={saving} />;
       case 'JOB_TITLES': return <JobTitleList jobTitles={jobTitles} onEdit={(t) => { setEditingJobTitle(t); handleNavigate('JOB_TITLE_FORM'); }} onDelete={handleDeleteJobTitle} onAdd={() => { setEditingJobTitle(null); handleNavigate('JOB_TITLE_FORM'); }} canEdit={can('MANAGE_JOB_TITLES')} canDelete={can('MANAGE_JOB_TITLES')} />;
       case 'JOB_TITLE_FORM': return <JobTitleForm initialData={editingJobTitle} onSave={handleSaveJobTitle} onCancel={handleBack} onDelete={handleDeleteJobTitle} />;
-      case 'VEHICLES': return <VehicleList items={vehicles} onAdd={() => { setEditingVehicle(null); handleNavigate('VEHICLE_FORM'); }} onEdit={(i) => { setEditingVehicle(i); handleNavigate('VEHICLE_FORM'); }} onDelete={(id) => handleDeleteAsset('vehicles', id, 'Veículo')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;
+      case 'VEHICLES': return <VehicleList items={vehicles} onAdd={() => { setEditingVehicle(null); handleNavigate('VEHICLE_FORM'); }} onEdit={(i) => { setEditingVehicle(i); handleNavigate('VEHICLE_FORM'); }} onDelete={(id) => handleDeleteAsset('vehicles', id, 'Veículo')} canEdit={can('MANAGE_VEHICLES')} canDelete={can('MANAGE_VEHICLES')} />;
       case 'VEHICLE_FORM': return <VehicleForm initialData={editingVehicle} onSave={(i: any) => handleSaveAsset('vehicles', i, 'VEHICLES', 'Veículo')} onCancel={handleBack} onDelete={() => editingVehicle && handleDeleteAsset('vehicles', editingVehicle.id, 'Veículo')} isLoading={saving} />;
-      case 'VESTS': return <VestList items={vests} onAdd={() => { setEditingVest(null); handleNavigate('VEST_FORM'); }} onEdit={(i) => { setEditingVest(i); handleNavigate('VEST_FORM'); }} onDelete={(id) => handleDeleteAsset('vests', id, 'Colete')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;
+      case 'VESTS': return <VestList items={vests} onAdd={() => { setEditingVest(null); handleNavigate('VEST_FORM'); }} onEdit={(i) => { setEditingVest(i); handleNavigate('VEST_FORM'); }} onDelete={(id) => handleDeleteAsset('vests', id, 'Colete')} canEdit={can('MANAGE_VESTS')} canDelete={can('MANAGE_VESTS')} />;
       case 'VEST_FORM': return <VestForm initialData={editingVest} onSave={(i: any) => handleSaveAsset('vests', i, 'VESTS', 'Colete')} onCancel={handleBack} onDelete={() => editingVest && handleDeleteAsset('vests', editingVest.id, 'Colete')} isLoading={saving} />;
-      case 'RADIOS': return <RadioList items={radios} onAdd={() => { setEditingRadio(null); handleNavigate('RADIO_FORM'); }} onEdit={(i) => { setEditingRadio(i); handleNavigate('RADIO_FORM'); }} onDelete={(id) => handleDeleteAsset('radios', id, 'Rádio')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;
+      case 'RADIOS': return <RadioList items={radios} onAdd={() => { setEditingRadio(null); handleNavigate('RADIO_FORM'); }} onEdit={(i) => { setEditingRadio(i); handleNavigate('RADIO_FORM'); }} onDelete={(id) => handleDeleteAsset('radios', id, 'Rádio')} canEdit={can('MANAGE_RADIOS')} canDelete={can('MANAGE_RADIOS')} />;
       case 'RADIO_FORM': return <RadioForm initialData={editingRadio} onSave={(i: any) => handleSaveAsset('radios', i, 'RADIOS', 'Rádio')} onCancel={handleBack} onDelete={() => editingRadio && handleDeleteAsset('radios', editingRadio.id, 'Rádio')} isLoading={saving} />;
-      case 'EQUIPMENTS': return <EquipmentList items={equipments} onAdd={() => { setEditingEquipment(null); handleNavigate('EQUIPMENT_FORM'); }} onEdit={(i) => { setEditingEquipment(i); handleNavigate('EQUIPMENT_FORM'); }} onDelete={(id) => handleDeleteAsset('equipments', id, 'Equipamento')} canEdit={can('MANAGE_ASSETS')} canDelete={can('DELETE_ASSETS')} />;
+      case 'EQUIPMENTS': return <EquipmentList items={equipments} onAdd={() => { setEditingEquipment(null); handleNavigate('EQUIPMENT_FORM'); }} onEdit={(i) => { setEditingEquipment(i); handleNavigate('EQUIPMENT_FORM'); }} onDelete={(id) => handleDeleteAsset('equipments', id, 'Equipamento')} canEdit={can('MANAGE_EQUIPMENTS')} canDelete={can('MANAGE_EQUIPMENTS')} />;
       case 'EQUIPMENT_FORM': return <EquipmentForm initialData={editingEquipment} onSave={(i: any) => handleSaveAsset('equipments', i, 'EQUIPMENTS', 'Equipamento')} onCancel={handleBack} onDelete={() => editingEquipment && handleDeleteAsset('equipments', editingEquipment.id, 'Equipamento')} isLoading={saving} />;
       case 'LOANS': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} />;
       case 'LOAN_HISTORY': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} initialTab="HISTORY" isReportView={true} loans={loans} onRefresh={() => fetchLoans(false)} hasMore={hasMoreLoans} isLoadingMore={loadingMoreLoans} onLoadMore={() => fetchLoans(true)} onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} />;
@@ -1963,13 +1976,20 @@ export function App() {
   };
   if (!user) return <Auth onLogin={handleLogin} onRegister={handleRegister} darkMode={darkMode} onToggleDarkMode={() => setDarkMode(!darkMode)} customLogo={customLogoRight} onShowSetup={() => setShowDbSetup(true)} systemVersion={DISPLAY_VERSION} users={users} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} />;
 
-  const pendingIncidentsCount = incidents.filter(i => i.status === 'PENDING').length;
+  const pendingIncidentsCount = incidents.filter(i => {
+    if (i.status !== 'PENDING') return false;
+    if (can('VIEW_ALL_PENDING_INCIDENTS') || can('APPROVE_INCIDENT')) return true;
+    if (can('VIEW_MY_PENDING_INCIDENTS')) return i.userId === user?.id;
+    return false;
+  }).length;
   // Conta lotes (batches) pendentes. Supervisores veem tudo, outros veem os seus (como recebedor ou operador)
   const pendingLoansCount = Array.from(new Set(
-    loans.filter(l => l.status === 'PENDING' && (
-      l.receiverId === user.id ||
-      l.operatorId === user.id
-    )).map(l => l.batchId || l.id)
+    loans.filter(l => {
+      if (l.status !== 'PENDING') return false;
+      if (can('VIEW_ALL_PENDING_LOANS') || can('APPROVE_LOAN') || can('RETURN_LOAN')) return true;
+      if (can('VIEW_MY_PENDING_LOANS')) return l.receiverId === user.id || l.operatorId === user.id;
+      return false;
+    }).map(l => l.batchId || l.id)
   )).length;
   // Badge total é a soma
   const totalPendingBadge = pendingIncidentsCount + pendingLoansCount;

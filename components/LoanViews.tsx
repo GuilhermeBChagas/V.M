@@ -440,13 +440,10 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             matriculaMatch;
     }).filter(l => {
         // PERMISSION FILTER:
-        // 1. Pending loans ONLY show to participants
-        if (l.status === 'PENDING' || (l.status as string) === 'pending') {
-            return l.receiverId === currentUser.id || l.operatorId === currentUser.id;
-        }
-        // 2. If canViewAll, see everything else (ACTIVE/HISTORY)
+        // If canViewAll is true (already checked in App.tsx for role/context), show everything
         if (canViewAll) return true;
-        // 3. Otherwise, only see where participant
+
+        // Otherwise, only see where participant (receiver or operator)
         return l.receiverId === currentUser.id || l.operatorId === currentUser.id;
     }).filter(l => {
         // Date filtering
