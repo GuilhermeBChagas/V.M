@@ -90,15 +90,98 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
         if (active && payload && payload.length) {
             return (
                 <div className="bg-white dark:bg-slate-800 p-3 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg">
-                    <p className="text-xs font-bold text-slate-500 uppercase mb-1">{label}</p>
-                    <p className="text-sm font-black text-blue-600 dark:text-blue-400">
-                        {payload[0].value} Atendimentos
-                    </p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-100 dark:border-slate-700 pb-1">{label}</p>
+                    <div className="space-y-1.5">
+                        {payload.map((entry: any, index: number) => (
+                            <div key={index} className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.fill }}></div>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase">{entry.name}</span>
+                                </div>
+                                <span className="text-xs font-black text-slate-800 dark:text-slate-100">
+                                    {entry.value} {entry.unit || ''}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             );
         }
         return null;
     };
+
+    // --- NOVOS DADOS MENSAIS ---
+
+    const monthsLabels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+    // Auxiliar para pegar o mês (0-11) de uma data YYYY-MM-DD
+    const getMonthIndex = (dateStr: string) => {
+        const parts = dateStr.split('-');
+        return parseInt(parts[1]) - 1;
+    };
+
+    // 5. Evolução de Horas PB (Mensal)
+    const pbHoursMonthlyData = useMemo(() => {
+        const monthlyHours = new Array(12).fill(0);
+
+        activeIncidents.forEach(inc => {
+            if (inc.alterationType.toUpperCase().includes('PB')) {
+                const [hS, mS] = inc.startTime.split(':').map(Number);
+                const [hE, mE] = inc.endTime.split(':').map(Number);
+                let startMin = hS * 60 + (mS || 0);
+                let endMin = hE * 60 + (mE || 0);
+                if (endMin < startMin) endMin += 1440;
+                const hours = (endMin - startMin) / 60;
+
+                const mIdx = getMonthIndex(inc.date);
+                if (mIdx >= 0 && mIdx < 12) {
+                    monthlyHours[mIdx] += hours;
+                }
+            }
+        });
+
+        return monthsLabels.map((name, i) => ({
+            name,
+            horas: parseFloat(monthlyHours[i].toFixed(1))
+        }));
+    }, [activeIncidents]);
+
+    // 6. Vistorias Prediais por Setor (Mensal)
+    const inspectionsMonthlyData = useMemo(() => {
+        const data: any[] = monthsLabels.map(name => ({ name }));
+        const sectorNames = sectors.map(s => s.name);
+
+        activeIncidents.forEach(inc => {
+            if (inc.alterationType.toUpperCase().includes('VISTORIA')) {
+                const mIdx = getMonthIndex(inc.date);
+                const building = buildings.find(b => b.id === inc.buildingId);
+                const sector = sectors.find(s => s.id === building?.sectorId);
+
+                if (mIdx >= 0 && mIdx < 12 && sector) {
+                    data[mIdx][sector.name] = (data[mIdx][sector.name] || 0) + 1;
+                }
+            }
+        });
+
+        return data;
+    }, [activeIncidents, sectors, buildings]);
+
+    // 7. Volume de Atendimentos por Setor (Mensal)
+    const incidentsMonthlyData = useMemo(() => {
+        const data: any[] = monthsLabels.map(name => ({ name }));
+
+        activeIncidents.forEach(inc => {
+            const mIdx = getMonthIndex(inc.date);
+            const building = buildings.find(b => b.id === inc.buildingId);
+            const sector = sectors.find(s => s.id === building?.sectorId);
+
+            if (mIdx >= 0 && mIdx < 12 && sector) {
+                data[mIdx][sector.name] = (data[mIdx][sector.name] || 0) + 1;
+            }
+        });
+
+        return data;
+    }, [activeIncidents, sectors, buildings]);
 
     return (
         <div className="space-y-6 animate-fade-in pb-12">
@@ -120,129 +203,6 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
                 </div>
             </div>
 
-            {/* KPI CARDS */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Total Registros</p>
-                        <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{totalIncidents}</h3>
-                    </div>
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg">
-                        <FileText size={20} />
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Pendentes</p>
-                        <h3 className="text-2xl font-black text-amber-500">{pendingCount}</h3>
-                    </div>
-                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-500 rounded-lg">
-                        <Clock size={20} />
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Setor Crítico</p>
-                        <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase truncate max-w-[120px]" title={topSector}>{topSector}</h3>
-                    </div>
-                    <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg">
-                        <AlertTriangle size={20} />
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Hoje</p>
-                        <h3 className="text-2xl font-black text-emerald-500">{incidentsToday}</h3>
-                    </div>
-                    <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-lg">
-                        <TrendingUp size={20} />
-                    </div>
-                </div>
-            </div>
-
-            {/* ROW 1: TENDÊNCIA E STATUS */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Gráfico de Área (Tendência) */}
-                <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase mb-6 flex items-center gap-2">
-                        <TrendingUp size={16} className="text-blue-500" /> Volume de Atendimentos (7 Dias)
-                    </h3>
-                    <div className="h-[250px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorIncidents" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
-                                <XAxis
-                                    dataKey="name"
-                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                    dy={10}
-                                />
-                                <YAxis
-                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <RechartsTooltip content={<CustomTooltip />} cursor={{ stroke: '#3b82f6', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                                <Area
-                                    type="monotone"
-                                    dataKey="value"
-                                    stroke="#3b82f6"
-                                    strokeWidth={3}
-                                    fillOpacity={1}
-                                    fill="url(#colorIncidents)"
-                                    activeDot={{ r: 6, strokeWidth: 0 }}
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Gráfico de Rosca (Status) */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase mb-6 flex items-center gap-2">
-                        <CheckCircle size={16} className="text-emerald-500" /> Eficiência de Validação
-                    </h3>
-                    <div className="h-[250px] w-full relative">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={statusData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {statusData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <RechartsTooltip content={<CustomTooltip />} />
-                                <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }} />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        {/* Total Center Text */}
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
-                            <div className="text-center">
-                                <span className="block text-2xl font-black text-slate-800 dark:text-white">{totalIncidents + (incidents.length - activeIncidents.length)}</span>
-                                <span className="block text-[8px] font-bold text-slate-400 uppercase">Total</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* ROW 2: TIPOS E SETORES */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -299,6 +259,136 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
                                 />
                                 <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9', opacity: 0.4 }} />
                                 <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40} fill="#3b82f6" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* ROW 3: EVOLUÇÃO MENSAL PB */}
+            <div className="grid grid-cols-1 gap-6">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                        <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
+                            <Clock size={16} className="text-blue-500" /> Evolução Mensal de Horas PB
+                        </h3>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">Total de Horas</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={pbHoursMonthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorPB" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
+                                <XAxis
+                                    dataKey="name"
+                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    dy={10}
+                                />
+                                <YAxis
+                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <RechartsTooltip content={<CustomTooltip />} />
+                                <Area
+                                    type="monotone"
+                                    dataKey="horas"
+                                    name="Horas"
+                                    stroke="#3b82f6"
+                                    strokeWidth={3}
+                                    fillOpacity={1}
+                                    fill="url(#colorPB)"
+                                    activeDot={{ r: 6, strokeWidth: 0 }}
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* ROW 4: VISTORIAS E ATENDIMENTOS POR SETOR */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Vistorias por Setor */}
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase mb-8 flex items-center gap-2">
+                        <CheckCircle size={16} className="text-emerald-500" /> Vistorias Prediais por Setor (Mensal)
+                    </h3>
+                    <div className="h-[350px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={inspectionsMonthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
+                                <XAxis
+                                    dataKey="name"
+                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    dy={10}
+                                />
+                                <YAxis
+                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <RechartsTooltip content={<CustomTooltip />} />
+                                <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase', paddingBottom: '20px' }} />
+                                {sectors.map((sector, index) => (
+                                    <Bar
+                                        key={sector.id}
+                                        dataKey={sector.name}
+                                        stackId="a"
+                                        fill={COLORS[index % COLORS.length]}
+                                        radius={0}
+                                    />
+                                ))}
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Atendimentos por Setor */}
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase mb-8 flex items-center gap-2">
+                        <Activity size={16} className="text-purple-500" /> Volume de Atendimentos por Setor (Mensal)
+                    </h3>
+                    <div className="h-[350px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={incidentsMonthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
+                                <XAxis
+                                    dataKey="name"
+                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    dy={10}
+                                />
+                                <YAxis
+                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <RechartsTooltip content={<CustomTooltip />} />
+                                <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase', paddingBottom: '20px' }} />
+                                {sectors.map((sector, index) => (
+                                    <Bar
+                                        key={sector.id}
+                                        dataKey={sector.name}
+                                        stackId="a"
+                                        fill={COLORS[index % COLORS.length]}
+                                        radius={0}
+                                    />
+                                ))}
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
