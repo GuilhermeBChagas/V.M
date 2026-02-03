@@ -89,16 +89,16 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-white dark:bg-slate-800 p-3 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg">
+                <div className="bg-white dark:bg-slate-800 p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl ring-1 ring-black/5">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-100 dark:border-slate-700 pb-1">{label}</p>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
                         {payload.map((entry: any, index: number) => (
                             <div key={index} className="flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.fill }}></div>
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase">{entry.name}</span>
+                                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: entry.color || entry.fill }}></div>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase truncate max-w-[80px] md:max-w-none">{entry.name}</span>
                                 </div>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100">
+                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 whitespace-nowrap">
                                     {entry.value} {entry.unit || ''}
                                 </span>
                             </div>
@@ -267,8 +267,8 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
 
             {/* ROW 3: EVOLUÇÃO MENSAL PB */}
             <div className="grid grid-cols-1 gap-6">
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
                         <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
                             <Clock size={16} className="text-blue-500" /> Evolução Mensal de Horas PB
                         </h3>
@@ -279,9 +279,9 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
                             </div>
                         </div>
                     </div>
-                    <div className="h-[300px] w-full">
+                    <div className="h-[250px] md:h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={pbHoursMonthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <AreaChart data={pbHoursMonthlyData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorPB" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
@@ -291,13 +291,14 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
                                 <XAxis
                                     dataKey="name"
-                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
+                                    tick={{ fontSize: 9, fontWeight: 'bold', fill: '#94a3b8' }}
                                     axisLine={false}
                                     tickLine={false}
                                     dy={10}
+                                    interval={window.innerWidth < 640 ? 1 : 0}
                                 />
                                 <YAxis
-                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
+                                    tick={{ fontSize: 9, fontWeight: 'bold', fill: '#94a3b8' }}
                                     axisLine={false}
                                     tickLine={false}
                                 />
@@ -321,28 +322,41 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
             {/* ROW 4: VISTORIAS E ATENDIMENTOS POR SETOR */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Vistorias por Setor */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase mb-8 flex items-center gap-2">
+                <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <h3 className="text-xs md:text-sm font-black text-slate-800 dark:text-slate-100 uppercase mb-6 md:mb-8 flex items-center gap-2">
                         <CheckCircle size={16} className="text-emerald-500" /> Vistorias Prediais por Setor (Mensal)
                     </h3>
-                    <div className="h-[350px] w-full">
+                    <div className="h-[300px] md:h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={inspectionsMonthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <BarChart data={inspectionsMonthlyData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
                                 <XAxis
                                     dataKey="name"
-                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
+                                    tick={{ fontSize: 9, fontWeight: 'bold', fill: '#94a3b8' }}
                                     axisLine={false}
                                     tickLine={false}
                                     dy={10}
+                                    interval={window.innerWidth < 640 ? 1 : 0}
                                 />
                                 <YAxis
-                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
+                                    tick={{ fontSize: 9, fontWeight: 'bold', fill: '#94a3b8' }}
                                     axisLine={false}
                                     tickLine={false}
                                 />
                                 <RechartsTooltip content={<CustomTooltip />} />
-                                <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase', paddingBottom: '20px' }} />
+                                <Legend
+                                    verticalAlign="top"
+                                    height={window.innerWidth < 640 ? 48 : 36}
+                                    iconType="circle"
+                                    wrapperStyle={{
+                                        fontSize: '8px',
+                                        fontWeight: 'bold',
+                                        textTransform: 'uppercase',
+                                        paddingBottom: window.innerWidth < 640 ? '10px' : '20px',
+                                        overflow: 'hidden'
+                                    }}
+                                    layout={window.innerWidth < 640 ? 'horizontal' : 'horizontal'}
+                                />
                                 {sectors.map((sector, index) => (
                                     <Bar
                                         key={sector.id}
@@ -358,28 +372,39 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
                 </div>
 
                 {/* Atendimentos por Setor */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase mb-8 flex items-center gap-2">
-                        <Activity size={16} className="text-purple-500" /> Volume de Atendimentos por Setor (Mensal)
+                <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <h3 className="text-xs md:text-sm font-black text-slate-800 dark:text-slate-100 uppercase mb-6 md:mb-8 flex items-center gap-2">
+                        <Activity size={16} className="text-purple-500" /> Atendimentos por Setor (Mensal)
                     </h3>
-                    <div className="h-[350px] w-full">
+                    <div className="h-[300px] md:h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={incidentsMonthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <BarChart data={incidentsMonthlyData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
                                 <XAxis
                                     dataKey="name"
-                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
+                                    tick={{ fontSize: 9, fontWeight: 'bold', fill: '#94a3b8' }}
                                     axisLine={false}
                                     tickLine={false}
                                     dy={10}
+                                    interval={window.innerWidth < 640 ? 1 : 0}
                                 />
                                 <YAxis
-                                    tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
+                                    tick={{ fontSize: 9, fontWeight: 'bold', fill: '#94a3b8' }}
                                     axisLine={false}
                                     tickLine={false}
                                 />
                                 <RechartsTooltip content={<CustomTooltip />} />
-                                <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase', paddingBottom: '20px' }} />
+                                <Legend
+                                    verticalAlign="top"
+                                    height={window.innerWidth < 640 ? 48 : 36}
+                                    iconType="circle"
+                                    wrapperStyle={{
+                                        fontSize: '8px',
+                                        fontWeight: 'bold',
+                                        textTransform: 'uppercase',
+                                        paddingBottom: window.innerWidth < 640 ? '10px' : '20px'
+                                    }}
+                                />
                                 {sectors.map((sector, index) => (
                                     <Bar
                                         key={sector.id}
