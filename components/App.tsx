@@ -1011,11 +1011,11 @@ export function App() {
   const [customLogoRight, setCustomLogoRight] = useState<string | null>(null);
   const [customLogoLeft, setCustomLogoLeft] = useState<string | null>(null);
 
-  const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0';
+  const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0.000';
   const gitHash = typeof __GIT_HASH__ !== 'undefined' ? __GIT_HASH__ : 'dev';
   const buildDate = typeof __BUILD_DATE__ !== 'undefined' ? __BUILD_DATE__ : '---';
-  const APP_VERSION = `v${appVersion}-${gitHash}`;
-  const DISPLAY_VERSION = `${appVersion}.${gitHash}`; // Simplified for discrete view
+  const APP_VERSION = `v${appVersion}`;
+  const DISPLAY_VERSION = appVersion;
 
   // --- FETCH FUNCTIONS INSIDE APP COMPONENT ---
 
@@ -2163,7 +2163,7 @@ export function App() {
               {!isSidebarCollapsed && (
                 <div className="py-2 text-center opacity-30 group-hover:opacity-100 transition-opacity duration-700">
                   <p className="text-[8px] font-mono text-slate-500 uppercase tracking-[0.15em] cursor-default">
-                    Internal System v{DISPLAY_VERSION}
+                    Sistema v{DISPLAY_VERSION}
                   </p>
                 </div>
               )}

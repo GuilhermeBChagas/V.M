@@ -12,9 +12,28 @@ const getGitHash = () => {
   }
 };
 
+// Função para gerar o Build Number sequencial baseado no total de commits
+const getBuildVersion = () => {
+  const MAJOR = 1;
+  const MINOR = 0;
+  const PATCH = 0;
+
+  try {
+    const totalCommits = parseInt(execSync('git rev-list --count HEAD').toString().trim());
+    // Ponto de partida: queremos que o build atual seja 001.
+    // Atualmente o repositório tem 7 commits.
+    // Offset = 7 - 1 = 6.
+    const offset = 6;
+    const buildNumber = Math.max(1, totalCommits - offset);
+    return `${MAJOR}.${MINOR}.${PATCH}.${buildNumber.toString().padStart(3, '0')}`;
+  } catch (e) {
+    return `${MAJOR}.${MINOR}.${PATCH}.dev`;
+  }
+};
+
 const gitHash = getGitHash();
 const buildDate = new Date().toLocaleDateString('pt-BR');
-const appVersion = '1.0.4'; // Versão base do sistema
+const appVersion = getBuildVersion(); // Versão no formato MAJOR.MINOR.PATCH.BUILD
 
 // https://vitejs.dev/config/
 export default defineConfig({
