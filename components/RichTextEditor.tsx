@@ -59,18 +59,20 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
                     <List size={18} />
                 </button>
             </div>
-            <div
-                ref={editorRef}
-                contentEditable
-                onInput={handleInput}
-                className="p-4 min-h-[150px] outline-none text-slate-700 dark:text-slate-200 prose dark:prose-invert max-w-none"
-                style={{ whiteSpace: 'pre-wrap' }}
-            />
-            {(!value || value === '<br>') && placeholder && (
-                <div className="absolute top-[60px] left-4 text-slate-400 pointer-events-none">
-                    {placeholder}
-                </div>
-            )}
+            <div className="relative">
+                <div
+                    ref={editorRef}
+                    contentEditable
+                    onInput={handleInput}
+                    className="p-4 min-h-[150px] outline-none text-slate-700 dark:text-slate-200 prose dark:prose-invert max-w-none"
+                    style={{ whiteSpace: 'pre-wrap' }}
+                />
+                {(!value || value === '<br>') && placeholder && (
+                    <div className="absolute top-4 left-4 text-slate-400 pointer-events-none">
+                        {placeholder}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
