@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Building, Sector } from '../types';
-import { Save, X, Key, Bell, Trash2, MapPin, Loader2 } from 'lucide-react';
+import { Save, X, Key, Bell, Trash2, MapPin, Loader2, ArrowLeft } from 'lucide-react';
 
 interface BuildingFormProps {
     initialData?: Building | null;
@@ -96,8 +96,9 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
                 <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 uppercase">
                     {initialData ? 'Editar Prédio' : 'Novo Prédio'}
                 </h2>
-                <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                    <X className="w-6 h-6" />
+                <button onClick={onCancel} className="btn-back scale-75 md:scale-90 origin-right">
+                    <ArrowLeft size={18} />
+                    <span>VOLTAR</span>
                 </button>
             </div>
 

@@ -106,11 +106,33 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         if (vehicleAsset) {
             const vehicle = vehicles.find(v => v.id === vehicleAsset.id);
             if (vehicle) {
+                setIsSubmitting(true);
+                let lastKm = vehicle.currentKm || 0;
+                try {
+                    // Busca a última cautela finalizada desse veículo para pegar o KM real
+                    const { data: lastLoan } = await supabase
+                        .from('loan_records')
+                        .select('meta')
+                        .eq('item_id', vehicle.id)
+                        .eq('status', 'COMPLETED')
+                        .order('return_time', { ascending: false })
+                        .limit(1)
+                        .single();
+
+                    if (lastLoan?.meta?.kmEnd) {
+                        lastKm = lastLoan.meta.kmEnd;
+                    }
+                } catch (e) {
+                    console.warn("Não foi possível buscar o último KM da cautela", e);
+                } finally {
+                    setIsSubmitting(false);
+                }
+
                 setVehicleStartData({
                     id: vehicle.id,
                     model: `${vehicle.model} (${vehicle.plate})`,
-                    currentKm: vehicle.currentKm || 0,
-                    manualKm: vehicle.currentKm || 0
+                    currentKm: lastKm,
+                    manualKm: lastKm
                 });
                 setShowVehicleStartModal(true);
                 return; // Stop here, wait for modal confirmation
@@ -243,16 +265,16 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             if (loanError) throw loanError;
 
             // Update Vehicle KM Table
-            // TEMPORARY FIX: The 'currentKm' column does not exist in the database properly yet.
-            // We are skipping the update of the master Vehicle record to allow the return flow to complete.
-            // The KM is still recorded in the loan history (loan_records meta).
-            /*
-            const { error: vehicleError } = await supabase.from('vehicles').update({
-                currentKm: vehicleReturnData.kmEnd
-            }).eq('id', vehicleReturnData.vehicleId);
-
-            if (vehicleError) throw vehicleError;
-            */
+            try {
+                const { error: vehicleError } = await supabase.from('vehicles').update({
+                    currentKm: vehicleReturnData.kmEnd
+                }).eq('id', vehicleReturnData.vehicleId);
+                // We don't throw here to avoid blocking the return if the column is missing, 
+                // but we check the error for debugging.
+                if (vehicleError) console.warn("Erro ao atualizar KM mestre do veículo:", vehicleError.message);
+            } catch (e) {
+                console.warn("Falha ao atualizar KM na tabela vehicles (coluna pode estar ausente)");
+            }
 
             // Process Other Items in Batch (if any)
             if (vehicleReturnData.batchIdsToComplete && vehicleReturnData.batchIdsToComplete.length > 0) {
@@ -1147,7 +1169,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                 <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
                                                 <div>
                                                     <p className="text-[10px] font-black uppercase">KM Inconsistente</p>
-                                                    <p className="text-[10px]">Valor menor que o atual ({vehicleStartData.currentKm.toLocaleString('pt-BR')} KM).</p>
+                                                    <p className="text-[10px]">Valor menor que a última utilização ({vehicleStartData.currentKm.toLocaleString('pt-BR')} KM).</p>
                                                 </div>
                                             </div>
                                         ) : (

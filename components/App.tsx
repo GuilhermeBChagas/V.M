@@ -1072,7 +1072,7 @@ export function App() {
     try {
       let finalData: LoanRecord[] = [];
       // Columns for LIST view
-      const loanListColumns = 'id, status, loan_time, return_time, building_id, operator_id, receiver_id, receiver_name, batch_id';
+      const loanListColumns = 'id, status, checkout_time, return_time, operator_id, receiver_id, receiver_name, batch_id, asset_type, item_id, description, meta';
 
       if (!isLoadMore) {
         const [activeRes, completedRes] = await Promise.all([
@@ -1098,7 +1098,11 @@ export function App() {
           return [...prev, ...newRecords];
         } else { return finalData; }
       });
-    } catch (error: any) { console.error("Erro ao buscar cautelas:", error); } finally { setLoadingMoreLoans(false); }
+    } catch (error: any) {
+      console.error("Erro ao buscar cautelas:", error.message || error);
+    } finally {
+      setLoadingMoreLoans(false);
+    }
   }, [loanPage]);
 
   const fetchLogs = useCallback(async () => {
@@ -1872,6 +1876,9 @@ export function App() {
           unreadAnnouncementsCount={unreadAnnouncementsCount}
           announcementsRevision={announcementsRevision}
           isAnnouncementsVisible={can('VIEW_ANNOUNCEMENTS')}
+          canViewPendingIncidents={can('VIEW_ALL_PENDING_INCIDENTS') || can('VIEW_MY_PENDING_INCIDENTS') || can('APPROVE_INCIDENT')}
+          canViewActiveLoans={can('VIEW_ALL_PENDING_LOANS') || can('VIEW_MY_PENDING_LOANS') || can('APPROVE_LOAN') || can('RETURN_LOAN')}
+          canViewRecentActivities={can('VIEW_ALL_INCIDENTS') || can('VIEW_MY_INCIDENTS')}
         />;
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
@@ -1969,8 +1976,12 @@ export function App() {
         onRefresh={() => fetchIncidents(false)}
         currentUser={user!}
         pendingIncidentsCount={pendingIncidentsCount}
+        pendingLoansCount={pendingLoansCount}
         unreadAnnouncementsCount={unreadAnnouncementsCount}
         isAnnouncementsVisible={MENU_STRUCTURE.some(s => s.children?.some(c => c.id === 'announcements' && isMenuVisible(c)))}
+        canViewPendingIncidents={can('VIEW_ALL_PENDING_INCIDENTS') || can('VIEW_MY_PENDING_INCIDENTS') || can('APPROVE_INCIDENT')}
+        canViewActiveLoans={can('VIEW_ALL_PENDING_LOANS') || can('VIEW_MY_PENDING_LOANS') || can('APPROVE_LOAN') || can('RETURN_LOAN')}
+        canViewRecentActivities={can('VIEW_ALL_INCIDENTS') || can('VIEW_MY_INCIDENTS')}
       />;
     }
   };

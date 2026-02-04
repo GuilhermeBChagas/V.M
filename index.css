@@ -41,3 +41,51 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+.btn-back {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.5rem 1rem;
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    color: #475569;
+    font-size: 0.625rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    outline: none;
+}
+
+.dark .btn-back {
+    background-color: #0f172a;
+    border-color: #1e293b;
+    color: #94a3b8;
+}
+
+.btn-back:hover {
+    background-color: #f8fafc;
+    color: #2563eb;
+    border-color: #cbd5e1;
+}
+
+.dark .btn-back:hover {
+    background-color: #1e293b;
+    color: #60a5fa;
+    border-color: #334155;
+}
+
+.btn-back:active {
+    transform: scale(0.95);
+}
+
+.btn-back svg {
+    transition: transform 0.2s;
+}
+
+.btn-back:hover svg {
+    transform: translateX(-0.25rem);
+}

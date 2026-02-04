@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Announcement, User, UserRole, JobTitle } from '../types';
 import { announcementService } from '../services/announcementService';
-import { Plus, Trash2, Megaphone, CheckCircle2, Users, Search, X, PieChart, BarChart2, Calendar, Filter, Download, Send, Eye, Clock, AlertTriangle, FileText, Briefcase, Check } from 'lucide-react';
+import { Plus, Trash2, Megaphone, CheckCircle2, Users, Search, X, PieChart, BarChart2, Calendar, Filter, Download, Send, Eye, Clock, AlertTriangle, FileText, Briefcase, Check, ArrowLeft } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { RichTextEditor } from './RichTextEditor';
 
@@ -195,9 +195,9 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
                 {view !== 'LIST' && (
                     <button
                         onClick={() => setView('LIST')}
-                        className="px-6 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-black uppercase flex items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                        className="btn-back"
                     >
-                        <X size={16} /> Voltar
+                        <ArrowLeft size={16} /> Voltar
                     </button>
                 )}
             </div>

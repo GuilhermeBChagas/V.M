@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Incident, Building, User, AlterationType } from '../types';
-import { Save, X, Clock, MapPin, FileText, Loader2, Search, Users, Navigation, Check, AlertTriangle, Plus, UserPlus, UserMinus, Calendar, ChevronDown, Send, Camera, ImagePlus, Trash2, Zap } from 'lucide-react';
+import { Save, X, Clock, MapPin, FileText, Loader2, Search, Users, Navigation, Check, AlertTriangle, Plus, UserPlus, UserMinus, Calendar, ChevronDown, Send, Camera, ImagePlus, Trash2, Zap, ArrowLeft } from 'lucide-react';
 import { normalizeString } from '../utils/stringUtils';
 import { getTodayLocalDate } from '../utils/dateUtils';
 import { compressImage } from '../utils/imageUtils';
@@ -368,9 +368,15 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border-2 border-blue-600 px-4 py-2 rounded-xl flex flex-col items-center justify-center min-w-[120px] shadow-sm">
-                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] leading-none mb-1">CÓDIGO R.A</span>
-                    <span className="text-lg font-black text-slate-800 dark:text-white leading-none">{currentRa}</span>
+                <div className="flex items-center gap-4">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-blue-600 px-4 py-2 rounded-xl flex flex-col items-center justify-center min-w-[120px] shadow-sm">
+                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] leading-none mb-1">CÓDIGO R.A</span>
+                        <span className="text-lg font-black text-slate-800 dark:text-white leading-none">{currentRa}</span>
+                    </div>
+                    <button type="button" onClick={onCancel} className="btn-back scale-90 md:scale-100">
+                        <ArrowLeft size={18} />
+                        <span>VOLTAR</span>
+                    </button>
                 </div>
             </div>
 

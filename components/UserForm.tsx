@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, UserRole, JobTitle } from '../types';
-import { Save, X, User as UserIcon, Shield, Trash2, UserCheck, Eye, Activity, Mail, Hash, MoreHorizontal, Briefcase, Loader2 } from 'lucide-react';
+import { Save, X, User as UserIcon, Shield, Trash2, UserCheck, Eye, Activity, Mail, Hash, MoreHorizontal, Briefcase, Loader2, ArrowLeft } from 'lucide-react';
 
 interface UserFormProps {
     initialData?: User | null;
@@ -104,8 +104,9 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                     <UserIcon className="w-5 h-5 mr-2" />
                     {initialData ? 'Editar Usuário' : 'Novo Usuário'}
                 </h2>
-                <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                    <X className="w-6 h-6" />
+                <button onClick={onCancel} className="btn-back scale-75 md:scale-90 origin-right">
+                    <ArrowLeft size={18} />
+                    <span>VOLTAR</span>
                 </button>
             </div>
 

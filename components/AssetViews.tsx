@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Vehicle, Vest, Radio, Equipment } from '../types';
-import { Plus, Pencil, Trash2, Search, Save, X, Car, Shield, Radio as RadioIcon, Package, Fuel, AlertCircle, Gauge, ChevronRight, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Save, X, Car, Shield, Radio as RadioIcon, Package, Fuel, AlertCircle, Gauge, ChevronRight, Loader2, ArrowLeft } from 'lucide-react';
 import { normalizeString } from '../utils/stringUtils';
 
 // --- STYLES & UTILS (MATCHING BUILDING FORM) ---
@@ -104,7 +104,10 @@ const GenericForm: React.FC<GenericFormProps> = ({ title, icon, children, onSubm
             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 uppercase tracking-tight">
                 {icon} {title}
             </h2>
-            <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"><X className="w-6 h-6" /></button>
+            <button onClick={onCancel} className="btn-back scale-75 md:scale-90 origin-right">
+                <ArrowLeft size={18} />
+                <span>VOLTAR</span>
+            </button>
         </div>
         <form onSubmit={onSubmit} className="p-6 space-y-6">
             {children}

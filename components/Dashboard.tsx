@@ -24,6 +24,9 @@ interface DashboardProps {
     unreadAnnouncementsCount: number;
     announcementsRevision?: number;
     isAnnouncementsVisible?: boolean;
+    canViewPendingIncidents?: boolean;
+    canViewActiveLoans?: boolean;
+    canViewRecentActivities?: boolean;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -40,7 +43,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
     pendingLoansCount,
     unreadAnnouncementsCount,
     announcementsRevision = 0,
-    isAnnouncementsVisible = true
+    isAnnouncementsVisible = true,
+    canViewPendingIncidents = false,
+    canViewActiveLoans = false,
+    canViewRecentActivities = false
 }) => {
     // Estados da Pesquisa de Prédios
     const [buildingSearchTerm, setBuildingSearchTerm] = useState('');
@@ -252,47 +258,53 @@ export const Dashboard: React.FC<DashboardProps> = ({
             )}
 
             {/* ATALHOS DE PENDÊNCIAS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div
-                    onClick={() => onNavigate('PENDING_APPROVALS')}
-                    className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex items-center gap-4"
-                >
-                    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-2xl group-hover:scale-110 transition-transform relative">
-                        <FileText size={28} />
-                        {pendingIncidentsCount > 0 && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-white dark:border-slate-800 rounded-full shadow-sm animate-pulse" />
-                        )}
-                    </div>
-                    <div>
-                        <h4 className="text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none">Registros Pendentes</h4>
-                        <div className="flex items-baseline gap-2 mt-1">
-                            <span className="text-3xl font-black text-slate-800 dark:text-white leading-none">{pendingIncidentsCount}</span>
-                            <span className="text-xs font-bold text-slate-400 uppercase">Aguardando</span>
+            {(canViewPendingIncidents || canViewActiveLoans) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {canViewPendingIncidents && (
+                        <div
+                            onClick={() => onNavigate('PENDING_APPROVALS')}
+                            className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex items-center gap-4"
+                        >
+                            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-2xl group-hover:scale-110 transition-transform relative">
+                                <FileText size={28} />
+                                {pendingIncidentsCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-white dark:border-slate-800 rounded-full shadow-sm animate-pulse" />
+                                )}
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none">Registros Pendentes</h4>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                    <span className="text-3xl font-black text-slate-800 dark:text-white leading-none">{pendingIncidentsCount}</span>
+                                    <span className="text-xs font-bold text-slate-400 uppercase">Aguardando</span>
+                                </div>
+                            </div>
+                            <ArrowRight className="ml-auto text-slate-300 group-hover:text-amber-500 group-hover:translate-x-1 transition-all" size={20} />
                         </div>
-                    </div>
-                    <ArrowRight className="ml-auto text-slate-300 group-hover:text-amber-500 group-hover:translate-x-1 transition-all" size={20} />
-                </div>
+                    )}
 
-                <div
-                    onClick={() => onNavigate('LOANS')}
-                    className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex items-center gap-4"
-                >
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl group-hover:scale-110 transition-transform relative">
-                        <Zap size={28} />
-                        {pendingLoansCount > 0 && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-white dark:border-slate-800 rounded-full shadow-sm animate-pulse" />
-                        )}
-                    </div>
-                    <div>
-                        <h4 className="text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none">Cautelas Ativas</h4>
-                        <div className="flex items-baseline gap-2 mt-1">
-                            <span className="text-3xl font-black text-slate-800 dark:text-white leading-none">{pendingLoansCount}</span>
-                            <span className="text-xs font-bold text-slate-400 uppercase">Pendentes</span>
+                    {canViewActiveLoans && (
+                        <div
+                            onClick={() => onNavigate('LOANS')}
+                            className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex items-center gap-4"
+                        >
+                            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl group-hover:scale-110 transition-transform relative">
+                                <Zap size={28} />
+                                {pendingLoansCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-white dark:border-slate-800 rounded-full shadow-sm animate-pulse" />
+                                )}
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none">Cautelas Ativas</h4>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                    <span className="text-3xl font-black text-slate-800 dark:text-white leading-none">{pendingLoansCount}</span>
+                                    <span className="text-xs font-bold text-slate-400 uppercase">Pendentes</span>
+                                </div>
+                            </div>
+                            <ArrowRight className="ml-auto text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" size={20} />
                         </div>
-                    </div>
-                    <ArrowRight className="ml-auto text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" size={20} />
+                    )}
                 </div>
-            </div>
+            )}
 
             {/* MURAL E ATIVIDADES */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -309,83 +321,85 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 )}
 
                 {/* ÚLTIMOS REGISTROS */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
-                    <div className="flex justify-between items-center mb-6">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg">
-                                <Activity size={20} />
-                            </div>
-                            <h3 className="font-bold text-slate-800 dark:text-white text-lg">Últimas Atividades</h3>
-                        </div>
-                        <button
-                            onClick={() => onNavigate('HISTORY')}
-                            className="text-slate-400 text-xs font-bold uppercase hover:text-brand-600 transition-colors"
-                        >
-                            Ver Todos
-                        </button>
-                    </div>
-
-                    <div className="space-y-4">
-                        {recentIncidents.map(incident => {
-                            const building = buildings.find(b => b.id === incident.buildingId);
-                            return (
-                                <div
-                                    key={incident.id}
-                                    onClick={() => onViewIncident?.(incident)}
-                                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/60 hover:shadow-md hover:scale-[1.01] transition-all cursor-pointer group"
-                                >
-                                    {/* Header: Local e Data */}
-                                    <div className="flex justify-between items-start mb-3">
-                                        <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide leading-tight group-hover:text-brand-600 transition-colors">
-                                            {building?.name || 'Local Não Identificado'}
-                                        </h4>
-                                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase whitespace-nowrap bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded-lg">
-                                            {formatDateBR(incident.date)}
-                                        </span>
-                                    </div>
-
-                                    {/* Description (Short) */}
-                                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-4 line-clamp-1">
-                                        {incident.description || "Registro de rotina sem observações detalhadas."}
-                                    </p>
-
-                                    {/* Tags Layout */}
-                                    <div className="flex items-center flex-wrap gap-2">
-                                        {/* Tag RA */}
-                                        <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-md text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                                            RA {incident.raCode}
-                                        </span>
-
-                                        {/* Tag Status */}
-                                        <span className={`px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider flex items-center gap-1 ${incident.status === 'APPROVED' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
-                                            incident.status === 'REJECTED' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400' :
-                                                'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                                            }`}>
-                                            {incident.status === 'APPROVED' ? 'Aprovado' : incident.status === 'REJECTED' ? 'Rejeitado' : 'Registro Gravado'}
-                                        </span>
-
-                                        {/* Tag Sync Status */}
-                                        {incident.isLocal ? (
-                                            <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-500 rounded-md text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
-                                                <WifiOff size={10} className="mb-0.5" /> Aguardando Sync
-                                            </span>
-                                        ) : (
-                                            <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-md text-[9px] font-black uppercase tracking-wider">
-                                                Registro Gravado
-                                            </span>
-                                        )}
-                                    </div>
+                {canViewRecentActivities && (
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+                        <div className="flex justify-between items-center mb-6">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                                    <Activity size={20} />
                                 </div>
-                            );
-                        })}
-                        {recentIncidents.length === 0 && (
-                            <div className="h-40 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600">
-                                <Activity size={32} className="mb-2 opacity-50" />
-                                <p className="text-xs font-black uppercase tracking-widest">Nenhuma atividade recente</p>
+                                <h3 className="font-bold text-slate-800 dark:text-white text-lg">Últimas Atividades</h3>
                             </div>
-                        )}
+                            <button
+                                onClick={() => onNavigate('HISTORY')}
+                                className="text-slate-400 text-xs font-bold uppercase hover:text-brand-600 transition-colors"
+                            >
+                                Ver Todos
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {recentIncidents.map(incident => {
+                                const building = buildings.find(b => b.id === incident.buildingId);
+                                return (
+                                    <div
+                                        key={incident.id}
+                                        onClick={() => onViewIncident?.(incident)}
+                                        className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/60 hover:shadow-md hover:scale-[1.01] transition-all cursor-pointer group"
+                                    >
+                                        {/* Header: Local e Data */}
+                                        <div className="flex justify-between items-start mb-3">
+                                            <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide leading-tight group-hover:text-brand-600 transition-colors">
+                                                {building?.name || 'Local Não Identificado'}
+                                            </h4>
+                                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase whitespace-nowrap bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded-lg">
+                                                {formatDateBR(incident.date)}
+                                            </span>
+                                        </div>
+
+                                        {/* Description (Short) */}
+                                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-4 line-clamp-1">
+                                            {incident.description || "Registro de rotina sem observações detalhadas."}
+                                        </p>
+
+                                        {/* Tags Layout */}
+                                        <div className="flex items-center flex-wrap gap-2">
+                                            {/* Tag RA */}
+                                            <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-md text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                                                RA {incident.raCode}
+                                            </span>
+
+                                            {/* Tag Status */}
+                                            <span className={`px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider flex items-center gap-1 ${incident.status === 'APPROVED' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
+                                                incident.status === 'REJECTED' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400' :
+                                                    'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                                }`}>
+                                                {incident.status === 'APPROVED' ? 'Aprovado' : incident.status === 'REJECTED' ? 'Rejeitado' : 'Registro Gravado'}
+                                            </span>
+
+                                            {/* Tag Sync Status */}
+                                            {incident.isLocal ? (
+                                                <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-500 rounded-md text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                                                    <WifiOff size={10} className="mb-0.5" /> Aguardando Sync
+                                                </span>
+                                            ) : (
+                                                <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-md text-[9px] font-black uppercase tracking-wider">
+                                                    Registro Gravado
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {recentIncidents.length === 0 && (
+                                <div className="h-40 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600">
+                                    <Activity size={32} className="mb-2 opacity-50" />
+                                    <p className="text-xs font-black uppercase tracking-widest">Nenhuma atividade recente</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

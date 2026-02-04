@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { JobTitle } from '../types';
-import { Save, X, Briefcase, Trash2 } from 'lucide-react';
+import { Save, X, Briefcase, Trash2, ArrowLeft } from 'lucide-react';
 
 interface JobTitleFormProps {
     initialData?: JobTitle | null;
@@ -47,8 +47,9 @@ export const JobTitleForm: React.FC<JobTitleFormProps> = ({ initialData, onSave,
                     <Briefcase className="w-5 h-5 mr-2" />
                     {initialData ? 'Editar Cargo/Função' : 'Novo Cargo/Função'}
                 </h2>
-                <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                    <X className="w-6 h-6" />
+                <button onClick={onCancel} className="btn-back scale-75 md:scale-90 origin-right">
+                    <ArrowLeft size={18} />
+                    <span>VOLTAR</span>
                 </button>
             </div>
 

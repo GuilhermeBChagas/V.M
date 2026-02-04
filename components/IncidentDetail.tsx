@@ -1,7 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import { Incident, Building, User } from '../types';
-import { ArrowLeft, Pencil, CheckCircle, XCircle, Download, Loader2, Ban, ShieldCheck, Printer, WifiOff } from 'lucide-react';
+import { ArrowLeft, Pencil, CheckCircle, XCircle, Download, Loader2, Ban, ShieldCheck, Printer, WifiOff, Share2 } from 'lucide-react';
 import { formatDateBR } from '../utils/dateUtils';
 
 declare var html2pdf: any;
@@ -32,6 +32,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
 }) => {
     const contentRef = useRef<HTMLDivElement>(null);
     const [isExporting, setIsExporting] = useState(false);
+    const [isSharing, setIsSharing] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
 
     // Determina se exibe a barra de ferramentas (se tiver pelo menos uma permissão)
@@ -56,6 +57,53 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
         html2pdf().set(opt).from(element).save().then(() => {
             setIsExporting(false);
         });
+    };
+
+    const handleShareImage = async () => {
+        if (!contentRef.current || typeof html2pdf === 'undefined') return;
+        setIsSharing(true);
+        try {
+            const element = contentRef.current;
+            // Captura o elemento como canvas usando o motor do html2pdf
+            html2pdf().set({
+                margin: 0,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 3, useCORS: true, scrollY: 0 }
+            }).from(element).toCanvas().get('canvas').then((canvas: HTMLCanvasElement) => {
+                canvas.toBlob(async (blob: Blob | null) => {
+                    if (!blob) {
+                        setIsSharing(false);
+                        return;
+                    }
+
+                    const fileName = `RA_${incident.raCode.replace('/', '-')}.jpg`;
+                    const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: `Registro de Atendimento ${incident.raCode}`,
+                                text: `Segue o Registro de Atendimento ${incident.raCode} em anexo.`
+                            });
+                        } catch (err) {
+                            console.error("Erro ao compartilhar:", err);
+                        }
+                    } else {
+                        // Fallback: download se não suportar share
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = fileName;
+                        link.click();
+                        URL.revokeObjectURL(link.href);
+                    }
+                    setIsSharing(false);
+                }, 'image/jpeg', 0.95);
+            });
+        } catch (err) {
+            console.error("Erro ao gerar imagem para compartilhamento:", err);
+            setIsSharing(false);
+        }
     };
 
     // Função para imprimir exatamente o mesmo layout do PDF
@@ -208,14 +256,19 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                 </div>
             )}
 
-            <div className="flex justify-between items-center mb-6 no-print px-4 md:px-0 w-full max-w-[210mm] mx-auto">
-                <button onClick={onBack} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-black text-[10px] uppercase flex items-center gap-1">
-                    <ArrowLeft size={16} /> VOLTAR
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 no-print px-4 md:px-0 w-full max-w-[210mm] mx-auto gap-4">
+                <button onClick={onBack} className="btn-back">
+                    <ArrowLeft size={18} />
+                    <span>VOLTAR</span>
                 </button>
-                <div className="flex gap-2">
-
-                    <button onClick={handleExportPDF} disabled={isExporting} className="px-6 h-9 bg-slate-800 dark:bg-slate-700 text-white rounded-lg font-black text-[10px] uppercase flex items-center justify-center gap-2 shadow-lg hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors">
-                        {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} <span>{isExporting ? 'PROCESSANDO' : 'GERAR PDF'}</span>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <button onClick={handleShareImage} disabled={isSharing} className="flex-1 sm:flex-none px-3 sm:px-6 h-10 bg-blue-600 dark:bg-blue-700 text-white rounded-lg font-black text-[9px] sm:text-[10px] uppercase flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
+                        {isSharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
+                        <span className="whitespace-nowrap">{isSharing ? 'GERANDO' : 'COMPARTILHAR'}</span>
+                    </button>
+                    <button onClick={handleExportPDF} disabled={isExporting} className="flex-1 sm:flex-none px-3 sm:px-6 h-10 bg-slate-800 dark:bg-slate-700 text-white rounded-lg font-black text-[9px] sm:text-[10px] uppercase flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors">
+                        {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                        <span className="whitespace-nowrap">{isExporting ? 'PROCESSANDO' : 'GERAR PDF'}</span>
                     </button>
                 </div>
             </div>
