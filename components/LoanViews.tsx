@@ -152,10 +152,10 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             : `Relatorio_Historico_${historyItemId}_${new Date().toISOString().split('T')[0]}.pdf`;
 
         const opt = {
-            margin: [2, 5, 5, 5], // Reduced top margin to 2mm
+            margin: [2, 6, 0, 6],
             filename: filename,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
         };
 
@@ -1397,9 +1397,9 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
                                             {/* HIDDEN PRINT TEMPLATE */}
                                             <div className="hidden">
-                                                <div ref={reportRef} className="bg-white text-black px-4 pb-4 pt-0" style={{ width: '275mm', minHeight: '190mm', fontFamily: "'Inter', sans-serif" }}>
+                                                <div ref={reportRef} className="bg-white text-black px-4 pb-4 pt-0 transform-gpu" style={{ width: '285mm', height: 'auto', minHeight: '190mm', fontFamily: "'Inter', sans-serif" }}>
                                                     {/* HEADER (Same as IncidentDetail) */}
-                                                    <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12">
+                                                    <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12 mt-4">
                                                         {/* Logo Esquerda (Muni) */}
                                                         <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
                                                             {customLogoLeft ? (
