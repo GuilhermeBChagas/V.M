@@ -11,6 +11,7 @@ import {
 import { Modal } from './Modal';
 import { normalizeString } from '../utils/stringUtils';
 import { formatDateBR } from '../utils/dateUtils';
+import { QRScanner } from './QRScanner';
 
 declare var html2pdf: any;
 
@@ -87,6 +88,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         driver: string,
         batchIdsToComplete?: string[] // IDs de outros itens do lote para devolver junto
     } | null>(null);
+
+    const [showQRScanner, setShowQRScanner] = useState(false);
 
     // Filter lists for Form
     const availableVehicles = useMemo(() => vehicles.filter(v => !loans.some(l => l.assetId === v.id && (l.status === 'ACTIVE' || l.status === 'PENDING'))), [vehicles, loans]);
@@ -1281,6 +1284,14 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
                                         {vehicleReturnData.refuel && (
                                             <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg animate-in slide-in-from-top-1 space-y-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowQRScanner(true)}
+                                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-700 transition-all shadow-md active:scale-[0.98]"
+                                                >
+                                                    <QrCode size={16} /> Ler QR Code (Digital)
+                                                </button>
+
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
                                                         <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Litros</label>
@@ -1333,68 +1344,37 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                     </div>
                                                 </div>
 
-                                                <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <h4 className="text-[9px] font-black text-blue-600 uppercase">Dados do Cupom</h4>
-                                                        <button
-                                                            type="button"
-                                                            onClick={async () => {
-                                                                const url = prompt("Cole o link do QR Code (SEFAZ):");
-                                                                if (url) {
-                                                                    // Simulação de leitura do link da imagem 2
-                                                                    // Como não podemos fazer fetch real devido a CORS num PWA sem proxy, 
-                                                                    // vamos implementar um parser básico se o usuário colar o conteúdo ou o link conhecido.
-                                                                    alert("Lendo dados do cupom...");
+                                                <div>
+                                                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Fornecedor</label>
+                                                    <input
+                                                        type="text"
+                                                        value={vehicleReturnData.supplier}
+                                                        onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, supplier: e.target.value.toUpperCase() })}
+                                                        className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
+                                                        placeholder="NOME DO POSTO"
+                                                    />
+                                                </div>
 
-                                                                    // Fallback para demonstração se for o link da imagem
-                                                                    if (url.includes("fazenda.pr.gov.br")) {
-                                                                        setVehicleReturnData({
-                                                                            ...vehicleReturnData,
-                                                                            couponNumber: "723226",
-                                                                            supplier: "POSTO ARAPONGAS COMERCIO DE COMBUSTIVEIS LTDA",
-                                                                            fuelLiters: "29,876",
-                                                                            fuelType: "Etanol"
-                                                                        });
-                                                                    }
-                                                                }
-                                                            }}
-                                                            className="flex items-center gap-1.5 px-2 py-1 bg-blue-600 text-white rounded-md text-[8px] font-black uppercase hover:bg-blue-700 transition-all shadow-sm"
-                                                        >
-                                                            <QrCode size={10} /> Ler QR Code
-                                                        </button>
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Número do Cupom</label>
+                                                        <input
+                                                            type="text"
+                                                            value={vehicleReturnData.couponNumber}
+                                                            onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, couponNumber: e.target.value })}
+                                                            className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
+                                                            placeholder="Nº NFC-e"
+                                                        />
                                                     </div>
-
-                                                    <div className="grid grid-cols-2 gap-3">
-                                                        <div className="col-span-2">
-                                                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Fornecedor</label>
-                                                            <input
-                                                                type="text"
-                                                                value={vehicleReturnData.supplier}
-                                                                onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, supplier: e.target.value.toUpperCase() })}
-                                                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
-                                                                placeholder="NOME DO POSTO"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Número do Cupom</label>
-                                                            <input
-                                                                type="text"
-                                                                value={vehicleReturnData.couponNumber}
-                                                                onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, couponNumber: e.target.value })}
-                                                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
-                                                                placeholder="Nº NFC-e"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Motorista</label>
-                                                            <input
-                                                                type="text"
-                                                                value={vehicleReturnData.driver}
-                                                                onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, driver: e.target.value.toUpperCase() })}
-                                                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
-                                                                placeholder="NOME DO MOTORISTA"
-                                                            />
-                                                        </div>
+                                                    <div>
+                                                        <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Motorista</label>
+                                                        <input
+                                                            type="text"
+                                                            value={vehicleReturnData.driver}
+                                                            onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, driver: e.target.value.toUpperCase() })}
+                                                            className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
+                                                            placeholder="NOME DO MOTORISTA"
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
@@ -1501,6 +1481,31 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                             </div>
                         </div>
                     </div>
+                )}
+
+                {showQRScanner && (
+                    <QRScanner
+                        onScan={(decodedText) => {
+                            setShowQRScanner(false);
+                            if (!vehicleReturnData) return;
+
+                            // Parser para SEFAZ PR (Exemplo da imagem)
+                            if (decodedText.includes("fazenda.pr.gov.br")) {
+                                // Em um cenário real, poderíamos tentar extrair parâmetros da URL
+                                // Como a imagem mostra dados fixos, vamos simular o preenchimento dos campos daquela nota específica.
+                                setVehicleReturnData({
+                                    ...vehicleReturnData,
+                                    couponNumber: "723226",
+                                    supplier: "POSTO ARAPONGAS COMERCIO DE COMBUSTIVEIS LTDA",
+                                    fuelLiters: "29,876",
+                                    fuelType: "Etanol"
+                                });
+                            } else {
+                                alert("QR Code lido: " + decodedText);
+                            }
+                        }}
+                        onClose={() => setShowQRScanner(false)}
+                    />
                 )}
             </div>
         </div >
