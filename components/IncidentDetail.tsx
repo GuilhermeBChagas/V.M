@@ -200,56 +200,62 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
         <div className="max-w-4xl mx-auto pb-10 px-0 md:px-4">
             {/* --- BARRA DE CONTROLE (TELA - NÃO IMPRIME) --- */}
             {showToolbar && (
-                <div className={`mb-6 p-4 rounded-xl border-2 flex flex-col sm:flex-row justify-between items-center no-print shadow-sm gap-4 ${isCancelled ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' : isPending ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' : 'bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800'}`}>
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <div className={`p-2 rounded-lg flex-shrink-0 ${isCancelled ? 'bg-red-100' : isPending ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                            {isCancelled ? <Ban className="text-red-600" /> : <ShieldCheck className={isPending ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'} />}
+                <div className={`mb-6 p-4 rounded-3xl border flex flex-col md:flex-row justify-between items-center no-print shadow-sm gap-4 transition-colors duration-300 ${isCancelled
+                    ? 'bg-red-50 border-red-100 dark:bg-red-900/10 dark:border-red-900/30'
+                    : isPending
+                        ? 'bg-blue-50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-900/30'
+                        : 'bg-white border-slate-100 dark:bg-slate-900 dark:border-slate-800'
+                    }`}>
+
+                    {/* Left: Status Indicator & Title */}
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm ${isCancelled ? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400' : isPending ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`}>
+                            {isCancelled ? <Ban size={24} strokeWidth={1.5} /> : <ShieldCheck size={24} strokeWidth={1.5} />}
                         </div>
-                        <div>
-                            <p className="font-black uppercase text-[10px] md:text-xs text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                                {isCancelled ? 'REGISTRO CANCELADO' : isPending ? 'VALIDAR DOCUMENTO RA ' + incident.raCode : 'GERENCIAR REGISTRO PUBLICADO'}
-                                {incident.isLocal && (
-                                    <span className="px-2 py-0.5 bg-amber-500 text-white text-[9px] font-black rounded flex items-center gap-1 shadow-sm">
-                                        <WifiOff size={10} /> DADOS LOCAIS
-                                    </span>
-                                )}
+                        <div className="flex-1 min-w-0">
+                            <h2 className="font-extrabold text-sm uppercase text-slate-800 dark:text-slate-100 leading-tight">
+                                {isCancelled ? 'Registro Cancelado' : isPending ? `Validação RA ${incident.raCode}` : 'Registro Oficial'}
+                            </h2>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-0.5">
+                                {isCancelled ? 'Sem validade legal' : isPending ? 'Aguardando Aprovação' : 'Validado e Publicado'}
                             </p>
-                            <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tight">{isCancelled ? 'ESTE DOCUMENTO NÃO POSSUI VALIDADE LEGAL' : isPending ? 'REGISTRO GRAVADO (AGUARDANDO VALIDAÇÃO)' : 'DOCUMENTO OFICIAL VALIDADADO E CARIMBADO'}</p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto justify-end">
+                    {/* Right: Actions Group */}
+                    <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto">
                         {!isCancelled && (
                             <>
                                 {canDelete && (
                                     <button
                                         onClick={handleDelete}
-                                        className="col-span-1 sm:w-28 h-9 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 font-black text-[10px] uppercase shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors"
+                                        className="h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-wide border border-red-200 dark:border-red-800/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 transition-all active:scale-95 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center"
                                     >
-                                        <XCircle size={14} className="flex-shrink-0" />
-                                        <span>CANCELAR</span>
+                                        <XCircle size={16} />
+                                        Cancelar
                                     </button>
                                 )}
                                 {canEdit && (
                                     <button
                                         onClick={onEdit}
                                         disabled={isValidating || incident.status === 'APPROVED'}
-                                        className="col-span-1 sm:w-28 h-9 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 font-black text-[10px] uppercase shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 whitespace-nowrap transition-colors"
+                                        className="h-10 px-5 rounded-xl text-[10px] font-black uppercase tracking-wide bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-300 hover:text-blue-600 dark:hover:border-blue-700 dark:hover:text-blue-400 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed flex-grow md:flex-grow-0 justify-center shadow-sm"
                                     >
-                                        <Pencil size={14} className="flex-shrink-0" />
-                                        <span>EDITAR</span>
+                                        <Pencil size={16} />
+                                        Editar
                                     </button>
                                 )}
                             </>
                         )}
+
                         {isPending && !isCancelled && canApprove && (
                             <button
                                 onClick={handleApprove}
                                 disabled={isValidating}
-                                className="col-span-2 sm:col-span-1 sm:w-28 h-9 bg-blue-900 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-800 dark:hover:bg-blue-600 font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 transition-all active:scale-95 whitespace-nowrap"
+                                className="h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-wide bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed w-full md:w-auto justify-center"
                             >
-                                {isValidating ? <Loader2 size={14} className="animate-spin flex-shrink-0" /> : <CheckCircle size={14} className="flex-shrink-0" />}
-                                {isValidating ? 'VALIDANDO...' : 'VALIDAR'}
+                                {isValidating ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} className="ml-[-2px]" />}
+                                {isValidating ? 'Processando...' : 'Validar Documento'}
                             </button>
                         )}
                     </div>

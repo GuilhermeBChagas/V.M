@@ -1128,7 +1128,7 @@ export function App() {
     catch (err) { atRes = await supabase.from('alteration_types').select('*'); }
     const [sRes, bRes, jtRes] = await Promise.all([
       supabase.from('sectors').select('*'),
-      supabase.from('buildings').select('*'),
+      supabase.from('buildings').select('id, buildingNumber, name, address, sectorId, hasKey, hasAlarm, latitude, longitude, managerName, managerPhone, managerEmail'),
       supabase.from('app_config').select('value').eq('key', 'system_job_titles').single()
     ]);
     if (sRes.data) setSectors(sRes.data);
@@ -1140,10 +1140,10 @@ export function App() {
   const fetchAssets = useCallback(async () => {
     try {
       const [vRes, veRes, rRes, eRes] = await Promise.all([
-        supabase.from('vehicles').select('*'),
-        supabase.from('vests').select('*'),
-        supabase.from('radios').select('*'),
-        supabase.from('equipments').select('*')
+        supabase.from('vehicles').select('id, model, plate, prefix, fleet_number, fuel_type, department, current_km'),
+        supabase.from('vests').select('id, number, size'),
+        supabase.from('radios').select('id, number, brand, serialNumber'),
+        supabase.from('equipments').select('id, name, description, quantity')
       ]);
       if (vRes.data) setVehicles(vRes.data.map(mapVehicle));
       if (veRes.data) setVests(veRes.data);

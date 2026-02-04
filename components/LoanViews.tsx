@@ -436,7 +436,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         try {
             let query = supabase
                 .from('loan_records')
-                .select('*')
+                .select('id, batch_id, operator_id, receiver_id, receiver_name, asset_type, item_id, description, checkout_time, return_time, status, meta')
                 .eq('asset_type', historyItemType)
                 .eq('item_id', historyItemId)
                 .order('checkout_time', { ascending: false });
