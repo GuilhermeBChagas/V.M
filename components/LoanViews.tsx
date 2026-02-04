@@ -39,6 +39,8 @@ interface LoanViewsProps {
     canReturn?: boolean;
     canViewHistory?: boolean;
     canViewAll?: boolean;
+    customLogo?: string | null;
+    customLogoLeft?: string | null;
 }
 
 export const LoanViews: React.FC<LoanViewsProps> = ({
@@ -46,7 +48,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     loans, onRefresh, initialTab = 'ACTIVE', isReportView = false,
     hasMore = false, isLoadingMore = false, onLoadMore, filterStatus,
     onShowConfirm,
-    canCreate = false, canApprove = false, canReturn = false, canViewHistory = false, canViewAll = false
+    canCreate = false, canApprove = false, canReturn = false, canViewHistory = false, canViewAll = false,
+    customLogo, customLogoLeft
 }) => {
     const [activeTab, setActiveTab] = useState<'ACTIVE' | 'HISTORY' | 'NEW'>(initialTab === 'HISTORY' ? 'HISTORY' : 'ACTIVE');
     const [searchTerm, setSearchTerm] = useState('');
@@ -105,6 +108,32 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     } | null>(null);
 
     const [showQRScanner, setShowQRScanner] = useState(false);
+
+    // PDF Export Logic (using existing isExporting state)
+    const reportRef = useRef<HTMLDivElement>(null);
+    // isExporting already declared above
+
+
+    const handleExportHistoryPDF = () => {
+        if (!reportRef.current || typeof html2pdf === 'undefined') {
+            alert('Biblioteca de PDF não carregada. Tente recarregar a página.');
+            return;
+        }
+        setIsExporting(true);
+        const element = reportRef.current;
+        const opt = {
+            margin: [5, 5, 5, 5],
+            filename: `Relatorio_Historico_Cautelas_${new Date().toISOString().split('T')[0]}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => setIsExporting(false)).catch((err: any) => {
+            console.error(err);
+            setIsExporting(false);
+        });
+    };
 
     // --- ITEM HISTORY STATE ---
     const [historyMode, setHistoryMode] = useState<'USER' | 'ITEM'>('USER');
@@ -1175,10 +1204,26 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                         className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500"
                                                     >
                                                         <option value="">Selecione...</option>
-                                                        {historyItemType === 'VEHICLE' && vehicles.map(v => <option key={v.id} value={v.id}>{v.model} - {v.plate}</option>)}
-                                                        {historyItemType === 'VEST' && vests.map(v => <option key={v.id} value={v.id}>Colete Nº {v.number} ({v.size})</option>)}
-                                                        {historyItemType === 'RADIO' && radios.map(r => <option key={r.id} value={r.id}>HT {r.number} ({r.serialNumber})</option>)}
-                                                        {historyItemType === 'EQUIPMENT' && equipments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                                                        {historyItemType === 'VEHICLE' && (
+                                                            vehicles.length > 0
+                                                                ? vehicles.map(v => <option key={v.id} value={v.id}>{v.model} - {v.plate}</option>)
+                                                                : <option disabled>Nenhuma viatura disponível</option>
+                                                        )}
+                                                        {historyItemType === 'VEST' && (
+                                                            vests.length > 0
+                                                                ? vests.map(v => <option key={v.id} value={v.id}>Colete Nº {v.number} ({v.size})</option>)
+                                                                : <option disabled>Nenhum colete disponível</option>
+                                                        )}
+                                                        {historyItemType === 'RADIO' && (
+                                                            radios.length > 0
+                                                                ? radios.map(r => <option key={r.id} value={r.id}>HT {r.number} ({r.serialNumber})</option>)
+                                                                : <option disabled>Nenhum rádio disponível</option>
+                                                        )}
+                                                        {historyItemType === 'EQUIPMENT' && (
+                                                            equipments.length > 0
+                                                                ? equipments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)
+                                                                : <option disabled>Nenhum equipamento disponível</option>
+                                                        )}
                                                     </select>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-2">
@@ -1191,7 +1236,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                         <input type="date" value={historyEndDate} onChange={e => setHistoryEndDate(e.target.value)} className="w-full p-2.5 rounded-lg border text-xs" />
                                                     </div>
                                                 </div>
-                                                <div className="md:col-span-4 flex justify-end">
+                                                <div className="md:col-span-4 flex justify-end gap-2">
                                                     <button
                                                         onClick={fetchItemHistory}
                                                         disabled={!historyItemId || isLoadingItemHistory}
@@ -1200,10 +1245,20 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                         {isLoadingItemHistory ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />}
                                                         Buscar Histórico
                                                     </button>
+                                                    {itemHistoryResults.length > 0 && (
+                                                        <button
+                                                            onClick={handleExportHistoryPDF}
+                                                            disabled={isExporting}
+                                                            className="px-6 py-2.5 bg-slate-800 text-white rounded-lg text-xs font-black uppercase hover:bg-slate-900 flex items-center gap-2 disabled:opacity-50"
+                                                        >
+                                                            {isExporting ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />}
+                                                            Exportar PDF
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
 
-                                            {/* RESULTS TABLE */}
+                                            {/* VISIBLE RESULTS TABLE */}
                                             <div className="overflow-x-auto">
                                                 <table className="w-full text-left border-collapse">
                                                     <thead>
@@ -1262,6 +1317,123 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                         )}
                                                     </tbody>
                                                 </table>
+                                            </div>
+
+                                            {/* HIDDEN PRINT TEMPLATE */}
+                                            <div className="hidden">
+                                                <div ref={reportRef} className="bg-white text-black p-4" style={{ width: '275mm', minHeight: '190mm', fontFamily: "'Inter', sans-serif" }}>
+                                                    {/* HEADER (Same as IncidentDetail) */}
+                                                    <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12">
+                                                        {/* Logo Esquerda (Muni) */}
+                                                        <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                            {customLogoLeft ? (
+                                                                <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Muni" />
+                                                            ) : (
+                                                                <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                    <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="text-center min-w-0 flex-1">
+                                                            <h1 className="text-[14px] font-black uppercase text-slate-900 leading-tight tracking-tight whitespace-nowrap">
+                                                                PREFEITURA MUNICIPAL DE ARAPONGAS
+                                                            </h1>
+                                                            <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-wide mt-1">
+                                                                SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
+                                                            </h2>
+                                                            <h3 className="text-[10px] font-bold uppercase text-blue-600 mt-0.5 tracking-wider">
+                                                                CENTRO DE MONITORAMENTO MUNICIPAL
+                                                            </h3>
+                                                        </div>
+
+                                                        {/* Logo Direita (GCM) */}
+                                                        <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                            {customLogo ? (
+                                                                <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão GCM" />
+                                                            ) : (
+                                                                <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                    <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* LINHA DE DIVISÃO SUPERIOR (AZUL) */}
+                                                    <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '6px' }}></div>
+
+                                                    {/* TÍTULO COM LINHAS LATERAIS */}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                                                        <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                        <h2 style={{ fontSize: '14px', fontWeight: '800', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+                                                            RELATÓRIO DE CAUTELAS
+                                                        </h2>
+                                                        <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                    </div>
+
+                                                    {/* LINHA DE DIVISÃO INFERIOR (AZUL) */}
+                                                    <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
+
+                                                    {/* PROMINENT ITEM DISPLAY */}
+                                                    <div className="mb-6 bg-slate-50 border border-slate-200 rounded p-4 text-center shadow-sm">
+                                                        <span className="text-[15px] font-black uppercase text-slate-900 tracking-wide">
+                                                            {historyItemType === 'VEHICLE' ? vehicles.find(v => v.id === historyItemId)?.model + ' - ' + vehicles.find(v => v.id === historyItemId)?.plate :
+                                                                historyItemType === 'VEST' ? 'COLETE ' + vests.find(v => v.id === historyItemId)?.number :
+                                                                    historyItemType === 'RADIO' ? 'RÁDIO ' + radios.find(v => v.id === historyItemId)?.number :
+                                                                        equipments.find(e => e.id === historyItemId)?.name || '---'}
+                                                        </span>
+                                                    </div>
+
+                                                    <table className="w-full border-collapse border border-slate-800 text-[9px]">
+                                                        <thead>
+                                                            <tr className="bg-slate-100 text-slate-900 uppercase font-black">
+                                                                <th className="border border-slate-400 p-2 text-center w-20">Retirada</th>
+                                                                <th className="border border-slate-400 p-2 text-center w-20">Devolução</th>
+                                                                <th className="border border-slate-400 p-2 text-left">Motorista/Responsável</th>
+                                                                <th className="border border-slate-400 p-2 text-center w-14">KM Ini</th>
+                                                                <th className="border border-slate-400 p-2 text-center w-14">KM Fim</th>
+                                                                <th className="border border-slate-400 p-2 text-center w-16">Combustível</th>
+                                                                <th className="border border-slate-400 p-2 text-center w-12">Litros</th>
+                                                                <th className="border border-slate-400 p-2 text-center w-14">KM Abast.</th>
+                                                                <th className="border border-slate-400 p-2 text-left w-24">Fornecedor</th>
+                                                                <th className="border border-slate-400 p-2 text-center w-16">Cupom</th>
+                                                                <th className="border border-slate-400 p-2 text-left">Mot. Abast.</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {itemHistoryResults.map((item, idx) => (
+                                                                <tr key={idx} className="uppercase font-medium text-slate-900">
+                                                                    <td className="border border-slate-300 p-1 text-center leading-tight">
+                                                                        {new Date(item.checkoutTime).toLocaleDateString()}<br />
+                                                                        <span className="text-[8px] text-slate-500">{new Date(item.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                    </td>
+                                                                    <td className="border border-slate-300 p-1 text-center leading-tight">
+                                                                        {item.returnTime ? (
+                                                                            <>
+                                                                                {new Date(item.returnTime).toLocaleDateString()}<br />
+                                                                                <span className="text-[8px] text-slate-500">{new Date(item.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                            </>
+                                                                        ) : '-'}
+                                                                    </td>
+                                                                    <td className="border border-slate-300 p-1 text-left font-bold">{item.receiverName}</td>
+                                                                    <td className="border border-slate-300 p-1 text-center font-mono">{item.meta?.kmStart ? `${item.meta.kmStart} km` : '-'}</td>
+                                                                    <td className="border border-slate-300 p-1 text-center font-mono">{item.meta?.kmEnd ? `${item.meta.kmEnd} km` : '-'}</td>
+                                                                    <td className="border border-slate-300 p-1 text-center">{item.meta?.fuelType || '-'}</td>
+                                                                    <td className="border border-slate-300 p-1 text-center">{item.meta?.fuelLiters ? `${item.meta.fuelLiters} L` : '-'}</td>
+                                                                    <td className="border border-slate-300 p-1 text-center font-mono">{item.meta?.fuelKm ? `${item.meta.fuelKm} km` : '-'}</td>
+                                                                    <td className="border border-slate-300 p-1 text-left truncate max-w-[100px]" title={item.meta?.supplier}>{item.meta?.supplier || '-'}</td>
+                                                                    <td className="border border-slate-300 p-1 text-center">{item.meta?.couponNumber || '-'}</td>
+                                                                    <td className="border border-slate-300 p-1 text-left truncate max-w-[100px]" title={item.meta?.driver}>{item.meta?.driver || '-'}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+
+                                                    <div className="mt-8 pt-4 flex justify-between text-[8px] text-slate-400 uppercase font-bold border-t border-slate-200">
+                                                        <span>CENTRO DE MONITORAMENTO - S.M.S.P.T</span>
+                                                        <span>EMITIDO EM {new Date().toLocaleDateString('pt-BR')} ÀS {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
