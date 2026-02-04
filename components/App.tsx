@@ -120,6 +120,13 @@ const mapLoan = (l: any): LoanRecord => ({
   returnTime: l.return_time || l.returnTime,
 });
 
+const mapVehicle = (v: any): Vehicle => ({
+  ...v,
+  fleetNumber: v.fleet_number || v.fleetNumber,
+  fuelType: v.fuel_type || v.fuelType,
+  currentKm: v.current_km !== undefined ? v.current_km : v.currentKm
+});
+
 // Helper for sequential integrity
 const calculateNextRaCode = (currentIncidents: any[]) => {
   const currentYear = new Date().getFullYear();
@@ -1138,7 +1145,7 @@ export function App() {
         supabase.from('radios').select('*'),
         supabase.from('equipments').select('*')
       ]);
-      if (vRes.data) setVehicles(vRes.data);
+      if (vRes.data) setVehicles(vRes.data.map(mapVehicle));
       if (veRes.data) setVests(veRes.data);
       if (rRes.data) setRadios(rRes.data);
       if (eRes.data) setEquipments(eRes.data);
@@ -1664,7 +1671,15 @@ export function App() {
     setSaving(true);
     try {
       const isNew = !item.id || item.id === '';
-      const payload = { ...item, id: isNew ? crypto.randomUUID() : item.id };
+      const payload: any = { ...item, id: isNew ? crypto.randomUUID() : item.id };
+
+      // Normaliza para snake_case para compatibilidade com o banco (PostgREST ignora campos extras)
+      if (table === 'vehicles') {
+        if (item.currentKm !== undefined) payload.current_km = item.currentKm;
+        if (item.fuelType !== undefined) payload.fuel_type = item.fuelType;
+        if (item.fleetNumber !== undefined) payload.fleet_number = item.fleetNumber;
+      }
+
       const { error } = await supabase.from(table).upsert(payload);
       if (error) throw error;
       fetchAssets();

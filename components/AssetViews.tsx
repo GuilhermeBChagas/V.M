@@ -187,7 +187,7 @@ export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-bold text-slate-600 dark:text-slate-400">
                                     <div className="flex items-center gap-1">
                                         <Gauge size={14} className="text-slate-400" />
-                                        {i.currentKm ? i.currentKm.toLocaleString('pt-BR') : '---'}
+                                        {(i.currentKm !== undefined && i.currentKm !== null) ? i.currentKm.toLocaleString('pt-BR') : '---'}
                                     </div>
                                 </td>
                             </tr>
@@ -207,7 +207,7 @@ export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit
                             <h3 className="font-bold text-slate-800 dark:text-slate-100 uppercase text-sm group-hover:text-brand-600">{i.model}</h3>
                             <div className="flex items-center gap-3 mt-1">
                                 <span className="text-[10px] text-slate-500 uppercase font-bold">{i.fuelType}</span>
-                                <span className="text-[10px] text-slate-400 flex items-center gap-1 font-mono font-bold"><Gauge size={10} /> {i.currentKm ? i.currentKm.toLocaleString('pt-BR') : '---'} KM</span>
+                                <span className="text-[10px] text-slate-400 flex items-center gap-1 font-mono font-bold"><Gauge size={10} /> {(i.currentKm !== undefined && i.currentKm !== null) ? i.currentKm.toLocaleString('pt-BR') : '---'} KM</span>
                             </div>
                         </div>
                     </div>

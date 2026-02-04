@@ -187,7 +187,6 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             if (error) throw error;
 
             onLogAction('LOAN_CREATE', `Criou cautela para ${receiver?.name} com ${newLoans.length} itens.`);
-            onLogAction('LOAN_CREATE', `Criou cautela para ${receiver?.name} com ${newLoans.length} itens.`);
             setActiveTab('ACTIVE');
             setReceiverId('');
             setUserSearch('');
@@ -279,13 +278,18 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             // Update Vehicle KM Table
             try {
                 const { error: vehicleError } = await supabase.from('vehicles').update({
-                    currentKm: vehicleReturnData.kmEnd
+                    currentKm: vehicleReturnData.kmEnd,
+                    current_km: vehicleReturnData.kmEnd // Fallback para snake_case
                 }).eq('id', vehicleReturnData.vehicleId);
-                // We don't throw here to avoid blocking the return if the column is missing, 
-                // but we check the error for debugging.
-                if (vehicleError) console.warn("Erro ao atualizar KM mestre do veículo:", vehicleError.message);
-            } catch (e) {
-                console.warn("Falha ao atualizar KM na tabela vehicles (coluna pode estar ausente)");
+
+                if (vehicleError) {
+                    console.error("Erro ao atualizar KM mestre do veículo:", vehicleError.message);
+                    // Opcionalmente logar isso no sistema para o admin ver
+                    onLogAction('DATABASE_TOOLS', `FALHA ao atualizar KM do veículo ${vehicleReturnData.model}: ${vehicleError.message}`);
+                }
+            } catch (e: any) {
+                console.error("Falha ao atualizar KM na tabela vehicles:", e);
+                onLogAction('DATABASE_TOOLS', `ERRO CRÍTICO ao atualizar KM do veículo ${vehicleReturnData.model}: ${e.message || 'Erro desconhecido'}`);
             }
 
             // Process Other Items in Batch (if any)
