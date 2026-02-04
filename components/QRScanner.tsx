@@ -17,8 +17,24 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
 
         const startScanner = async () => {
             try {
+                const devices = await Html5Qrcode.getCameras();
+                let cameraId = "";
+
+                if (devices && devices.length > 0) {
+                    // Look for back camera in labels (handling Portuguese/English)
+                    const backCamera = devices.find(device =>
+                        device.label.toLowerCase().includes('back') ||
+                        device.label.toLowerCase().includes('traseira') ||
+                        device.label.toLowerCase().includes('rear') ||
+                        device.label.toLowerCase().includes('environment')
+                    );
+
+                    // If not found by label, usually the last one in the list is the main back camera
+                    cameraId = backCamera ? backCamera.id : devices[devices.length - 1].id;
+                }
+
                 await html5QrCode.start(
-                    { facingMode: "environment" }, // Prioritize back camera
+                    cameraId ? cameraId : { facingMode: "environment" },
                     {
                         fps: 10,
                         qrbox: { width: 250, height: 250 },
