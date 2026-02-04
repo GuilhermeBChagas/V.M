@@ -68,7 +68,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
     // States for Vehicle Mileage Modals
     const [showVehicleStartModal, setShowVehicleStartModal] = useState(false);
-    const [vehicleStartData, setVehicleStartData] = useState<{ id: string, model: string, currentKm: number, manualKm: number } | null>(null);
+    const [vehicleStartData, setVehicleStartData] = useState<{ id: string, model: string, currentKm: number, manualKm: number, reason?: string } | null>(null);
 
 
 
@@ -221,7 +221,10 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                 const v = vehicles.find(x => x.id === asset.id);
                 description = `${v?.model} (${v?.plate})`;
                 if (startKmOverride !== undefined) {
-                    meta = { kmStart: startKmOverride };
+                    meta = {
+                        kmStart: startKmOverride,
+                        reason: vehicleStartData?.reason || 'RONDA PRÓPRIOS'
+                    };
                 }
             }
             else if (asset.type === 'VEST') { const v = vests.find(x => x.id === asset.id); description = `Colete ${v?.number} (${v?.size})`; }
@@ -468,7 +471,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                 .select('id, batch_id, operator_id, receiver_id, receiver_name, asset_type, item_id, description, checkout_time, return_time, status, meta')
                 .eq('asset_type', historyItemType)
                 .eq('item_id', historyItemId)
-                .order('checkout_time', { ascending: false });
+                .order('checkout_time', { ascending: true });
 
             if (historyStartDate) {
                 query = query.gte('checkout_time', `${historyStartDate}T00:00:00`);
@@ -1365,8 +1368,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                     {/* TÍTULO COM LINHAS LATERAIS */}
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
                                                         <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
-                                                        <h2 style={{ fontSize: '14px', fontWeight: '800', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-                                                            RELATÓRIO DE CAUTELAS
+                                                        <h2 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+                                                            {historyItemType === 'VEHICLE' ? 'DIÁRIO DE BORDO' : 'RELATÓRIO DE CAUTELAS'}
                                                         </h2>
                                                         <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
                                                     </div>
@@ -1374,60 +1377,152 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                     {/* LINHA DE DIVISÃO INFERIOR (AZUL) */}
                                                     <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
 
-                                                    {/* PROMINENT ITEM DISPLAY */}
-                                                    <div className="mb-6 bg-slate-50 border border-slate-200 rounded p-4 text-center shadow-sm">
-                                                        <span className="text-[15px] font-black uppercase text-slate-900 tracking-wide">
-                                                            {historyItemType === 'VEHICLE' ? vehicles.find(v => v.id === historyItemId)?.model + ' - ' + vehicles.find(v => v.id === historyItemId)?.plate :
-                                                                historyItemType === 'VEST' ? 'COLETE ' + vests.find(v => v.id === historyItemId)?.number :
+                                                    {/* VEHICLE SPECIFIC HEADER */}
+                                                    {historyItemType === 'VEHICLE' ? (
+                                                        <div className="mb-4 font-black uppercase text-[10px] text-slate-900 border border-slate-900">
+                                                            <div className="grid grid-cols-12 bg-slate-100 border-b border-slate-900 divide-x divide-slate-900">
+                                                                <div className="col-span-5 p-2 flex items-center gap-2">
+                                                                    <span className="text-slate-500 font-bold">VEÍCULO:</span>
+                                                                    <span className="text-[14px]">{vehicles.find(v => v.id === historyItemId)?.model}</span>
+                                                                </div>
+                                                                <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                    <span className="text-slate-500 font-bold">PLACA:</span>
+                                                                    <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.plate}</span>
+                                                                </div>
+                                                                <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                    <span className="text-slate-500 font-bold">Nº FROTA:</span>
+                                                                    <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fleetNumber || vehicles.find(v => v.id === historyItemId)?.prefix}</span>
+                                                                </div>
+                                                                <div className="col-span-3 p-2 flex items-center gap-2 justify-center">
+                                                                    <span className="text-slate-500 font-bold">COMBUSTÍVEL:</span>
+                                                                    <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fuelType || 'FLEX'}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 bg-slate-100 divide-x divide-slate-900">
+                                                                <div className="p-2 flex items-center gap-2">
+                                                                    <span className="text-slate-500 font-bold">MÊS/ANO REF.:</span>
+                                                                    <span className="text-[12px]">
+                                                                        {historyStartDate ? new Date(historyStartDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase() : new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="p-2 flex items-center gap-2">
+                                                                    <span className="text-slate-500 font-bold">SECRETARIA:</span>
+                                                                    <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.department || 'SESTRAN'}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        /* GENERIC HEADER ITEM DISPLAY */
+                                                        <div className="mb-6 bg-slate-50 border border-slate-200 rounded p-4 text-center shadow-sm">
+                                                            <span className="text-[15px] font-black uppercase text-slate-900 tracking-wide">
+                                                                {historyItemType === 'VEST' ? 'COLETE ' + vests.find(v => v.id === historyItemId)?.number :
                                                                     historyItemType === 'RADIO' ? 'RÁDIO ' + radios.find(v => v.id === historyItemId)?.number :
                                                                         equipments.find(e => e.id === historyItemId)?.name || '---'}
-                                                        </span>
-                                                    </div>
+                                                            </span>
+                                                        </div>
+                                                    )}
 
-                                                    <table className="w-full border-collapse border border-slate-800 text-[9px]">
-                                                        <thead>
-                                                            <tr className="bg-slate-100 text-slate-900 uppercase font-black">
-                                                                <th className="border border-slate-400 p-2 text-center w-20">Retirada</th>
-                                                                <th className="border border-slate-400 p-2 text-center w-20">Devolução</th>
-                                                                <th className="border border-slate-400 p-2 text-left">Motorista/Responsável</th>
-                                                                <th className="border border-slate-400 p-2 text-center w-14">KM Ini</th>
-                                                                <th className="border border-slate-400 p-2 text-center w-14">KM Fim</th>
-                                                                <th className="border border-slate-400 p-2 text-center w-16">Combustível</th>
-                                                                <th className="border border-slate-400 p-2 text-center w-12">Litros</th>
-                                                                <th className="border border-slate-400 p-2 text-center w-14">KM Abast.</th>
-                                                                <th className="border border-slate-400 p-2 text-left w-24">Fornecedor</th>
-                                                                <th className="border border-slate-400 p-2 text-center w-16">Cupom</th>
-                                                                <th className="border border-slate-400 p-2 text-left">Mot. Abast.</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {itemHistoryResults.map((item, idx) => (
-                                                                <tr key={idx} className="uppercase font-medium text-slate-900">
-                                                                    <td className="border border-slate-300 p-1 text-center leading-tight">
-                                                                        {new Date(item.checkoutTime).toLocaleDateString()}<br />
-                                                                        <span className="text-[8px] text-slate-500">{new Date(item.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                                    </td>
-                                                                    <td className="border border-slate-300 p-1 text-center leading-tight">
-                                                                        {item.returnTime ? (
-                                                                            <>
-                                                                                {new Date(item.returnTime).toLocaleDateString()}<br />
-                                                                                <span className="text-[8px] text-slate-500">{new Date(item.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                                            </>
-                                                                        ) : '-'}
-                                                                    </td>
-                                                                    <td className="border border-slate-300 p-1 text-left font-bold">{item.receiverName}</td>
-                                                                    <td className="border border-slate-300 p-1 text-center font-mono">{item.meta?.kmStart ? `${item.meta.kmStart} km` : '-'}</td>
-                                                                    <td className="border border-slate-300 p-1 text-center font-mono">{item.meta?.kmEnd ? `${item.meta.kmEnd} km` : '-'}</td>
-                                                                    <td className="border border-slate-300 p-1 text-center">{item.meta?.fuelType || '-'}</td>
-                                                                    <td className="border border-slate-300 p-1 text-center">{item.meta?.fuelLiters ? `${item.meta.fuelLiters} L` : '-'}</td>
-                                                                    <td className="border border-slate-300 p-1 text-center font-mono">{item.meta?.fuelKm ? `${item.meta.fuelKm} km` : '-'}</td>
-                                                                    <td className="border border-slate-300 p-1 text-left truncate max-w-[100px]" title={item.meta?.supplier}>{item.meta?.supplier || '-'}</td>
-                                                                    <td className="border border-slate-300 p-1 text-center">{item.meta?.couponNumber || '-'}</td>
-                                                                    <td className="border border-slate-300 p-1 text-left truncate max-w-[100px]" title={item.meta?.driver}>{item.meta?.driver || '-'}</td>
+                                                    {/* TABLE */}
+                                                    {historyItemType === 'VEHICLE' ? (
+                                                        /* VEHICLE DIARY TABLE */
+                                                        <div>
+                                                            <table className="w-full border-collapse border-t border-l border-slate-900 text-[10px]">
+                                                                <thead>
+                                                                    <tr className="bg-slate-200 text-slate-900 uppercase font-black">
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-left">DESTINO / MOTIVO</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-20">HORA SAÍDA</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-20">KM SAÍDA</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-20">HORA CHEGADA</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-20">KM CHEGADA</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-20">TOTAL KM</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-left w-48">MOTORISTA / ASSINATURA</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {itemHistoryResults.map((item, idx) => (
+                                                                        <tr key={idx} className="uppercase font-bold text-slate-900">
+                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">
+                                                                                {new Date(item.checkoutTime).getDate().toString().padStart(2, '0')}
+                                                                            </td>
+                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-left text-[9px] truncate max-w-[200px]">
+                                                                                {item.meta?.reason || '---'}
+                                                                            </td>
+                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">
+                                                                                {new Date(item.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                            </td>
+                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">
+                                                                                {item.meta?.kmStart ? Number(item.meta.kmStart).toLocaleString('pt-BR') : '-'}
+                                                                            </td>
+                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">
+                                                                                {item.returnTime ? new Date(item.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                                            </td>
+                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">
+                                                                                {item.meta?.kmEnd ? Number(item.meta.kmEnd).toLocaleString('pt-BR') : '-'}
+                                                                            </td>
+                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">
+                                                                                {(item.meta?.kmEnd && item.meta?.kmStart) ? (item.meta.kmEnd - item.meta.kmStart).toLocaleString('pt-BR') : '-'}
+                                                                            </td>
+                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-left">
+                                                                                {/* Blank For Signature */}
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
+                                                                    {/* Empty rows to fill a fixed page size (approx 12 rows total to allow footer space) */}
+                                                                    {Array.from({ length: Math.max(0, 12 - itemHistoryResults.length) }).map((_, i) => (
+                                                                        <tr key={`empty-${i}`} className="h-8">
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    ) : (
+                                                        /* GENERIC TABLE FOR OTHER ITEMS */
+                                                        <table className="w-full border-collapse border border-slate-800 text-[9px]">
+                                                            <thead>
+                                                                <tr className="bg-slate-100 text-slate-900 uppercase font-black">
+                                                                    <th className="border border-slate-400 p-2 text-center w-20">Retirada</th>
+                                                                    <th className="border border-slate-400 p-2 text-center w-20">Devolução</th>
+                                                                    <th className="border border-slate-400 p-2 text-left">Responsável</th>
+                                                                    <th className="border border-slate-400 p-2 text-center">Status</th>
+                                                                    <th className="border border-slate-400 p-2 text-center">Obs</th>
                                                                 </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
+                                                            </thead>
+                                                            <tbody>
+                                                                {itemHistoryResults.map((item, idx) => (
+                                                                    <tr key={idx} className="uppercase font-medium text-slate-900">
+                                                                        <td className="border border-slate-300 p-1 text-center leading-tight">
+                                                                            {new Date(item.checkoutTime).toLocaleDateString()}<br />
+                                                                            <span className="text-[8px] text-slate-500">{new Date(item.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                        </td>
+                                                                        <td className="border border-slate-300 p-1 text-center leading-tight">
+                                                                            {item.returnTime ? (
+                                                                                <>
+                                                                                    {new Date(item.returnTime).toLocaleDateString()}<br />
+                                                                                    <span className="text-[8px] text-slate-500">{new Date(item.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                                </>
+                                                                            ) : '-'}
+                                                                        </td>
+                                                                        <td className="border border-slate-300 p-1 text-left font-bold">{item.receiverName}</td>
+                                                                        <td className="border border-slate-300 p-1 text-center font-bold">
+                                                                            {item.status === 'COMPLETED' ? 'DEVOLVIDO' : item.status === 'ACTIVE' ? 'EM USO' : item.status}
+                                                                        </td>
+                                                                        <td className="border border-slate-300 p-1 text-center">
+                                                                            {item.meta?.notes || '-'}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    )}
 
                                                     <div className="mt-8 pt-4 flex justify-between text-[8px] text-slate-400 uppercase font-bold border-t border-slate-200">
                                                         <span>CENTRO DE MONITORAMENTO - S.M.S.P.T</span>
@@ -1656,6 +1751,27 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                 </div>
 
                                 <div className="mb-6">
+                                    <div className="mb-4">
+                                        <label className="block text-xs font-black text-slate-500 uppercase mb-1">Motivo / Destino</label>
+                                        <div className="flex flex-wrap gap-2 mb-2">
+                                            {['Ronda Próprios', 'Administrativo', 'Manutenção'].map(r => (
+                                                <button
+                                                    key={r}
+                                                    onClick={() => setVehicleStartData({ ...vehicleStartData, reason: r })}
+                                                    className={`px-2 py-1 rounded text-[10px] uppercase font-bold border transition-all ${vehicleStartData.reason === r ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                                                >
+                                                    {r}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={vehicleStartData.reason || ''}
+                                            onChange={(e) => setVehicleStartData({ ...vehicleStartData, reason: e.target.value.toUpperCase() })}
+                                            className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold uppercase"
+                                            placeholder="OUTRO MOTIVO..."
+                                        />
+                                    </div>
                                     <label className="block text-xs font-black text-slate-500 uppercase mb-1">Quilometragem Inicial (KM)</label>
                                     <div className="relative">
                                         <input
