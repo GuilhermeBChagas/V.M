@@ -20,12 +20,7 @@ const getBuildVersion = () => {
 
   try {
     const totalCommits = parseInt(execSync('git rev-list --count HEAD').toString().trim());
-    // Ponto de partida: queremos que o build atual seja 001.
-    // Atualmente o repositório tem 7 commits.
-    // Offset = 7 - 1 = 6.
-    const offset = 6;
-    const buildNumber = Math.max(1, totalCommits - offset);
-    return `${MAJOR}.${MINOR}.${PATCH}.${buildNumber.toString().padStart(3, '0')}`;
+    return `${MAJOR}.${MINOR}.${PATCH}.${totalCommits.toString().padStart(3, '0')}`;
   } catch (e) {
     return `${MAJOR}.${MINOR}.${PATCH}.dev`;
   }
