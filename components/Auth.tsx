@@ -329,8 +329,8 @@ export const Auth: React.FC<AuthProps> = ({
                   Sistema Integrado de Segurança e Vigilância Municipal
                </p>
                {systemVersion && (
-                  <p className="text-[8px] font-mono font-medium text-slate-600 mt-1 opacity-50">
-                     Internal Build: {systemVersion || '1.0.4'}
+                  <p className="text-[11px] font-sans font-black text-white/70 mt-1 tracking-widest">
+                     {systemVersion || '1.0.0.000'}
                   </p>
                )}
             </div>

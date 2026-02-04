@@ -2174,9 +2174,9 @@ export function App() {
             <div className="mt-8 pt-4 border-t border-white/5">
               <NavItem icon={<LogOut className="rotate-180" />} label="Sair do Sistema" onClick={handleLogout} collapsed={isSidebarCollapsed} />
               {!isSidebarCollapsed && (
-                <div className="py-2 text-center opacity-30 group-hover:opacity-100 transition-opacity duration-700">
-                  <p className="text-[8px] font-mono text-slate-500 uppercase tracking-[0.15em] cursor-default">
-                    Sistema v{DISPLAY_VERSION}
+                <div className="py-2 text-center group-hover:opacity-100 transition-opacity duration-700">
+                  <p className="text-[11px] font-sans font-black text-white/70 mt-1 tracking-widest">
+                    {DISPLAY_VERSION}
                   </p>
                 </div>
               )}
