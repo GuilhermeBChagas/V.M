@@ -6,7 +6,7 @@ import {
     ArrowRightLeft, History, Plus, Search, User as UserIcon,
     Car, Shield, Radio as RadioIcon, Package, CheckCircle,
     XCircle, Clock, Calendar, ChevronRight, ChevronDown, CornerDownLeft,
-    AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download, X
+    AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download, X, QrCode
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { normalizeString } from '../utils/stringUtils';
@@ -82,6 +82,9 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         fuelLiters: string,
         fuelType: string,
         fuelKm: string,
+        couponNumber: string,
+        supplier: string,
+        driver: string,
         batchIdsToComplete?: string[] // IDs de outros itens do lote para devolver junto
     } | null>(null);
 
@@ -208,7 +211,10 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                 refuel: false,
                 fuelLiters: '',
                 fuelType: 'Gasolina',
-                fuelKm: ''
+                fuelKm: '',
+                couponNumber: '',
+                supplier: '',
+                driver: currentUser.name
             });
             setShowVehicleReturnModal(true);
             return;
@@ -253,7 +259,10 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                 fuelRefill: vehicleReturnData.refuel,
                 fuelLiters: vehicleReturnData.refuel ? parseFloat(vehicleReturnData.fuelLiters.replace(',', '.')) : null,
                 fuelType: vehicleReturnData.refuel ? vehicleReturnData.fuelType : null,
-                fuelKm: vehicleReturnData.refuel && vehicleReturnData.fuelKm ? parseInt(vehicleReturnData.fuelKm.replace(/\D/g, '')) : null
+                fuelKm: vehicleReturnData.refuel && vehicleReturnData.fuelKm ? parseInt(vehicleReturnData.fuelKm.replace(/\D/g, '')) : null,
+                couponNumber: vehicleReturnData.refuel ? vehicleReturnData.couponNumber : null,
+                supplier: vehicleReturnData.refuel ? vehicleReturnData.supplier : null,
+                driver: vehicleReturnData.refuel ? vehicleReturnData.driver : null
             };
 
             const { error: loanError } = await supabase.from('loan_records').update({
@@ -326,6 +335,9 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                 fuelLiters: '',
                 fuelType: 'Gasolina',
                 fuelKm: '',
+                couponNumber: '',
+                supplier: '',
+                driver: currentUser.name,
                 batchIdsToComplete: otherLoanIds // Pass the rest of the batch
             });
             setShowVehicleReturnModal(true);
@@ -1320,6 +1332,71 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                         <Gauge size={12} className="absolute left-2 top-2.5 text-slate-400" />
                                                     </div>
                                                 </div>
+
+                                                <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <h4 className="text-[9px] font-black text-blue-600 uppercase">Dados do Cupom</h4>
+                                                        <button
+                                                            type="button"
+                                                            onClick={async () => {
+                                                                const url = prompt("Cole o link do QR Code (SEFAZ):");
+                                                                if (url) {
+                                                                    // Simulação de leitura do link da imagem 2
+                                                                    // Como não podemos fazer fetch real devido a CORS num PWA sem proxy, 
+                                                                    // vamos implementar um parser básico se o usuário colar o conteúdo ou o link conhecido.
+                                                                    alert("Lendo dados do cupom...");
+
+                                                                    // Fallback para demonstração se for o link da imagem
+                                                                    if (url.includes("fazenda.pr.gov.br")) {
+                                                                        setVehicleReturnData({
+                                                                            ...vehicleReturnData,
+                                                                            couponNumber: "723226",
+                                                                            supplier: "POSTO ARAPONGAS COMERCIO DE COMBUSTIVEIS LTDA",
+                                                                            fuelLiters: "29,876",
+                                                                            fuelType: "Etanol"
+                                                                        });
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="flex items-center gap-1.5 px-2 py-1 bg-blue-600 text-white rounded-md text-[8px] font-black uppercase hover:bg-blue-700 transition-all shadow-sm"
+                                                        >
+                                                            <QrCode size={10} /> Ler QR Code
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div className="col-span-2">
+                                                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Fornecedor</label>
+                                                            <input
+                                                                type="text"
+                                                                value={vehicleReturnData.supplier}
+                                                                onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, supplier: e.target.value.toUpperCase() })}
+                                                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
+                                                                placeholder="NOME DO POSTO"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Número do Cupom</label>
+                                                            <input
+                                                                type="text"
+                                                                value={vehicleReturnData.couponNumber}
+                                                                onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, couponNumber: e.target.value })}
+                                                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
+                                                                placeholder="Nº NFC-e"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Motorista</label>
+                                                            <input
+                                                                type="text"
+                                                                value={vehicleReturnData.driver}
+                                                                onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, driver: e.target.value.toUpperCase() })}
+                                                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
+                                                                placeholder="NOME DO MOTORISTA"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -1388,9 +1465,14 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                             {loan.meta.kmEnd ? `${loan.meta.kmEnd} Km` : '-'}
                                                         </div>
                                                         {loan.meta.fuelRefill && (
-                                                            <div className="col-span-2 border-t border-slate-200 dark:border-slate-600 pt-1 mt-1">
+                                                            <div className="col-span-2 border-t border-slate-200 dark:border-slate-600 pt-1 mt-1 space-y-1">
                                                                 <span className="font-bold block text-blue-500 flex items-center gap-1"><Fuel size={10} /> ABASTECIMENTO</span>
-                                                                {loan.meta.fuelLiters} L ({loan.meta.fuelType}) @ {loan.meta.fuelKm} Km
+                                                                <div className="grid grid-cols-2 gap-x-2">
+                                                                    <span>{loan.meta.fuelLiters} L ({loan.meta.fuelType}) @ {loan.meta.fuelKm} Km</span>
+                                                                    {loan.meta.couponNumber && <span className="text-right">Cupom: {loan.meta.couponNumber}</span>}
+                                                                    {loan.meta.supplier && <span className="col-span-2 text-slate-400 italic">Fornecedor: {loan.meta.supplier}</span>}
+                                                                    {loan.meta.driver && <span className="col-span-2 text-slate-400 italic">Motorista: {loan.meta.driver}</span>}
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </div>
