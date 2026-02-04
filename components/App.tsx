@@ -512,6 +512,7 @@ const IncidentHistory: React.FC<{
                 <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[80px]">Data</th>
                 <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[60px]">H. Inicial</th>
                 <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[60px]">H. Final</th>
+                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[120px]">Natureza</th>
                 <th className="border border-slate-900 p-2 text-[10px] font-black uppercase">Relato</th>
               </tr>
             </thead>
@@ -525,6 +526,7 @@ const IncidentHistory: React.FC<{
                     <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{formatDateBR(i.date)}</td>
                     <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.startTime}</td>
                     <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.endTime || '--:--'}</td>
+                    <td className="border border-slate-900 p-2 text-[9px] font-bold uppercase text-center align-middle">{i.alterationType}</td>
                     <td className="border border-slate-900 p-2 text-[9px] font-medium leading-tight align-top whitespace-pre-wrap break-all">{i.description}</td>
                   </tr>
                 );
