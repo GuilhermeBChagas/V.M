@@ -68,7 +68,27 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
     // States for Vehicle Mileage Modals
     const [showVehicleStartModal, setShowVehicleStartModal] = useState(false);
-    const [vehicleStartData, setVehicleStartData] = useState<{ id: string, model: string, currentKm: number, manualKm: number, reason?: string } | null>(null);
+    const [vehicleStartData, setVehicleStartData] = useState<{ loanId?: string, id: string, model: string, currentKm: number, manualKm: number, reason?: string } | null>(null);
+
+    // Queue for Batch Vehicle Operations
+    const [batchVehicleQueue, setBatchVehicleQueue] = useState<LoanRecord[]>([]);
+    const [batchActionType, setBatchActionType] = useState<'CONFIRM' | 'RETURN' | null>(null);
+
+    const processNextBatchStep = () => {
+        if (batchVehicleQueue.length === 0) {
+            setBatchActionType(null);
+            onRefresh();
+            return;
+        }
+        const nextLoan = batchVehicleQueue[0];
+        const remaining = batchVehicleQueue.slice(1);
+        setBatchVehicleQueue(remaining);
+
+        // Only RETURN is processed in batch with modal now
+        handleReturn(nextLoan);
+    };
+
+
 
 
 
@@ -121,16 +141,30 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         }
         setIsExporting(true);
         const element = reportRef.current;
+
+        // Ensure element is visible during capture
+        const parent = element.parentElement;
+        const wasHidden = parent?.classList.contains('hidden');
+        if (wasHidden && parent) parent.classList.remove('hidden');
+
+        const filename = historyItemType === 'VEHICLE'
+            ? `Diario_Bordo_${historyItemId}_${new Date().toISOString().split('T')[0]}.pdf`
+            : `Relatorio_Historico_${historyItemId}_${new Date().toISOString().split('T')[0]}.pdf`;
+
         const opt = {
-            margin: [5, 5, 5, 5],
-            filename: `Relatorio_Historico_Cautelas_${new Date().toISOString().split('T')[0]}.pdf`,
+            margin: [2, 5, 5, 5], // Reduced top margin to 2mm
+            filename: filename,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, letterRendering: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
         };
 
-        html2pdf().set(opt).from(element).save().then(() => setIsExporting(false)).catch((err: any) => {
+        html2pdf().set(opt).from(element).save().then(() => {
+            if (wasHidden && parent) parent.classList.add('hidden');
+            setIsExporting(false);
+        }).catch((err: any) => {
             console.error(err);
+            if (wasHidden && parent) parent.classList.add('hidden');
             setIsExporting(false);
         });
     };
@@ -164,51 +198,91 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         }
     }, [initialTab]);
 
+
+
+    // Queue for Loan Creation (Vehicles)
+    const [creationQueue, setCreationQueue] = useState<{ type: string, id: string }[]>([]);
+    const [preparedVehicleData, setPreparedVehicleData] = useState<Record<string, { km: number, reason: string }>>({});
+
+    const processNextCreationStep = async (queue: { type: string, id: string }[], currentPreparedData: Record<string, { km: number, reason: string }>) => {
+        if (queue.length === 0) {
+            // All vehicles processed, proceed to create loans
+            await finalProcessLoanCreation(currentPreparedData);
+            return;
+        }
+
+        const nextAsset = queue[0];
+        const remainingQueue = queue.slice(1);
+        const vehicle = vehicles.find(v => v.id === nextAsset.id);
+
+        if (vehicle) {
+            setIsSubmitting(true);
+            let lastKm = vehicle.currentKm || 0;
+            try {
+                const { data: lastLoan } = await supabase
+                    .from('loan_records')
+                    .select('meta')
+                    .eq('item_id', vehicle.id)
+                    .eq('status', 'COMPLETED')
+                    .order('return_time', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                if (lastLoan?.meta?.kmEnd) {
+                    lastKm = lastLoan.meta.kmEnd;
+                }
+            } catch (e) {
+                console.warn("Não foi possível buscar o último KM", e);
+            } finally {
+                setIsSubmitting(false);
+            }
+
+            setVehicleStartData({
+                id: vehicle.id,
+                model: `${vehicle.model} (${vehicle.plate})`,
+                currentKm: lastKm,
+                manualKm: lastKm
+            });
+            // Update state so the modal can use it to callback
+            setCreationQueue(remainingQueue);
+            setPreparedVehicleData(currentPreparedData);
+            setShowVehicleStartModal(true);
+        } else {
+            // Should not happen, but skip if vehicle not found
+            processNextCreationStep(remainingQueue, currentPreparedData);
+        }
+    };
+
     const handleCreateLoan = async () => {
         if (!receiverId || selectedAssets.length === 0) return alert("Selecione um recebedor e ao menos um item.");
 
-        // Check for Vehicles to confirm mileage
-        const vehicleAsset = selectedAssets.find(a => a.type === 'VEHICLE');
-        if (vehicleAsset) {
-            const vehicle = vehicles.find(v => v.id === vehicleAsset.id);
-            if (vehicle) {
-                setIsSubmitting(true);
-                let lastKm = vehicle.currentKm || 0;
-                try {
-                    // Busca a última cautela finalizada desse veículo para pegar o KM real
-                    const { data: lastLoan } = await supabase
-                        .from('loan_records')
-                        .select('meta')
-                        .eq('item_id', vehicle.id)
-                        .eq('status', 'COMPLETED')
-                        .order('return_time', { ascending: false })
-                        .limit(1)
-                        .single();
+        const vehicleAssets = selectedAssets.filter(a => a.type === 'VEHICLE');
 
-                    if (lastLoan?.meta?.kmEnd) {
-                        lastKm = lastLoan.meta.kmEnd;
-                    }
-                } catch (e) {
-                    console.warn("Não foi possível buscar o último KM da cautela", e);
-                } finally {
-                    setIsSubmitting(false);
-                }
-
-                setVehicleStartData({
-                    id: vehicle.id,
-                    model: `${vehicle.model} (${vehicle.plate})`,
-                    currentKm: lastKm,
-                    manualKm: lastKm
-                });
-                setShowVehicleStartModal(true);
-                return; // Stop here, wait for modal confirmation
-            }
+        if (vehicleAssets.length > 0) {
+            // Start the queue process
+            processNextCreationStep(vehicleAssets, {});
+        } else {
+            // No vehicles, regular creation
+            await finalProcessLoanCreation({});
         }
-
-        await processLoanCreation();
     };
 
-    const processLoanCreation = async (startKmOverride?: number) => {
+    const confirmCreationStep = (km: number, reason: string) => {
+        if (!vehicleStartData) return;
+
+        const newData = {
+            ...preparedVehicleData,
+            [vehicleStartData.id]: { km, reason }
+        };
+
+        setShowVehicleStartModal(false);
+        setVehicleStartData(null); // Clear current
+
+        // Process next in queue
+        processNextCreationStep(creationQueue, newData);
+    };
+
+    const finalProcessLoanCreation = async (vehicleData: Record<string, { km: number, reason: string }>) => {
         setIsSubmitting(true);
         const batchId = crypto.randomUUID();
         const receiver = users.find(u => u.id === receiverId);
@@ -220,10 +294,11 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             if (asset.type === 'VEHICLE') {
                 const v = vehicles.find(x => x.id === asset.id);
                 description = `${v?.model} (${v?.plate})`;
-                if (startKmOverride !== undefined) {
+                // Use the pre-collected data
+                if (vehicleData[asset.id]) {
                     meta = {
-                        kmStart: startKmOverride,
-                        reason: vehicleStartData?.reason || 'RONDA PRÓPRIOS'
+                        kmStart: vehicleData[asset.id].km,
+                        reason: vehicleData[asset.id].reason
                     };
                 }
             }
@@ -373,10 +448,18 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             onLogAction('LOAN_RETURN', logMsg);
             setShowVehicleReturnModal(false);
             setVehicleReturnData(null);
-            onRefresh();
+
+            if (batchVehicleQueue.length > 0) {
+                setTimeout(() => processNextBatchStep(), 300);
+            } else {
+                setBatchActionType(null);
+                onRefresh();
+            }
+
         } catch (err: any) {
             console.error("Erro return vehicle:", err);
             alert('Erro ao devolver veículo: ' + err.message);
+        } finally {
             setIsSubmitting(false);
         }
     };
@@ -513,56 +596,55 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     const handleReturnBatch = (loansToReturn: LoanRecord[]) => {
         if (loansToReturn.length === 0) return;
 
-        // Check if batch contains a vehicle
-        const vehicleLoan = loansToReturn.find(l => l.assetType === 'VEHICLE');
+        const nonVehicleLoans = loansToReturn.filter(l => l.assetType !== 'VEHICLE');
+        const vehicleLoans = loansToReturn.filter(l => l.assetType === 'VEHICLE');
 
-        if (vehicleLoan) {
-            // Identify other items to return together
-            const otherLoanIds = loansToReturn
-                .filter(l => l.id !== vehicleLoan.id)
-                .map(l => l.id);
+        const processVehicles = () => {
+            if (vehicleLoans.length === 0) return;
+            // Start Queue
+            setBatchVehicleQueue(vehicleLoans.slice(1));
+            setBatchActionType('RETURN');
+            // Trigger first
+            handleReturn(vehicleLoans[0]);
+        };
 
-            setVehicleReturnData({
-                loanId: vehicleLoan.id,
-                vehicleId: vehicleLoan.assetId,
-                model: vehicleLoan.assetDescription,
-                kmStart: vehicleLoan.meta?.kmStart || 0,
-                kmEnd: vehicleLoan.meta?.kmStart || 0, // Default to start KM
-                refuel: vehicleLoan.meta?.fuelRefill || false,
-                fuelLiters: vehicleLoan.meta?.fuelLiters?.toString().replace('.', ',') || '',
-                fuelType: vehicleLoan.meta?.fuelType || 'Gasolina',
-                fuelKm: vehicleLoan.meta?.fuelKm?.toString() || '',
-                couponNumber: vehicleLoan.meta?.couponNumber || '',
-                supplier: vehicleLoan.meta?.supplier || '',
-                driver: vehicleLoan.meta?.driver || currentUser.name,
-                batchIdsToComplete: otherLoanIds // Pass the rest of the batch
-            });
-            setShowVehicleReturnModal(true);
+        if (nonVehicleLoans.length === 0) {
+            // Only vehicles
+            processVehicles();
             return;
         }
 
         const receiverName = loansToReturn[0].receiverName;
+        const msg = vehicleLoans.length > 0
+            ? `Confirmar devolução rápida de ${nonVehicleLoans.length} itens? As ${vehicleLoans.length} viaturas serão processadas individualmente na sequência.`
+            : `Confirmar a devolução de ${loansToReturn.length} itens de ${receiverName}?`;
 
         onShowConfirm(
             "Devolver Todos",
-            `Confirmar a devolução de ${loansToReturn.length} itens de ${receiverName}?`,
+            msg,
             async () => {
-                setIsSubmitting(true); // Set submitting true inside confirm callback
+                setIsSubmitting(true);
                 try {
-                    const ids = loansToReturn.map(l => l.id);
+                    const ids = nonVehicleLoans.map(l => l.id);
                     const { error } = await supabase.from('loan_records').update({
                         status: 'COMPLETED',
                         return_time: new Date().toISOString()
                     }).in('id', ids);
 
                     if (error) throw error;
-                    onLogAction('LOAN_RETURN', `Recebeu devolução de lote (${loansToReturn.length} itens) de ${receiverName}`);
-                    setTimeout(() => onRefresh(), 200);
+                    onLogAction('LOAN_RETURN', `Recebeu devolução de lote (${nonVehicleLoans.length} itens) de ${receiverName}`);
+
+                    // Proceed to vehicles if any
+                    setTimeout(() => {
+                        onRefresh();
+                        processVehicles();
+                    }, 500);
+
                 } catch (err: any) {
                     console.error("Erro ao devolver lote:", err);
                     alert('Erro ao processar devolução em lote: ' + err.message);
                 } finally {
-                    setIsSubmitting(false); // Set submitting false in finally
+                    setIsSubmitting(false);
                 }
             }
         );
@@ -570,6 +652,9 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
     const handleConfirm = async (loan: LoanRecord) => {
         if (isSubmitting) return;
+
+
+
         setIsSubmitting(true);
         try {
             const { error } = await supabase.from('loan_records').update({ status: 'ACTIVE' }).eq('id', loan.id);
@@ -633,13 +718,13 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     // --- BATCH CONFIRMATION LOGIC ---
     const handleConfirmBatch = (loansToConfirm: LoanRecord[]) => {
         if (isSubmitting || loansToConfirm.length === 0) return;
-        const receiverName = loansToConfirm[0].receiverName;
 
+        const receiverName = loansToConfirm[0].receiverName;
         onShowConfirm(
             "Confirmar Lote",
             `Confirma a entrega de ${loansToConfirm.length} itens para ${receiverName}?`,
             async () => {
-                setIsSubmitting(true); // Set submitting true inside confirm callback
+                setIsSubmitting(true);
                 try {
                     const ids = loansToConfirm.map(l => l.id);
                     const { error } = await supabase.from('loan_records').update({ status: 'ACTIVE' }).in('id', ids);
@@ -649,7 +734,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                 } catch (err: any) {
                     alert('Erro ao confirmar lote: ' + err.message);
                 } finally {
-                    setIsSubmitting(false); // Set submitting false in finally
+                    setIsSubmitting(false);
                 }
             }
         );
@@ -896,7 +981,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                         </button>
                         {(activeTab === 'HISTORY' || isReportView) && (
                             <button
-                                onClick={handleExportPDF}
+                                onClick={() => (activeTab === 'HISTORY' && historyMode === 'ITEM') ? handleExportHistoryPDF() : handleExportPDF()}
                                 disabled={isExporting}
                                 className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 dark:from-slate-700 dark:to-slate-800 dark:hover:from-slate-600 dark:hover:to-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 transition-all duration-200 disabled:opacity-50"
                             >
@@ -1182,8 +1267,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                     {/* ITEM HISTORY FILTERS & VIEW */}
                                     {historyMode === 'ITEM' && (
                                         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 animate-in fade-in slide-in-from-top-2">
-                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
-                                                <div>
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-6">
+                                                <div className="md:col-span-2">
                                                     <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Tipo de Item</label>
                                                     <select
                                                         value={historyItemType}
@@ -1199,7 +1284,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                         <option value="EQUIPMENT">Outros</option>
                                                     </select>
                                                 </div>
-                                                <div className="md:col-span-2">
+                                                <div className="md:col-span-4">
                                                     <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Selecione o Item</label>
                                                     <select
                                                         value={historyItemId}
@@ -1229,35 +1314,23 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                         )}
                                                     </select>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <div>
-                                                        <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">De</label>
-                                                        <input type="date" value={historyStartDate} onChange={e => setHistoryStartDate(e.target.value)} className="w-full p-2.5 rounded-lg border text-xs" />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Até</label>
-                                                        <input type="date" value={historyEndDate} onChange={e => setHistoryEndDate(e.target.value)} className="w-full p-2.5 rounded-lg border text-xs" />
-                                                    </div>
+                                                <div className="md:col-span-2">
+                                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">De</label>
+                                                    <input type="date" value={historyStartDate} onChange={e => setHistoryStartDate(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500" />
                                                 </div>
-                                                <div className="md:col-span-4 flex justify-end gap-2">
+                                                <div className="md:col-span-2">
+                                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Até</label>
+                                                    <input type="date" value={historyEndDate} onChange={e => setHistoryEndDate(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500" />
+                                                </div>
+                                                <div className="md:col-span-2">
                                                     <button
                                                         onClick={fetchItemHistory}
                                                         disabled={!historyItemId || isLoadingItemHistory}
-                                                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
+                                                        className="w-full p-2.5 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 flex items-center justify-center gap-2 disabled:opacity-50"
                                                     >
                                                         {isLoadingItemHistory ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />}
-                                                        Buscar Histórico
+                                                        Buscar
                                                     </button>
-                                                    {itemHistoryResults.length > 0 && (
-                                                        <button
-                                                            onClick={handleExportHistoryPDF}
-                                                            disabled={isExporting}
-                                                            className="px-6 py-2.5 bg-slate-800 text-white rounded-lg text-xs font-black uppercase hover:bg-slate-900 flex items-center gap-2 disabled:opacity-50"
-                                                        >
-                                                            {isExporting ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />}
-                                                            Exportar PDF
-                                                        </button>
-                                                    )}
                                                 </div>
                                             </div>
 
@@ -1324,7 +1397,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
                                             {/* HIDDEN PRINT TEMPLATE */}
                                             <div className="hidden">
-                                                <div ref={reportRef} className="bg-white text-black p-4" style={{ width: '275mm', minHeight: '190mm', fontFamily: "'Inter', sans-serif" }}>
+                                                <div ref={reportRef} className="bg-white text-black px-4 pb-4 pt-0" style={{ width: '275mm', minHeight: '190mm', fontFamily: "'Inter', sans-serif" }}>
                                                     {/* HEADER (Same as IncidentDetail) */}
                                                     <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12">
                                                         {/* Logo Esquerda (Muni) */}
@@ -1602,20 +1675,22 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                                         <>
                                                                             {currentUser.id === group.receiverId && canApprove && (
                                                                                 <>
-                                                                                    <button
-                                                                                        disabled={isSubmitting}
-                                                                                        onClick={(e) => { e.stopPropagation(); handleConfirm(loan); }}
-                                                                                        className="flex-1 py-1 bg-emerald-600 text-white text-[7px] rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50"
-                                                                                    >
-                                                                                        Aceitar
-                                                                                    </button>
-                                                                                    <button
-                                                                                        disabled={isSubmitting}
-                                                                                        onClick={(e) => { e.stopPropagation(); handleReject(loan); }}
-                                                                                        className="flex-1 py-1 bg-red-600 text-white text-[7px] rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50"
-                                                                                    >
-                                                                                        Recusar
-                                                                                    </button>
+                                                                                    <div className="flex gap-1.5 w-full h-full p-1 items-center">
+                                                                                        <button
+                                                                                            disabled={isSubmitting}
+                                                                                            onClick={(e) => { e.stopPropagation(); handleConfirm(loan); }}
+                                                                                            className="flex-1 h-full bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-1"
+                                                                                        >
+                                                                                            <CheckCircle size={15} /> Aceitar
+                                                                                        </button>
+                                                                                        <button
+                                                                                            disabled={isSubmitting}
+                                                                                            onClick={(e) => { e.stopPropagation(); handleReject(loan); }}
+                                                                                            className="flex-1 h-full bg-red-600 hover:bg-red-500 text-white text-[11px] font-black rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-1"
+                                                                                        >
+                                                                                            <XCircle size={15} /> Recusar
+                                                                                        </button>
+                                                                                    </div>
                                                                                 </>
                                                                             )}
                                                                             {currentUser.id === loan.operatorId && currentUser.id !== group.receiverId && (
@@ -1624,24 +1699,24 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                                         </>
                                                                     ) : (
                                                                         (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')) && (
-                                                                            <div className="flex gap-1.5 w-full h-full p-2 items-center">
+                                                                            <div className="flex gap-1.5 w-full h-full p-1 items-center">
                                                                                 {loan.assetType === 'VEHICLE' && (
                                                                                     <button
                                                                                         disabled={isSubmitting}
                                                                                         onClick={(e) => { e.stopPropagation(); handleRefuel(loan); }}
-                                                                                        className={`flex-1 h-full bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black rounded-xl shadow-lg hover:shadow-blue-500/50 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-1 ${!canReturn ? 'w-full' : ''}`}
+                                                                                        className={`flex-1 h-full bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-1 ${!canReturn ? 'w-full' : ''}`}
                                                                                         title="Abastecer"
                                                                                     >
-                                                                                        <Fuel size={14} /> Abastecer
+                                                                                        <Fuel size={15} /> Abastecer
                                                                                     </button>
                                                                                 )}
                                                                                 {canReturn && (
                                                                                     <button
                                                                                         disabled={isSubmitting}
                                                                                         onClick={(e) => { e.stopPropagation(); handleReturn(loan); }}
-                                                                                        className="flex-1 h-full bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black rounded-xl shadow-lg hover:shadow-emerald-500/50 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-1"
+                                                                                        className="flex-1 h-full bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-1"
                                                                                     >
-                                                                                        <CheckCircle size={14} /> Devolver
+                                                                                        <CheckCircle size={15} /> Devolver
                                                                                     </button>
                                                                                 )}
                                                                             </div>
@@ -1733,7 +1808,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     title="Confirmação de Saída de Viatura"
                     message=""
                     onClose={() => setShowVehicleStartModal(false)}
-                    onConfirm={() => processLoanCreation(vehicleStartData?.manualKm)}
+                    onConfirm={() => confirmCreationStep(vehicleStartData?.manualKm || 0, vehicleStartData?.reason || '')}
                 >
                 </Modal>
 
@@ -1817,8 +1892,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                 <div className="flex justify-end gap-3">
                                     <button onClick={() => setShowVehicleStartModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
                                     <button
-                                        onClick={() => processLoanCreation(vehicleStartData.manualKm)}
-                                        disabled={isSubmitting || vehicleStartData.manualKm < vehicleStartData.currentKm}
+                                        onClick={() => confirmCreationStep(vehicleStartData.manualKm, vehicleStartData.reason || '')}
+                                        disabled={isSubmitting || vehicleStartData.manualKm < vehicleStartData.currentKm || !vehicleStartData.reason}
                                         className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                                     >
                                         {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : null}

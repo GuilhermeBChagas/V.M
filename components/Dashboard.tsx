@@ -2,7 +2,7 @@
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { Incident, Building, Sector, ViewState } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { CheckCircle, Clock, Activity, Zap, Plus, ArrowRight, CalendarClock, FileText, Search, MapPin, Loader2, Navigation, AlertTriangle, X, WifiOff } from 'lucide-react';
+import { CheckCircle, Clock, Activity, Zap, Plus, ArrowRight, CalendarClock, FileText, Search, MapPin, Loader2, Navigation, AlertTriangle, X, WifiOff, Cloud, CloudOff } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
 import { formatDateBR } from '../utils/dateUtils';
@@ -374,17 +374,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                 incident.status === 'REJECTED' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400' :
                                                     'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                                                 }`}>
-                                                {incident.status === 'APPROVED' ? 'Aprovado' : incident.status === 'REJECTED' ? 'Rejeitado' : 'Registro Gravado'}
+                                                {incident.status === 'APPROVED' ? 'Aprovado' : incident.status === 'REJECTED' ? 'Rejeitado' : 'Pendente'}
                                             </span>
 
                                             {/* Tag Sync Status */}
+                                            {/* Tag Sync Status - Icons Only */}
                                             {incident.isLocal ? (
-                                                <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-500 rounded-md text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
-                                                    <WifiOff size={10} className="mb-0.5" /> Aguardando Sync
+                                                <span className="px-2 py-1 flex items-center justify-center bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-500 rounded-md" title="Salvo Localmente">
+                                                    <CloudOff size={11} />
                                                 </span>
                                             ) : (
-                                                <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-md text-[9px] font-black uppercase tracking-wider">
-                                                    Registro Gravado
+                                                <span className="px-2 py-1 flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-md" title="Salvo na Nuvem">
+                                                    <Cloud size={11} />
                                                 </span>
                                             )}
                                         </div>
