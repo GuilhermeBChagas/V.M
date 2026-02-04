@@ -190,6 +190,9 @@ export interface LoanRecord {
     fuelLiters?: number;
     fuelType?: string;
     fuelKm?: number;
+    couponNumber?: string;
+    supplier?: string;
+    driver?: string;
     notes?: string;
   };
 }

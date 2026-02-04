@@ -89,7 +89,31 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         batchIdsToComplete?: string[] // IDs de outros itens do lote para devolver junto
     } | null>(null);
 
+    // State for Refuel Modal (Active Loans)
+    const [showRefuelModal, setShowRefuelModal] = useState(false);
+    const [refuelData, setRefuelData] = useState<{
+        loanId: string,
+        vehicleId: string,
+        model: string,
+        currentKm: number,
+        fuelLiters: string,
+        fuelType: string,
+        fuelKm: string,
+        couponNumber: string,
+        supplier: string,
+        driver: string
+    } | null>(null);
+
     const [showQRScanner, setShowQRScanner] = useState(false);
+
+    // --- ITEM HISTORY STATE ---
+    const [historyMode, setHistoryMode] = useState<'USER' | 'ITEM'>('USER');
+    const [historyItemType, setHistoryItemType] = useState<string>('VEHICLE');
+    const [historyItemId, setHistoryItemId] = useState<string>('');
+    const [historyStartDate, setHistoryStartDate] = useState('');
+    const [historyEndDate, setHistoryEndDate] = useState('');
+    const [itemHistoryResults, setItemHistoryResults] = useState<LoanRecord[]>([]);
+    const [isLoadingItemHistory, setIsLoadingItemHistory] = useState(false);
 
     // Filter lists for Form
     const availableVehicles = useMemo(() => vehicles.filter(v => !loans.some(l => l.assetId === v.id && (l.status === 'ACTIVE' || l.status === 'PENDING'))), [vehicles, loans]);
@@ -103,6 +127,13 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         .filter(r => !loans.some(l => l.assetId === r.id && (l.status === 'ACTIVE' || l.status === 'PENDING')))
         .sort((a, b) => parseInt(a.number) - parseInt(b.number)),
         [radios, loans]);
+
+    // Sync activeTab with initialTab prop on change (fix for navigation)
+    React.useEffect(() => {
+        if (initialTab) {
+            setActiveTab(initialTab === 'HISTORY' ? 'HISTORY' : 'ACTIVE');
+        }
+    }, [initialTab]);
 
     const handleCreateLoan = async () => {
         if (!receiverId || selectedAssets.length === 0) return alert("Selecione um recebedor e ao menos um item.");
@@ -210,13 +241,13 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                 model: loan.assetDescription,
                 kmStart: loan.meta?.kmStart || 0,
                 kmEnd: loan.meta?.kmStart || 0, // Default to start KM
-                refuel: false,
-                fuelLiters: '',
-                fuelType: 'Gasolina',
-                fuelKm: '',
-                couponNumber: '',
-                supplier: '',
-                driver: currentUser.name
+                refuel: loan.meta?.fuelRefill || false,
+                fuelLiters: loan.meta?.fuelLiters?.toString().replace('.', ',') || '',
+                fuelType: loan.meta?.fuelType || 'Gasolina',
+                fuelKm: loan.meta?.fuelKm?.toString() || '',
+                couponNumber: loan.meta?.couponNumber || '',
+                supplier: loan.meta?.supplier || '',
+                driver: loan.meta?.driver || currentUser.name
             });
             setShowVehicleReturnModal(true);
             return;
@@ -314,8 +345,135 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         } catch (err: any) {
             console.error("Erro return vehicle:", err);
             alert('Erro ao devolver veículo: ' + err.message);
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleRefuel = async (loan: LoanRecord) => {
+        if (!loan.assetDescription) return;
+
+        // Get latest vehicle data for current KM check
+        let currentKm = loan.meta?.kmStart || 0;
+        try {
+            const { data: v } = await supabase.from('vehicles').select('current_km').eq('id', loan.assetId).single();
+            if (v && v.current_km) currentKm = v.current_km;
+        } catch (e) { }
+
+        setRefuelData({
+            loanId: loan.id,
+            vehicleId: loan.assetId,
+            model: loan.assetDescription,
+            currentKm: currentKm,
+            fuelLiters: '',
+            fuelType: 'Gasolina',
+            fuelKm: currentKm.toString(),
+            couponNumber: '',
+            supplier: '',
+            driver: ''
+        });
+        setShowRefuelModal(true);
+    };
+
+    const processRefuel = async () => {
+        if (!refuelData) return;
+
+        // Validation
+        const fKm = parseInt(refuelData.fuelKm.replace(/\D/g, '') || '0');
+        if (fKm < refuelData.currentKm) {
+            alert(`O KM do abastecimento (${fKm}) não pode ser menor que o KM atual do veículo (${refuelData.currentKm}).`);
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            // Get existing meta to preserve kmStart etc
+            const { data: currentLoan } = await supabase.from('loan_records').select('meta').eq('id', refuelData.loanId).single();
+            const existingMeta = currentLoan?.meta || {};
+
+            const newMeta = {
+                ...existingMeta,
+                fuelRefill: true,
+                fuelLiters: parseFloat(refuelData.fuelLiters.replace(',', '.')),
+                fuelType: refuelData.fuelType,
+                fuelKm: fKm,
+                couponNumber: refuelData.couponNumber,
+                supplier: refuelData.supplier,
+                driver: refuelData.driver
+            };
+
+            const { error } = await supabase.from('loan_records').update({
+                meta: newMeta
+            }).eq('id', refuelData.loanId);
+
+            if (error) throw error;
+
+            // Update Vehicle KM if new KM is greater
+            if (fKm > refuelData.currentKm) {
+                await supabase.from('vehicles').update({
+                    currentKm: fKm,
+                    current_km: fKm
+                }).eq('id', refuelData.vehicleId);
+            }
+
+            onLogAction('LOAN_CONFIRM', `Adicionou abastecimento a viatura: ${refuelData.model}`);
+            setShowRefuelModal(false);
+            setRefuelData(null);
+            onRefresh();
+
+        } catch (err: any) {
+            console.error(err);
+            alert('Erro ao registrar abastecimento: ' + err.message);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+
+
+    const fetchItemHistory = async () => {
+        if (!historyItemId) return;
+        setIsLoadingItemHistory(true);
+        try {
+            let query = supabase
+                .from('loan_records')
+                .select('*')
+                .eq('asset_type', historyItemType)
+                .eq('item_id', historyItemId)
+                .order('checkout_time', { ascending: false });
+
+            if (historyStartDate) {
+                query = query.gte('checkout_time', `${historyStartDate}T00:00:00`);
+            }
+            if (historyEndDate) {
+                query = query.lte('checkout_time', `${historyEndDate}T23:59:59`);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+
+            const mappedData: LoanRecord[] = (data || []).map((l: any) => ({
+                id: l.id,
+                batchId: l.batch_id,
+                operatorId: l.operator_id,
+                receiverId: l.receiver_id,
+                receiverName: l.receiver_name,
+                assetType: l.asset_type,
+                assetId: l.item_id,
+                assetDescription: l.description,
+                checkoutTime: l.checkout_time,
+                returnTime: l.return_time,
+                status: l.status,
+                meta: l.meta
+            }));
+
+            setItemHistoryResults(mappedData);
+
+        } catch (err: any) {
+            console.error("Erro ao buscar histórico do item:", err);
+            alert("Erro ao buscar histórico.");
+        } finally {
+            setIsLoadingItemHistory(false);
         }
     };
 
@@ -338,13 +496,13 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                 model: vehicleLoan.assetDescription,
                 kmStart: vehicleLoan.meta?.kmStart || 0,
                 kmEnd: vehicleLoan.meta?.kmStart || 0, // Default to start KM
-                refuel: false,
-                fuelLiters: '',
-                fuelType: 'Gasolina',
-                fuelKm: '',
-                couponNumber: '',
-                supplier: '',
-                driver: currentUser.name,
+                refuel: vehicleLoan.meta?.fuelRefill || false,
+                fuelLiters: vehicleLoan.meta?.fuelLiters?.toString().replace('.', ',') || '',
+                fuelType: vehicleLoan.meta?.fuelType || 'Gasolina',
+                fuelKm: vehicleLoan.meta?.fuelKm?.toString() || '',
+                couponNumber: vehicleLoan.meta?.couponNumber || '',
+                supplier: vehicleLoan.meta?.supplier || '',
+                driver: vehicleLoan.meta?.driver || currentUser.name,
                 batchIdsToComplete: otherLoanIds // Pass the rest of the batch
             });
             setShowVehicleReturnModal(true);
@@ -964,154 +1122,316 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                 ) : (
                     <>
                         <div ref={printRef} className="space-y-4">
-                            {/* UNIFIED GRID VIEW */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-                                {groupedLoans.map((group) => (
-                                    <div
-                                        key={group.id}
-                                        onClick={() => setSelectedGroup(group)}
-                                        className={`rounded-2xl border-2 overflow-hidden flex flex-col shadow-sm transition-all hover:shadow-md cursor-pointer ${group.type === 'PENDING'
-                                            ? 'border-amber-400 bg-white dark:bg-slate-900 shadow-amber-500/5'
-                                            : group.type === 'HISTORY'
-                                                ? 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-slate-500/5 opacity-80 hover:opacity-100'
-                                                : 'border-emerald-400 bg-white dark:bg-slate-900 shadow-emerald-500/5'
-                                            }`}
-                                    >
-                                        {/* Header */}
-                                        <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center text-lg font-black shadow-sm ${group.type === 'PENDING' ? 'bg-amber-100 text-amber-600' : group.type === 'HISTORY' ? 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400' : 'bg-emerald-100 text-emerald-600'}`}>
-                                                    {group.receiverName.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div className="flex flex-col min-w-0 flex-1">
-                                                    <h3 className="text-xs md:text-sm font-black text-slate-800 dark:text-slate-100 uppercase leading-tight mb-1 tracking-tight truncate" title={group.receiverName}>
-                                                        {group.receiverName}
-                                                    </h3>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md border ${group.type === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200'
-                                                            : group.type === 'HISTORY' ? 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
-                                                                : 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                                            }`}>
-                                                            {group.type === 'PENDING' ? 'AGUARDANDO' : group.type === 'HISTORY' ? (group.loans.some(l => l.status === 'REJECTED') ? 'RECUSADO' : 'DEVOLVIDO') : 'EM POSSE'}
-                                                        </span>
-                                                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                                            <Clock size={10} className="opacity-60" />
-                                                            {new Date(group.loans[0].checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
 
-                                        {/* Items Grid */}
-                                        <div className="p-2 flex-1 overflow-y-auto max-h-[350px]">
-                                            <div className="grid grid-cols-2 gap-2 h-full content-start">
-                                                {group.loans.map(loan => (
-                                                    <div key={loan.id} className="bg-slate-50/40 dark:bg-slate-800/20 rounded-xl p-2 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-800 min-h-[75px] relative group transition-all hover:bg-white dark:hover:bg-slate-800 shadow-sm">
-                                                        <div className={`mb-1 ${group.type === 'PENDING' ? 'text-amber-500' : group.type === 'HISTORY' ? 'text-slate-400' : 'text-emerald-500'}`}>
-                                                            {getAssetIcon(loan.assetType, 20)}
-                                                        </div>
-                                                        <p className="text-[8px] font-black text-slate-800 dark:text-slate-200 uppercase leading-tight mb-0.5 line-clamp-2 px-1">
-                                                            {loan.assetDescription}
-                                                        </p>
-                                                        {loan.assetType === 'VEHICLE' && (
-                                                            <span className="text-[7px] font-bold text-slate-400 uppercase">{loan.meta?.kmStart} KM</span>
-                                                        )}
-                                                        {(loan.assetType === 'VEST' || loan.assetDescription.includes('(M)') || loan.assetDescription.includes('(G)')) && (
-                                                            <span className="text-[7px] font-bold text-slate-400 uppercase opacity-60">
-                                                                TAM: ({loan.assetDescription.match(/\((.*?)\)/)?.[1] || '---'})
-                                                            </span>
-                                                        )}
-
-                                                        {/* Individual Action (Overlay) */}
-                                                        {((group.type === 'PENDING' && ((canApprove && currentUser.id === group.receiverId) || (canCreate && currentUser.id === loan.operatorId))) || (group.type === 'ACTIVE' && canReturn)) && (
-                                                            <div className="absolute inset-0 bg-slate-900/90 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-[2px] z-10 p-1.5 gap-1 font-black uppercase">
-                                                                {group.type === 'PENDING' ? (
-                                                                    <>
-                                                                        {currentUser.id === group.receiverId && canApprove && (
-                                                                            <>
-                                                                                <button
-                                                                                    disabled={isSubmitting}
-                                                                                    onClick={(e) => { e.stopPropagation(); handleConfirm(loan); }}
-                                                                                    className="flex-1 py-1 bg-emerald-600 text-white text-[7px] rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50"
-                                                                                >
-                                                                                    Aceitar
-                                                                                </button>
-                                                                                <button
-                                                                                    disabled={isSubmitting}
-                                                                                    onClick={(e) => { e.stopPropagation(); handleReject(loan); }}
-                                                                                    className="flex-1 py-1 bg-red-600 text-white text-[7px] rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50"
-                                                                                >
-                                                                                    Recusar
-                                                                                </button>
-                                                                            </>
-                                                                        )}
-                                                                        {currentUser.id === loan.operatorId && currentUser.id !== group.receiverId && (
-                                                                            <span className="text-white text-[7px] text-center px-1">Aguardando Confirmação</span>
-                                                                        )}
-                                                                    </>
-                                                                ) : (
-                                                                    canReturn && (
-                                                                        <button
-                                                                            disabled={isSubmitting}
-                                                                            onClick={(e) => { e.stopPropagation(); handleReturn(loan); }}
-                                                                            className="w-full py-1 bg-emerald-600 text-white text-[8px] rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50"
-                                                                        >
-                                                                            Devolver
-                                                                        </button>
-                                                                    )
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Footer Action */}
-                                        {group.type !== 'HISTORY' && (
-                                            <div className={`p-2 border-t ${group.type === 'PENDING' ? 'bg-amber-50/20' : 'bg-emerald-50/20'} dark:bg-slate-800/50 border-slate-100 dark:border-slate-800`}>
-                                                {group.type === 'PENDING' ? (
-                                                    <div className="flex gap-1.5">
-                                                        {currentUser.id === group.receiverId && canApprove && (
-                                                            <button
-                                                                disabled={isSubmitting}
-                                                                onClick={(e) => { e.stopPropagation(); handleConfirmBatch(group.loans); }}
-                                                                className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-amber-500/25 disabled:opacity-50"
-                                                            >
-                                                                <CheckCircle size={12} /> ACEITAR TUDO
-                                                            </button>
-                                                        )}
-
-                                                        {group.loans.some(l => l.operator_id === currentUser.id || l.operatorId === currentUser.id) && canCreate && (
-                                                            <button
-                                                                disabled={isSubmitting}
-                                                                onClick={(e) => { e.stopPropagation(); handleCancelBatch(group.loans); }}
-                                                                className="px-2.5 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95 disabled:opacity-50"
-                                                                title="Cancelar Cautela"
-                                                            >
-                                                                <XCircle size={16} />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    canReturn && (
-                                                        <button
-                                                            disabled={isSubmitting}
-                                                            onClick={(e) => { e.stopPropagation(); handleReturnBatch(group.loans); }}
-                                                            className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/25 disabled:opacity-50"
-                                                        >
-                                                            <CornerDownLeft size={12} /> DEVOLVER TODOS
-                                                        </button>
-                                                    )
-                                                )}
-                                            </div>
-                                        )}
+                            {/* HISTORY MODE TOGGLE */}
+                            {activeTab === 'HISTORY' && (
+                                <div className="flex flex-col gap-4 mb-4">
+                                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-fit self-start">
+                                        <button
+                                            onClick={() => setHistoryMode('USER')}
+                                            className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${historyMode === 'USER'
+                                                ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white'
+                                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                                                }`}
+                                        >
+                                            Por Usuário
+                                        </button>
+                                        <button
+                                            onClick={() => setHistoryMode('ITEM')}
+                                            className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${historyMode === 'ITEM'
+                                                ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white'
+                                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                                                }`}
+                                        >
+                                            Por Item
+                                        </button>
                                     </div>
-                                ))}
-                            </div>
 
-                            {groupedLoans.length === 0 && (
+                                    {/* ITEM HISTORY FILTERS & VIEW */}
+                                    {historyMode === 'ITEM' && (
+                                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 animate-in fade-in slide-in-from-top-2">
+                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
+                                                <div>
+                                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Tipo de Item</label>
+                                                    <select
+                                                        value={historyItemType}
+                                                        onChange={(e) => {
+                                                            setHistoryItemType(e.target.value);
+                                                            setHistoryItemId('');
+                                                        }}
+                                                        className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500"
+                                                    >
+                                                        <option value="VEHICLE">Viaturas</option>
+                                                        <option value="VEST">Coletes</option>
+                                                        <option value="RADIO">Rádios</option>
+                                                        <option value="EQUIPMENT">Outros</option>
+                                                    </select>
+                                                </div>
+                                                <div className="md:col-span-2">
+                                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Selecione o Item</label>
+                                                    <select
+                                                        value={historyItemId}
+                                                        onChange={(e) => setHistoryItemId(e.target.value)}
+                                                        className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500"
+                                                    >
+                                                        <option value="">Selecione...</option>
+                                                        {historyItemType === 'VEHICLE' && vehicles.map(v => <option key={v.id} value={v.id}>{v.model} - {v.plate}</option>)}
+                                                        {historyItemType === 'VEST' && vests.map(v => <option key={v.id} value={v.id}>Colete Nº {v.number} ({v.size})</option>)}
+                                                        {historyItemType === 'RADIO' && radios.map(r => <option key={r.id} value={r.id}>HT {r.number} ({r.serialNumber})</option>)}
+                                                        {historyItemType === 'EQUIPMENT' && equipments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">De</label>
+                                                        <input type="date" value={historyStartDate} onChange={e => setHistoryStartDate(e.target.value)} className="w-full p-2.5 rounded-lg border text-xs" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Até</label>
+                                                        <input type="date" value={historyEndDate} onChange={e => setHistoryEndDate(e.target.value)} className="w-full p-2.5 rounded-lg border text-xs" />
+                                                    </div>
+                                                </div>
+                                                <div className="md:col-span-4 flex justify-end">
+                                                    <button
+                                                        onClick={fetchItemHistory}
+                                                        disabled={!historyItemId || isLoadingItemHistory}
+                                                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
+                                                    >
+                                                        {isLoadingItemHistory ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />}
+                                                        Buscar Histórico
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* RESULTS TABLE */}
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="border-b border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase text-slate-500 bg-slate-50 dark:bg-slate-800/50">
+                                                            <th className="p-3">Data Retirada</th>
+                                                            <th className="p-3">Recebedor</th>
+                                                            <th className="p-3">Devolução</th>
+                                                            <th className="p-3">Status</th>
+                                                            <th className="p-3">Detalhes</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                                        {itemHistoryResults.length > 0 ? (
+                                                            itemHistoryResults.map(loan => (
+                                                                <tr key={loan.id} className="text-xs hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                                                    <td className="p-3 font-bold text-slate-700 dark:text-slate-300">
+                                                                        {new Date(loan.checkoutTime).toLocaleDateString()} <span className="text-slate-400 font-normal">{new Date(loan.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                    </td>
+                                                                    <td className="p-3 uppercase font-bold">{loan.receiverName}</td>
+                                                                    <td className="p-3">
+                                                                        {loan.returnTime ? (
+                                                                            <>
+                                                                                {new Date(loan.returnTime).toLocaleDateString()} <span className="text-slate-400 text-[10px]">{new Date(loan.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                            </>
+                                                                        ) : '-'}
+                                                                    </td>
+                                                                    <td className="p-3">
+                                                                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase ${loan.status === 'COMPLETED' ? 'bg-slate-100 text-slate-600' :
+                                                                            loan.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-600' :
+                                                                                loan.status === 'REJECTED' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
+                                                                            }`}>
+                                                                            {loan.status === 'COMPLETED' ? 'Devolvido' :
+                                                                                loan.status === 'ACTIVE' ? 'Em Uso' :
+                                                                                    loan.status === 'REJECTED' ? 'Recusado' : 'Pendente'}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="p-3 text-[10px] text-slate-500">
+                                                                        {loan.assetType === 'VEHICLE' && loan.meta && (
+                                                                            <div className="flex flex-col">
+                                                                                <span>KM: {loan.meta.kmStart} {'->'} {loan.meta.kmEnd || '?'}</span>
+                                                                                {loan.meta.fuelRefill && <span className="text-blue-500 font-bold flex items-center gap-1"><Droplet size={8} /> Abast.</span>}
+                                                                            </div>
+                                                                        )}
+                                                                        {!['VEHICLE'].includes(loan.assetType) && (
+                                                                            <span className="italic opacity-50">---</span>
+                                                                        )}
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        ) : (
+                                                            <tr>
+                                                                <td colSpan={5} className="p-8 text-center text-slate-400 text-xs uppercase font-bold italic">
+                                                                    Nenhum registro encontrado.
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* UNIFIED GRID VIEW (Conditionally Rendered) */}
+                            {(!activeTab || activeTab !== 'HISTORY' || historyMode === 'USER') && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+                                    {groupedLoans.map((group) => (
+                                        <div
+                                            key={group.id}
+                                            onClick={() => setSelectedGroup(group)}
+                                            className={`rounded-2xl border-2 overflow-hidden flex flex-col shadow-sm transition-all hover:shadow-md cursor-pointer ${group.type === 'PENDING'
+                                                ? 'border-amber-400 bg-white dark:bg-slate-900 shadow-amber-500/5'
+                                                : group.type === 'HISTORY'
+                                                    ? 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-slate-500/5 opacity-80 hover:opacity-100'
+                                                    : 'border-emerald-400 bg-white dark:bg-slate-900 shadow-emerald-500/5'
+                                                }`}
+                                        >
+                                            {/* Header */}
+                                            <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center text-lg font-black shadow-sm ${group.type === 'PENDING' ? 'bg-amber-100 text-amber-600' : group.type === 'HISTORY' ? 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400' : 'bg-emerald-100 text-emerald-600'}`}>
+                                                        {group.receiverName.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0 flex-1">
+                                                        <h3 className="text-xs md:text-sm font-black text-slate-800 dark:text-slate-100 uppercase leading-tight mb-1 tracking-tight truncate" title={group.receiverName}>
+                                                            {group.receiverName}
+                                                        </h3>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md border ${group.type === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                                                : group.type === 'HISTORY' ? 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                                                                    : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                                }`}>
+                                                                {group.type === 'PENDING' ? 'AGUARDANDO' : group.type === 'HISTORY' ? (group.loans.some(l => l.status === 'REJECTED') ? 'RECUSADO' : 'DEVOLVIDO') : 'EM POSSE'}
+                                                            </span>
+                                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                                                <Clock size={10} className="opacity-60" />
+                                                                {new Date(group.loans[0].checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Items Grid */}
+                                            <div className="p-2 flex-1 overflow-y-auto max-h-[350px]">
+                                                <div className="grid grid-cols-2 gap-2 h-full content-start">
+                                                    {group.loans.map(loan => (
+                                                        <div key={loan.id} className="bg-slate-50/40 dark:bg-slate-800/20 rounded-xl p-2 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-800 min-h-[75px] relative group transition-all hover:bg-white dark:hover:bg-slate-800 shadow-sm">
+                                                            <div className={`mb-1 ${group.type === 'PENDING' ? 'text-amber-500' : group.type === 'HISTORY' ? 'text-slate-400' : 'text-emerald-500'}`}>
+                                                                {getAssetIcon(loan.assetType, 20)}
+                                                            </div>
+                                                            <p className="text-[8px] font-black text-slate-800 dark:text-slate-200 uppercase leading-tight mb-0.5 line-clamp-2 px-1">
+                                                                {loan.assetDescription}
+                                                            </p>
+                                                            {loan.assetType === 'VEHICLE' && (
+                                                                <span className="text-[7px] font-bold text-slate-400 uppercase">{loan.meta?.kmStart} KM</span>
+                                                            )}
+                                                            {(loan.assetType === 'VEST' || loan.assetDescription.includes('(M)') || loan.assetDescription.includes('(G)')) && (
+                                                                <span className="text-[7px] font-bold text-slate-400 uppercase opacity-60">
+                                                                    TAM: ({loan.assetDescription.match(/\((.*?)\)/)?.[1] || '---'})
+                                                                </span>
+                                                            )}
+
+                                                            {/* Individual Action (Overlay) */}
+                                                            {((group.type === 'PENDING' && ((canApprove && currentUser.id === group.receiverId) || (canCreate && currentUser.id === loan.operatorId))) || (group.type === 'ACTIVE' && (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')))) && (
+                                                                <div className="absolute inset-0 bg-slate-900/90 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-[2px] z-10 p-1.5 gap-1 font-black uppercase">
+                                                                    {group.type === 'PENDING' ? (
+                                                                        <>
+                                                                            {currentUser.id === group.receiverId && canApprove && (
+                                                                                <>
+                                                                                    <button
+                                                                                        disabled={isSubmitting}
+                                                                                        onClick={(e) => { e.stopPropagation(); handleConfirm(loan); }}
+                                                                                        className="flex-1 py-1 bg-emerald-600 text-white text-[7px] rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50"
+                                                                                    >
+                                                                                        Aceitar
+                                                                                    </button>
+                                                                                    <button
+                                                                                        disabled={isSubmitting}
+                                                                                        onClick={(e) => { e.stopPropagation(); handleReject(loan); }}
+                                                                                        className="flex-1 py-1 bg-red-600 text-white text-[7px] rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50"
+                                                                                    >
+                                                                                        Recusar
+                                                                                    </button>
+                                                                                </>
+                                                                            )}
+                                                                            {currentUser.id === loan.operatorId && currentUser.id !== group.receiverId && (
+                                                                                <span className="text-white text-[7px] text-center px-1">Aguardando Confirmação</span>
+                                                                            )}
+                                                                        </>
+                                                                    ) : (
+                                                                        (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')) && (
+                                                                            <div className="flex gap-1.5 w-full h-full p-2 items-center">
+                                                                                {loan.assetType === 'VEHICLE' && (
+                                                                                    <button
+                                                                                        disabled={isSubmitting}
+                                                                                        onClick={(e) => { e.stopPropagation(); handleRefuel(loan); }}
+                                                                                        className={`flex-1 h-full bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black rounded-xl shadow-lg hover:shadow-blue-500/50 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-1 ${!canReturn ? 'w-full' : ''}`}
+                                                                                        title="Abastecer"
+                                                                                    >
+                                                                                        <Fuel size={14} /> Abastecer
+                                                                                    </button>
+                                                                                )}
+                                                                                {canReturn && (
+                                                                                    <button
+                                                                                        disabled={isSubmitting}
+                                                                                        onClick={(e) => { e.stopPropagation(); handleReturn(loan); }}
+                                                                                        className="flex-1 h-full bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black rounded-xl shadow-lg hover:shadow-emerald-500/50 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-1"
+                                                                                    >
+                                                                                        <CheckCircle size={14} /> Devolver
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                        )
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Footer Action */}
+                                            {group.type !== 'HISTORY' && (
+                                                <div className={`p-2 border-t ${group.type === 'PENDING' ? 'bg-amber-50/20' : 'bg-emerald-50/20'} dark:bg-slate-800/50 border-slate-100 dark:border-slate-800`}>
+                                                    {group.type === 'PENDING' ? (
+                                                        <div className="flex gap-1.5">
+                                                            {currentUser.id === group.receiverId && canApprove && (
+                                                                <button
+                                                                    disabled={isSubmitting}
+                                                                    onClick={(e) => { e.stopPropagation(); handleConfirmBatch(group.loans); }}
+                                                                    className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-amber-500/25 disabled:opacity-50"
+                                                                >
+                                                                    <CheckCircle size={12} /> ACEITAR TUDO
+                                                                </button>
+                                                            )}
+
+                                                            {group.loans.some(l => l.operator_id === currentUser.id || l.operatorId === currentUser.id) && canCreate && (
+                                                                <button
+                                                                    disabled={isSubmitting}
+                                                                    onClick={(e) => { e.stopPropagation(); handleCancelBatch(group.loans); }}
+                                                                    className="px-2.5 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                                                                    title="Cancelar Cautela"
+                                                                >
+                                                                    <XCircle size={16} />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        canReturn && (
+                                                            <button
+                                                                disabled={isSubmitting}
+                                                                onClick={(e) => { e.stopPropagation(); handleReturnBatch(group.loans); }}
+                                                                className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/25 disabled:opacity-50"
+                                                            >
+                                                                <CornerDownLeft size={12} /> DEVOLVER TODOS
+                                                            </button>
+                                                        )
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {(!activeTab || activeTab !== 'HISTORY' || historyMode === 'USER') && groupedLoans.length === 0 && (
                                 <div className="text-center py-20 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
                                     <div className="w-16 h-16 mx-auto bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-300">
                                         <ArrowRightLeft size={32} />
@@ -1132,7 +1452,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                             </button>
                         )}
                     </>
-                )}
+                )
+            }
 
             {/* Global Modals and Overlays (Outside ternary) */}
             <div className="no-print">
@@ -1401,6 +1722,133 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     )
                 }
 
+                {/* Custom Overlay for Refueling */}
+                {
+                    showRefuelModal && refuelData && (
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+                            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-3 bg-blue-100 text-blue-600 rounded-full"><Fuel size={24} /></div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Registrar Abastecimento</h3>
+                                        <p className="text-xs text-slate-500 uppercase">{refuelData.model}</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-50 dark:bg-slate-800 p-3 rounded-lg animate-in slide-in-from-top-1 space-y-3 mb-6">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowQRScanner(true)}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-700 transition-all shadow-md active:scale-[0.98]"
+                                    >
+                                        <QrCode size={16} /> Ler QR Code (Digital)
+                                    </button>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Litros</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    value={refuelData.fuelLiters}
+                                                    onChange={(e) => {
+                                                        let val = e.target.value.replace('.', ',');
+                                                        if (/^\d*,?\d*$/.test(val)) {
+                                                            setRefuelData({ ...refuelData, fuelLiters: val })
+                                                        }
+                                                    }}
+                                                    className="w-full pl-7 p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
+                                                    placeholder="0,0"
+                                                    inputMode="decimal"
+                                                />
+                                                <Droplet size={12} className="absolute left-2 top-2.5 text-slate-400" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Combustível</label>
+                                            <select
+                                                value={refuelData.fuelType}
+                                                onChange={(e) => setRefuelData({ ...refuelData, fuelType: e.target.value })}
+                                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold uppercase bg-white dark:bg-slate-900"
+                                            >
+                                                <option>Gasolina</option>
+                                                <option>Etanol</option>
+                                                <option>Diesel</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">KM do Abastecimento</label>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                value={refuelData.fuelKm ? parseInt(refuelData.fuelKm).toLocaleString('pt-BR') : ''}
+                                                onChange={(e) => {
+                                                    const raw = e.target.value.replace(/\D/g, '');
+                                                    const val = raw ? parseInt(raw) : '';
+                                                    setRefuelData({ ...refuelData, fuelKm: val.toString() })
+                                                }}
+                                                className={`w-full pl-7 p-2 rounded border text-xs font-bold bg-white dark:bg-slate-900 ${parseInt(refuelData.fuelKm || '0') < refuelData.currentKm ? 'border-red-300 text-red-600' : 'border-slate-300 dark:border-slate-600'}`}
+                                                placeholder="0"
+                                                inputMode="numeric"
+                                            />
+                                            <Gauge size={12} className="absolute left-2 top-2.5 text-slate-400" />
+                                        </div>
+                                        {parseInt(refuelData.fuelKm || '0') < refuelData.currentKm && (
+                                            <p className="text-[9px] text-red-500 font-bold mt-1">KM menor que atual ({refuelData.currentKm})</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Fornecedor</label>
+                                        <input
+                                            type="text"
+                                            value={refuelData.supplier}
+                                            onChange={(e) => setRefuelData({ ...refuelData, supplier: e.target.value.toUpperCase() })}
+                                            className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
+                                            placeholder="NOME DO POSTO"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Número do Cupom</label>
+                                            <input
+                                                type="text"
+                                                value={refuelData.couponNumber}
+                                                onChange={(e) => setRefuelData({ ...refuelData, couponNumber: e.target.value })}
+                                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
+                                                placeholder="Nº NFC-e"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Motorista</label>
+                                            <input
+                                                type="text"
+                                                value={refuelData.driver}
+                                                onChange={(e) => setRefuelData({ ...refuelData, driver: e.target.value.toUpperCase() })}
+                                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
+                                                placeholder="NOME DO MOTORISTA"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-3">
+                                    <button onClick={() => setShowRefuelModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                                    <button
+                                        onClick={processRefuel}
+                                        disabled={isSubmitting || !refuelData.fuelLiters || parseInt(refuelData.fuelKm || '0') < refuelData.currentKm}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                    >
+                                        {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />} Salvar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+
 
                 {/* Group Details Modal */}
                 {selectedGroup && (
@@ -1491,24 +1939,41 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     <QRScanner
                         onScan={(decodedText) => {
                             setShowQRScanner(false);
-                            if (!vehicleReturnData) return;
 
-                            // Parser para SEFAZ PR (Exemplo da imagem)
-                            if (decodedText.includes("fazenda.pr.gov.br") || decodedText.includes("RESUMO PAGAMENTO")) {
-                                // Extração simulada/real baseada no padrão observado na imagem
-                                const kmMatch = decodedText.match(/km:(\d+)/i);
-                                const driverMatch = decodedText.match(/MOTORISTA\s+([^|]+)/i);
-
-                                setVehicleReturnData({
-                                    ...vehicleReturnData,
-                                    couponNumber: "723226",
-                                    fuelLiters: "29,876",
-                                    fuelType: "Etanol",
-                                    fuelKm: kmMatch ? kmMatch[1] : "49788",
-                                    driver: driverMatch ? driverMatch[1].trim().toUpperCase() : "LUIZ ALBERTO FONSECA"
-                                });
-                            } else {
-                                alert("QR Code lido: " + decodedText);
+                            // HANDLE RETURN SCAN
+                            if (vehicleReturnData && showVehicleReturnModal) {
+                                // Parser para SEFAZ PR (Exemplo da imagem)
+                                if (decodedText.includes("fazenda.pr.gov.br") || decodedText.includes("RESUMO PAGAMENTO")) {
+                                    const kmMatch = decodedText.match(/km:(\d+)/i);
+                                    const driverMatch = decodedText.match(/MOTORISTA\s+([^|]+)/i);
+                                    setVehicleReturnData({
+                                        ...vehicleReturnData,
+                                        couponNumber: "723226", // Mock extract
+                                        fuelLiters: "29,876",
+                                        fuelType: "Etanol",
+                                        fuelKm: kmMatch ? kmMatch[1] : vehicleReturnData.kmEnd.toString(),
+                                        driver: driverMatch ? driverMatch[1].trim().toUpperCase() : vehicleReturnData.driver
+                                    });
+                                } else {
+                                    alert("QR Code lido: " + decodedText);
+                                }
+                            }
+                            // HANDLE REFUEL SCAN
+                            else if (refuelData && showRefuelModal) {
+                                if (decodedText.includes("fazenda.pr.gov.br") || decodedText.includes("RESUMO PAGAMENTO")) {
+                                    const kmMatch = decodedText.match(/km:(\d+)/i);
+                                    const driverMatch = decodedText.match(/MOTORISTA\s+([^|]+)/i);
+                                    setRefuelData({
+                                        ...refuelData,
+                                        couponNumber: "723226", // Mock extract
+                                        fuelLiters: "29,876",
+                                        fuelType: "Etanol",
+                                        fuelKm: kmMatch ? kmMatch[1] : refuelData.fuelKm.toString(),
+                                        driver: driverMatch ? driverMatch[1].trim().toUpperCase() : refuelData.driver
+                                    });
+                                } else {
+                                    alert("QR Code lido: " + decodedText);
+                                }
                             }
                         }}
                         onClose={() => setShowQRScanner(false)}
