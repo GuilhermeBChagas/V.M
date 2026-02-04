@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 import { X, Camera } from 'lucide-react';
 
 interface QRScannerProps {
@@ -9,40 +9,40 @@ interface QRScannerProps {
 }
 
 export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
-    const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+    const scannerRef = useRef<Html5Qrcode | null>(null);
 
     useEffect(() => {
-        // Initialize scanner
-        scannerRef.current = new Html5QrcodeScanner(
-            "qr-reader",
-            {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
-            },
-            /* verbose= */ false
-        );
+        const html5QrCode = new Html5Qrcode("qr-reader");
+        scannerRef.current = html5QrCode;
 
-        scannerRef.current.render(
-            (decodedText) => {
-                // Success case
-                if (scannerRef.current) {
-                    scannerRef.current.clear().then(() => {
+        const startScanner = async () => {
+            try {
+                await html5QrCode.start(
+                    { facingMode: "environment" }, // Prioritize back camera
+                    {
+                        fps: 10,
+                        qrbox: { width: 250, height: 250 },
+                    },
+                    (decodedText) => {
                         onScan(decodedText);
-                    }).catch(err => {
-                        console.error("Failed to clear scanner", err);
-                        onScan(decodedText);
-                    });
-                }
-            },
-            (errorMessage) => {
-                // error case is too frequent to log
+                    },
+                    (errorMessage) => {
+                        // ignore failures
+                    }
+                );
+            } catch (err) {
+                console.error("Unable to start scanning", err);
             }
-        );
+        };
+
+        const timeout = setTimeout(startScanner, 100); // Small delay to ensure container is ready
 
         return () => {
-            if (scannerRef.current) {
-                scannerRef.current.clear().catch(err => console.error("Cleanup error", err));
+            clearTimeout(timeout);
+            if (scannerRef.current && scannerRef.current.isScanning) {
+                scannerRef.current.stop().then(() => {
+                    scannerRef.current?.clear();
+                }).catch(err => console.error("Failed to stop scanner", err));
             }
         };
     }, [onScan]);
