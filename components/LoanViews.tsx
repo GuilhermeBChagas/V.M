@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { User, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemLog } from '../types';
 import { supabase } from '../services/supabaseClient';
 import {
@@ -42,6 +42,7 @@ interface LoanViewsProps {
     canViewAll?: boolean;
     customLogo?: string | null;
     customLogoLeft?: string | null;
+    onFilterChange?: (filters: { dateStart: string, timeStart: string, dateEnd: string, timeEnd: string }) => void;
 }
 
 export const LoanViews: React.FC<LoanViewsProps> = ({
@@ -50,7 +51,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     hasMore = false, isLoadingMore = false, onLoadMore, filterStatus,
     onShowConfirm,
     canCreate = false, canApprove = false, canReturn = false, canViewHistory = false, canViewAll = false,
-    customLogo, customLogoLeft
+    customLogo, customLogoLeft, onFilterChange
 }) => {
     const [activeTab, setActiveTab] = useState<'ACTIVE' | 'HISTORY' | 'NEW'>(initialTab === 'HISTORY' ? 'HISTORY' : 'ACTIVE');
     const [searchTerm, setSearchTerm] = useState('');
@@ -58,6 +59,15 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     const [isExporting, setIsExporting] = useState(false);
     const [dateStart, setDateStart] = useState('');
     const [dateEnd, setDateEnd] = useState('');
+    const [timeStart, setTimeStart] = useState('');
+    const [timeEnd, setTimeEnd] = useState('');
+
+    useEffect(() => {
+        if (onFilterChange) {
+            onFilterChange({ dateStart, timeStart, dateEnd, timeEnd });
+        }
+    }, [dateStart, timeStart, dateEnd, timeEnd, onFilterChange]);
+
     const printRef = useRef<HTMLDivElement>(null);
 
     // Form States
@@ -852,15 +862,14 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         // Otherwise, only see where participant (receiver or operator)
         return l.receiverId === currentUser.id || l.operatorId === currentUser.id;
     }).filter(l => {
-        // Date filtering
-        // Date filtering - Treat inputs as local midnight
+        // Date and Time filtering
         const loanDate = new Date(l.checkoutTime);
         if (dateStart) {
-            const startDate = new Date(`${dateStart}T00:00:00`);
+            const startDate = new Date(`${dateStart}T${timeStart || '00:00'}:00`);
             if (startDate > loanDate) return false;
         }
         if (dateEnd) {
-            const endDate = new Date(`${dateEnd}T23:59:59`);
+            const endDate = new Date(`${dateEnd}T${timeEnd || '23:59'}:59`);
             if (endDate < loanDate) return false;
         }
         return true;
@@ -1096,11 +1105,29 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                             />
                         </div>
                         <div>
+                            <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Hora Inicial</label>
+                            <input
+                                type="time"
+                                value={timeStart}
+                                onChange={e => setTimeStart(e.target.value)}
+                                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
+                            />
+                        </div>
+                        <div>
                             <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Data Final</label>
                             <input
                                 type="date"
                                 value={dateEnd}
                                 onChange={e => setDateEnd(e.target.value)}
+                                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Hora Final</label>
+                            <input
+                                type="time"
+                                value={timeEnd}
+                                onChange={e => setTimeEnd(e.target.value)}
                                 className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
                             />
                         </div>

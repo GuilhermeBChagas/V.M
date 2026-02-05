@@ -233,16 +233,24 @@ const IncidentHistory: React.FC<{
   canExport: boolean;
   canViewAll?: boolean;
   jobTitles: JobTitle[];
+  onFilterChange?: (filters: { dateStart: string, timeStart: string, dateEnd: string, timeEnd: string }) => void;
 }> = (props) => {
   const { incidents, buildings, onView, onEdit, onDelete, onApprove,
     filterStatus, currentUser, customLogo, customLogoLeft, loans = [], onConfirmLoanBatch,
-    onLoadMore, hasMore, isLoadingMore, canEdit, canDelete, canApprove, canExport, canViewAll = false, jobTitles } = props;
+    onLoadMore, hasMore, isLoadingMore, canEdit, canDelete, canApprove, canExport, canViewAll = false, jobTitles, onFilterChange } = props;
   const [search, setSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
   const [timeStart, setTimeStart] = useState('');
   const [timeEnd, setTimeEnd] = useState('');
+
+  // Auto-refresh on filter change
+  useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange({ dateStart, timeStart, dateEnd, timeEnd });
+    }
+  }, [dateStart, timeStart, dateEnd, timeEnd, onFilterChange]);
   const [exportIP, setExportIP] = useState<string>('');
   const [exportDate, setExportDate] = useState<string>('');
   const [exportHash, setExportHash] = useState<string>('');
@@ -1136,7 +1144,7 @@ export function App() {
 
   // --- FETCH FUNCTIONS INSIDE APP COMPONENT ---
 
-  const fetchIncidents = useCallback(async (isLoadMore = false) => {
+  const fetchIncidents = useCallback(async (isLoadMore = false, dateFilters?: { dateStart?: string, timeStart?: string, dateEnd?: string, timeEnd?: string }) => {
     if (fetchLockRef.current) return;
     fetchLockRef.current = true;
     if (isLoadMore) setLoadingMore(true);
@@ -1145,22 +1153,40 @@ export function App() {
     const PAGE_SIZE = 10;
     const from = currentPage * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
+
+    const hasFilters = !!(dateFilters && (dateFilters.dateStart || dateFilters.dateEnd));
+
     try {
       let finalData: Incident[] = [];
-      // Columns for LIST view - exclude heavy description and photos
       const listColumns = 'id, ra_code, building_id, user_id, operator_name, date, start_time, end_time, alteration_type, status, timestamp, is_edited, last_edited_at, edited_by, created_ip, updated_ip, approved_ip, signature_hash, approved_by, approved_at, created_at';
 
       if (!isLoadMore) {
-        const [pendingRes, historyRes] = await Promise.all([
-          supabase.from('incidents').select(listColumns).eq('status', 'PENDING'),
-          supabase.from('incidents').select(listColumns).neq('status', 'PENDING').order('created_at', { ascending: false }).range(0, PAGE_SIZE - 1)
-        ]);
+        let pendingQuery = supabase.from('incidents').select(listColumns).eq('status', 'PENDING');
+        let historyQuery = supabase.from('incidents').select(listColumns).neq('status', 'PENDING').order('created_at', { ascending: false });
+
+        if (hasFilters) {
+          if (dateFilters?.dateStart) {
+            pendingQuery = pendingQuery.gte('date', dateFilters.dateStart);
+            historyQuery = historyQuery.gte('date', dateFilters.dateStart);
+          }
+          if (dateFilters?.dateEnd) {
+            pendingQuery = pendingQuery.lte('date', dateFilters.dateEnd);
+            historyQuery = historyQuery.lte('date', dateFilters.dateEnd);
+          }
+          // Remove limit if filtering
+          historyQuery = historyQuery.limit(1000);
+          setHasMore(false);
+        } else {
+          historyQuery = historyQuery.range(0, PAGE_SIZE - 1);
+        }
+
+        const [pendingRes, historyRes] = await Promise.all([pendingQuery, historyQuery]);
         if (pendingRes.error) throw pendingRes.error;
         if (historyRes.error) throw historyRes.error;
         const mappedPending = (pendingRes.data || []).map(mapIncident);
         const mappedHistory = (historyRes.data || []).map(mapIncident);
         finalData = [...mappedPending, ...mappedHistory];
-        if ((historyRes.data?.length || 0) < PAGE_SIZE) setHasMore(false);
+        if (!hasFilters && (historyRes.data?.length || 0) < PAGE_SIZE) setHasMore(false);
       } else {
         const { data, error } = await supabase.from('incidents').select(listColumns).neq('status', 'PENDING').order('created_at', { ascending: false }).range(from, to);
         if (error) throw error;
@@ -1180,28 +1206,47 @@ export function App() {
     } catch (error: any) { console.error("Erro ao buscar ocorrências:", error); } finally { setLoadingMore(false); fetchLockRef.current = false; }
   }, [unsyncedIncidents, page]);
 
-  const fetchLoans = useCallback(async (isLoadMore = false) => {
+  const fetchLoans = useCallback(async (isLoadMore = false, dateFilters?: { dateStart?: string, timeStart?: string, dateEnd?: string, timeEnd?: string }) => {
     if (isLoadMore) setLoadingMoreLoans(true); else { setLoanPage(0); setHasMoreLoans(true); }
     const currentPage = isLoadMore ? loanPage + 1 : 0;
     const PAGE_SIZE = 10;
     const from = currentPage * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
+
+    const hasFilters = !!(dateFilters && (dateFilters.dateStart || dateFilters.dateEnd));
+
     try {
       let finalData: LoanRecord[] = [];
-      // Columns for LIST view
       const loanListColumns = 'id, status, checkout_time, return_time, operator_id, receiver_id, receiver_name, batch_id, asset_type, item_id, description, meta';
 
       if (!isLoadMore) {
-        const [activeRes, completedRes] = await Promise.all([
-          supabase.from('loan_records').select(loanListColumns).in('status', ['PENDING', 'ACTIVE']),
-          supabase.from('loan_records').select(loanListColumns).in('status', ['COMPLETED', 'REJECTED']).order('return_time', { ascending: false }).range(0, PAGE_SIZE - 1)
-        ]);
+        let activeQuery = supabase.from('loan_records').select(loanListColumns).in('status', ['PENDING', 'ACTIVE']);
+        let completedQuery = supabase.from('loan_records').select(loanListColumns).in('status', ['COMPLETED', 'REJECTED']).order('return_time', { ascending: false });
+
+        if (hasFilters) {
+          if (dateFilters?.dateStart) {
+            const start = `${dateFilters.dateStart}T${dateFilters.timeStart || '00:00'}:00`;
+            activeQuery = activeQuery.gte('checkout_time', start);
+            completedQuery = completedQuery.gte('checkout_time', start);
+          }
+          if (dateFilters?.dateEnd) {
+            const end = `${dateFilters.dateEnd}T${dateFilters.timeEnd || '23:59'}:59`;
+            activeQuery = activeQuery.lte('checkout_time', end);
+            completedQuery = completedQuery.lte('checkout_time', end);
+          }
+          completedQuery = completedQuery.limit(1000);
+          setHasMoreLoans(false);
+        } else {
+          completedQuery = completedQuery.range(0, PAGE_SIZE - 1);
+        }
+
+        const [activeRes, completedRes] = await Promise.all([activeQuery, completedQuery]);
         if (activeRes.error) throw activeRes.error;
         if (completedRes.error) throw completedRes.error;
         const mappedActive = (activeRes.data || []).map(mapLoan);
         const mappedCompleted = (completedRes.data || []).map(mapLoan);
         finalData = [...mappedActive, ...mappedCompleted];
-        if ((completedRes.data?.length || 0) < PAGE_SIZE) setHasMoreLoans(false);
+        if (!hasFilters && (completedRes.data?.length || 0) < PAGE_SIZE) setHasMoreLoans(false);
       } else {
         const { data, error } = await supabase.from('loan_records').select(loanListColumns).in('status', ['COMPLETED', 'REJECTED']).order('return_time', { ascending: false }).range(from, to);
         if (error) throw error;
@@ -2458,7 +2503,7 @@ export function App() {
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
         return <IncidentForm user={user!} users={users} incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleBack(); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} />;
-      case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} jobTitles={jobTitles} />;
+      case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} jobTitles={jobTitles} onFilterChange={(f) => fetchIncidents(false, f)} />;
       case 'PENDING_APPROVALS':
         return (
           <div className="space-y-4 animate-fade-in">
@@ -2522,8 +2567,8 @@ export function App() {
       case 'RADIO_FORM': return <RadioForm initialData={editingRadio} onSave={(i: any) => handleSaveAsset('radios', i, 'RADIOS', 'Rádio')} onCancel={handleBack} onDelete={() => editingRadio && handleDeleteAsset('radios', editingRadio.id, 'Rádio')} isLoading={saving} />;
       case 'EQUIPMENTS': return <EquipmentList items={equipments} onAdd={() => { setEditingEquipment(null); handleNavigate('EQUIPMENT_FORM'); }} onEdit={(i) => { setEditingEquipment(i); handleNavigate('EQUIPMENT_FORM'); }} onDelete={(id) => handleDeleteAsset('equipments', id, 'Equipamento')} canEdit={can('MANAGE_EQUIPMENTS')} canDelete={can('MANAGE_EQUIPMENTS')} />;
       case 'EQUIPMENT_FORM': return <EquipmentForm initialData={editingEquipment} onSave={(i: any) => handleSaveAsset('equipments', i, 'EQUIPMENTS', 'Equipamento')} onCancel={handleBack} onDelete={() => editingEquipment && handleDeleteAsset('equipments', editingEquipment.id, 'Equipamento')} isLoading={saving} />;
-      case 'LOANS': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} />;
-      case 'LOAN_HISTORY': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} initialTab="HISTORY" isReportView={true} loans={loans} onRefresh={() => fetchLoans(false)} hasMore={hasMoreLoans} isLoadingMore={loadingMoreLoans} onLoadMore={() => fetchLoans(true)} onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} />;
+      case 'LOANS': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} />;
+      case 'LOAN_HISTORY': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} initialTab="HISTORY" isReportView={true} loans={loans} onRefresh={() => fetchLoans(false)} hasMore={hasMoreLoans} isLoadingMore={loadingMoreLoans} onLoadMore={() => fetchLoans(true)} onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} />;
       case 'SECTORS': return <SectorList sectors={sectors} onEdit={(s) => { setEditingSector(s); handleNavigate('SECTOR_FORM'); }} onDelete={handleDeleteSector} onAdd={() => { setEditingSector(null); handleNavigate('SECTOR_FORM'); }} canEdit={can('MANAGE_SECTORS')} canDelete={can('MANAGE_SECTORS')} />;
       case 'SECTOR_FORM': return <SectorForm initialData={editingSector} onSave={handleSaveSector} onCancel={handleBack} onDelete={handleDeleteSector} />;
       case 'ALTERATION_TYPES': return <AlterationTypeManager types={alterationTypes} onAdd={async (name) => { const newType = { id: crypto.randomUUID(), name, order: alterationTypes.length }; await handleSaveAlterationType(newType); }} onEdit={(t) => { setEditingAlterationType(t); setView('ALTERATION_TYPE_FORM'); }} onDelete={handleDeleteAlterationType} onReorder={handleReorderAlterationTypes} canManage={can('MANAGE_ALTERATION_TYPES')} />;
