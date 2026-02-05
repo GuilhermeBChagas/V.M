@@ -23,12 +23,12 @@ const getBuildVersion = () => {
     const totalCommits = parseInt(execSync('git rev-list --count HEAD').toString().trim());
 
     // Vercel/CI usually has a shallow clone depth of 10.
-    // If we detect we are in CI and the number is small (like 10), 
+    // If we detect we are in CI and the number is small (usually 10 on Vercel default settings), 
     // we use a base offset to restore the real count.
-    // Current total is 88. Let's use 78 as base if we see 10.
+    // NOTE: To fix this permanently, set GIT_CLONE_DEPTH=0 in Vercel Environment Variables.
     let finalCount = totalCommits;
-    if (isCI && totalCommits <= 15) {
-      const BASE_COMMITS = 78; // Commits before the current shallow window
+    if (isCI && totalCommits <= 50) {
+      const BASE_COMMITS = 99; // Commits before the current shallow window
       finalCount = BASE_COMMITS + totalCommits;
     }
 
