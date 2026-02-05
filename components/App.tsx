@@ -1789,11 +1789,27 @@ export function App() {
   };
 
   const handleLogin = async (identifier: string, password: string) => {
+    let clientIP = 'Não identificado';
+    try {
+      if (navigator.onLine) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          clientIP = data.ip || 'Não identificado';
+        }
+      }
+    } catch (e) {
+      console.warn('Falha ao obter IP:', e);
+    }
+
     if (isLocalMode && identifier === '00') {
       if (password === 'admin') {
         const emergencyUser: User = { id: 'emergency-master', name: 'SUPERVISOR (CONTINGÊNCIA)', role: UserRole.ADMIN, cpf: '000.000.000-00', matricula: 'EMERGENCY', userCode: '00', status: 'ACTIVE' };
         setUser(emergencyUser); localStorage.setItem('vigilante_session', JSON.stringify(emergencyUser)); localStorage.setItem('app_version', APP_VERSION);
-        createLog('LOGIN', 'Acesso de contingência (Admin)', emergencyUser);
+        createLog('LOGIN', `Acesso de contingência (Admin) - IP: ${clientIP}`, emergencyUser);
         return;
       } else { throw new Error("Senha de contingência incorreta."); }
     }
@@ -1851,7 +1867,7 @@ export function App() {
     setUser(dbUser);
     localStorage.setItem('vigilante_session', JSON.stringify(dbUser));
     localStorage.setItem('app_version', APP_VERSION);
-    createLog('LOGIN', isOfflineLogin ? 'Acesso Offline (Cache)' : 'Acesso realizado via credenciais', dbUser);
+    createLog('LOGIN', isOfflineLogin ? `Acesso Offline (Cache) - IP: ${clientIP}` : `Acesso realizado via credenciais - IP: ${clientIP}`, dbUser);
     if (isOfflineLogin) showAlert("Modo Offline", "Login realizado com credenciais em cache.");
   };
 
