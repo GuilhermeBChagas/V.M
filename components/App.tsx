@@ -1408,9 +1408,22 @@ export function App() {
   const handleDeleteSector = (id: string) => {
     if (!can('MANAGE_SECTORS')) return showError('Acesso Negado', 'Sem permissão.');
     if (saving) return;
-    showConfirm("Remover Setor", "Deseja realmente remover este setor?", async () => {
+    showConfirm("Remover Setor", "Deseja realmente remover este setor? Isso pode falhar se houver prédios ou usuários vinculados.", async () => {
       setSaving(true);
-      try { await supabase.from('sectors').delete().eq('id', id); fetchStaticData(); handleNavigate('SECTORS'); } catch (err: any) { showError("Erro", err.message); } finally { setSaving(false); }
+      try {
+        const { error } = await supabase.from('sectors').delete().eq('id', id);
+        if (error) {
+          if (error.code === '23503') throw new Error("Não é possível remover este setor pois existem Prédios ou Vínculos dependentes dele.");
+          throw error;
+        }
+        fetchStaticData();
+        createLog('DELETE_SECTOR', `Excluiu setor ID: ${id}`);
+        handleNavigate('SECTORS');
+      } catch (err: any) {
+        showError("Erro", err.message);
+      } finally {
+        setSaving(false);
+      }
     });
   };
 
@@ -1419,7 +1432,20 @@ export function App() {
     if (saving) return;
     showConfirm("Remover Tipo", "Deseja realmente remover este tipo de alteração?", async () => {
       setSaving(true);
-      try { await supabase.from('alteration_types').delete().eq('id', id); fetchStaticData(); handleNavigate('ALTERATION_TYPES'); } catch (err: any) { showError("Erro", err.message); } finally { setSaving(false); }
+      try {
+        const { error } = await supabase.from('alteration_types').delete().eq('id', id);
+        if (error) {
+          if (error.code === '23503') throw new Error("Não é possível remover este tipo pois existem R.As que o utilizam.");
+          throw error;
+        }
+        fetchStaticData();
+        createLog('DELETE_ALTERATION_TYPE', `Excluiu tipo RA ID: ${id}`);
+        handleNavigate('ALTERATION_TYPES');
+      } catch (err: any) {
+        showError("Erro", err.message);
+      } finally {
+        setSaving(false);
+      }
     });
   };
 
@@ -1674,12 +1700,23 @@ export function App() {
   const handleDeleteJobTitle = (id: string) => {
     if (!can('MANAGE_JOB_TITLES')) return showError('Acesso Negado', 'Sem permissão.');
     showConfirm("Remover Cargo", "Deseja realmente remover este cargo?", async () => {
+      setSaving(true);
       try {
+        const { error } = await supabase.from('job_titles').delete().eq('id', id);
+        if (error) {
+          if (error.code === '23503') throw new Error("Não é possível remover este cargo pois existem usuários vinculados a ele.");
+          throw error;
+        }
         const newJobTitles = jobTitles.filter(j => j.id !== id);
         await supabase.from('app_config').upsert({ key: 'system_job_titles', value: JSON.stringify(newJobTitles) });
         setJobTitles(newJobTitles);
+        createLog('DELETE_JOB_TITLE', `Excluiu cargo ID: ${id}`);
         handleNavigate('JOB_TITLES');
-      } catch (err: any) { showError("Erro", err.message); }
+      } catch (err: any) {
+        showError("Erro", err.message);
+      } finally {
+        setSaving(false);
+      }
     });
   };
 
@@ -1736,7 +1773,19 @@ export function App() {
     if (saving) return;
     showConfirm("Excluir Item", "Tem certeza?", async () => {
       setSaving(true);
-      try { await supabase.from(table).delete().eq('id', id); fetchAssets(); } catch (err: any) { showError("Erro", err.message); } finally { setSaving(false); }
+      try {
+        const { error } = await supabase.from(table).delete().eq('id', id);
+        if (error) {
+          if (error.code === '23503') throw new Error("Este item não pode ser excluído pois possui histórico de Cautelas ou R.As vinculado a ele. Recomenda-se apenas manter o item inativo.");
+          throw error;
+        }
+        fetchAssets();
+        createLog('DELETE_ASSET', `Removeu do inventário (${table}) ID: ${id}`);
+      } catch (err: any) {
+        showError("Erro", err.message);
+      } finally {
+        setSaving(false);
+      }
     });
   };
 
@@ -1767,16 +1816,46 @@ export function App() {
   const handleDeleteUser = (id: string) => {
     if (!can('MANAGE_USERS')) return showError('Acesso Negado', 'Você não tem permissão para excluir usuários.');
     if (saving) return;
-    showConfirm("Remover Usuário", "Deseja realmente remover?", async () => {
+
+    showConfirm("Remover Usuário", "Deseja realmente remover este usuário permanentemente? Esta ação não pode ser desfeita.", async () => {
       setSaving(true);
-      try { await supabase.from('users').delete().eq('id', id); fetchUsers(); } catch (err: any) { showError("Erro", err.message); } finally { setSaving(false); }
+      try {
+        const { error } = await supabase.from('users').delete().eq('id', id);
+
+        if (error) {
+          if (error.code === '23503') {
+            throw new Error("Não é possível excluir este usuário pois ele possui registros vinculados ao CPF/Matrícula (R.As, Cautelas ou Mensagens). Para segurança dos dados, recomenda-se apenas BLOQUEAR o acesso do usuário.");
+          }
+          throw error;
+        }
+
+        fetchUsers();
+        createLog('DELETE_USER', `Excluiu usuário ID: ${id}`);
+      } catch (err: any) {
+        showError("Erro ao excluir", err.message);
+      } finally {
+        setSaving(false);
+      }
     });
   };
 
   const handleDeleteBuilding = (id: string) => {
     if (!can('MANAGE_BUILDINGS')) return showError('Acesso Negado', 'Sem permissão.');
     showConfirm("Remover Prédio", "Deseja excluir esta unidade?", async () => {
-      try { await supabase.from('buildings').delete().eq('id', id); fetchStaticData(); } catch (any) { showError("Erro", "Falha ao remover."); }
+      setSaving(true);
+      try {
+        const { error } = await supabase.from('buildings').delete().eq('id', id);
+        if (error) {
+          if (error.code === '23503') throw new Error("Não é possível remover este prédio pois ele possui R.As (Relatórios) vinculados a ele.");
+          throw error;
+        }
+        fetchStaticData();
+        createLog('DELETE_BUILDING', `Excluiu unidade (prédio) ID: ${id}`);
+      } catch (err: any) {
+        showError("Erro ao remover", err.message);
+      } finally {
+        setSaving(false);
+      }
     });
   };
 

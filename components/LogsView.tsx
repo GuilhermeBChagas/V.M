@@ -45,6 +45,11 @@ export const LogsView: React.FC<LogsViewProps> = ({ logs, onTestLog }) => {
       case 'UPDATE_PERMISSIONS': return <Shield className="text-red-500" size={16} />;
       case 'MANAGE_SETTINGS': return <Settings className="text-slate-600 dark:text-slate-400" size={16} />;
       case 'DATABASE_TOOLS': return <Database className="text-blue-500" size={16} />;
+      case 'DELETE_USER': return <Trash2 className="text-red-600" size={16} />;
+      case 'DELETE_BUILDING':
+      case 'DELETE_SECTOR':
+      case 'DELETE_JOB_TITLE':
+      case 'DELETE_ALTERATION_TYPE': return <Trash2 className="text-slate-400" size={16} />;
 
       default: return <History className="text-slate-400" size={16} />;
     }
@@ -59,7 +64,12 @@ export const LogsView: React.FC<LogsViewProps> = ({ logs, onTestLog }) => {
       case 'CREATE_INCIDENT': return 'Novo RA';
       case 'UPDATE_INCIDENT': return 'Edição RA';
       case 'APPROVE_INCIDENT': return 'Validação';
-      case 'DELETE_RESOURCE': return 'Exclusão RA';
+      case 'DELETE_RESOURCE': return 'Exclusão';
+      case 'DELETE_USER': return 'Exclusão Usuário';
+      case 'DELETE_BUILDING': return 'Exclusão Unidade';
+      case 'DELETE_SECTOR': return 'Exclusão Setor';
+      case 'DELETE_JOB_TITLE': return 'Exclusão Cargo';
+      case 'DELETE_ALTERATION_TYPE': return 'Exclusão Tipo RA';
 
       // Usuários
       case 'USER_REGISTER': return 'Cadastro Usuário';
