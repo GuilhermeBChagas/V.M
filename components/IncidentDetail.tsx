@@ -1,7 +1,7 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Incident, Building, User } from '../types';
-import { ArrowLeft, Pencil, CheckCircle, XCircle, Download, Loader2, Ban, ShieldCheck, Printer, WifiOff, Share2 } from 'lucide-react';
+import { ArrowLeft, Pencil, CheckCircle, XCircle, Download, Loader2, Ban, ShieldCheck, Printer, WifiOff, Share2, Settings } from 'lucide-react';
 import { formatDateBR } from '../utils/dateUtils';
 
 declare var html2pdf: any;
@@ -34,6 +34,16 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
     const [isExporting, setIsExporting] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
+    const [pdfMargins, setPdfMargins] = useState(() => {
+        const saved = localStorage.getItem('app_pdf_margins_detail');
+        return saved ? JSON.parse(saved) : { top: 5, right: 5, bottom: 5, left: 5 };
+    });
+
+    useEffect(() => {
+        localStorage.setItem('app_pdf_margins_detail', JSON.stringify(pdfMargins));
+    }, [pdfMargins]);
+
+    const [showMarginSettings, setShowMarginSettings] = useState(false);
 
     // Determina se exibe a barra de ferramentas (se tiver pelo menos uma permissão)
     const showToolbar = canEdit || canDelete || canApprove;
@@ -47,7 +57,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
         const element = contentRef.current;
 
         const opt = {
-            margin: 0,
+            margin: [pdfMargins.top, pdfMargins.left, pdfMargins.bottom, pdfMargins.right],
             filename: `RA_${incident.raCode.replace('/', '-')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
@@ -66,7 +76,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
             const element = contentRef.current;
             // Captura o elemento como canvas usando o motor do html2pdf
             html2pdf().set({
-                margin: 0,
+                margin: [pdfMargins.top, pdfMargins.left, pdfMargins.bottom, pdfMargins.right],
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 3, useCORS: true, scrollY: 0 }
             }).from(element).toCanvas().get('canvas').then((canvas: HTMLCanvasElement) => {
@@ -268,6 +278,13 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     <span>VOLTAR</span>
                 </button>
                 <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                        onClick={() => setShowMarginSettings(!showMarginSettings)}
+                        className={`px-3 h-10 rounded-lg border-2 transition-all no-print ${showMarginSettings ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600'}`}
+                        title="Ajustar Margens"
+                    >
+                        <Settings size={18} />
+                    </button>
                     <button onClick={handleShareImage} disabled={isSharing} className="flex-1 sm:flex-none px-3 sm:px-6 h-10 bg-blue-600 dark:bg-blue-700 text-white rounded-lg font-black text-[9px] sm:text-[10px] uppercase flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
                         {isSharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
                         <span className="whitespace-nowrap">{isSharing ? 'GERANDO' : 'COMPARTILHAR'}</span>
@@ -278,6 +295,54 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     </button>
                 </div>
             </div>
+
+            {/* Margin Settings Panel */}
+            {showMarginSettings && (
+                <div className="max-w-[210mm] mx-auto mb-6 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 animate-in slide-in-from-top-2 no-print shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Settings size={14} className="text-blue-500" />
+                        <h4 className="text-[10px] font-black uppercase text-slate-600 tracking-widest">Ajuste de Margens do PDF (mm)</h4>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div>
+                            <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Topo</label>
+                            <input
+                                type="number"
+                                value={pdfMargins.top}
+                                onChange={e => setPdfMargins({ ...pdfMargins, top: parseInt(e.target.value) || 0 })}
+                                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Inferior</label>
+                            <input
+                                type="number"
+                                value={pdfMargins.bottom}
+                                onChange={e => setPdfMargins({ ...pdfMargins, bottom: parseInt(e.target.value) || 0 })}
+                                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Esquerda</label>
+                            <input
+                                type="number"
+                                value={pdfMargins.left}
+                                onChange={e => setPdfMargins({ ...pdfMargins, left: parseInt(e.target.value) || 0 })}
+                                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Direita</label>
+                            <input
+                                type="number"
+                                value={pdfMargins.right}
+                                onChange={e => setPdfMargins({ ...pdfMargins, right: parseInt(e.target.value) || 0 })}
+                                className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* --- ÁREA DE IMPRESSÃO / RELATÓRIO (FOLHA A4) --- */}
             <div className="w-full overflow-x-auto md:overflow-x-visible pb-6">

@@ -6,7 +6,7 @@ import {
     ArrowRightLeft, History, Plus, Search, User as UserIcon,
     Car, Shield, Radio as RadioIcon, Package, CheckCircle,
     XCircle, Clock, Calendar, ChevronRight, ChevronDown, CornerDownLeft,
-    AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download, X, QrCode
+    AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download, X, QrCode, Settings
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { normalizeString } from '../utils/stringUtils';
@@ -61,6 +61,16 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     const [dateEnd, setDateEnd] = useState('');
     const [timeStart, setTimeStart] = useState('');
     const [timeEnd, setTimeEnd] = useState('');
+    const [pdfMargins, setPdfMargins] = useState(() => {
+        const saved = localStorage.getItem('app_pdf_margins_loans');
+        return saved ? JSON.parse(saved) : { top: 12, right: 8, bottom: 12, left: 8 };
+    });
+
+    useEffect(() => {
+        localStorage.setItem('app_pdf_margins_loans', JSON.stringify(pdfMargins));
+    }, [pdfMargins]);
+
+    const [showMarginSettings, setShowMarginSettings] = useState(false);
 
     useEffect(() => {
         if (onFilterChange) {
@@ -163,7 +173,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             : `Relatorio_Historico_${historyItemId}_${new Date().toISOString().split('T')[0]}.pdf`;
 
         const opt = {
-            margin: [12, 8, 12, 8],
+            margin: [pdfMargins.top, pdfMargins.left, pdfMargins.bottom, pdfMargins.right],
             filename: filename,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
@@ -1015,7 +1025,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         setIsExporting(true);
         const element = printRef.current;
         const opt = {
-            margin: [10, 10, 10, 10],
+            margin: [pdfMargins.top, pdfMargins.left, pdfMargins.bottom, pdfMargins.right],
             filename: `Relatorio_Cautelas_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true },
@@ -1079,15 +1089,24 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                             <span className="hidden sm:inline">Filtros</span>
                         </button>
                         {(activeTab === 'HISTORY' || isReportView) && (
-                            <button
-                                onClick={() => (activeTab === 'HISTORY' && historyMode === 'ITEM') ? handleExportHistoryPDF() : handleExportPDF()}
-                                disabled={isExporting}
-                                className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 dark:from-slate-700 dark:to-slate-800 dark:hover:from-slate-600 dark:hover:to-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 transition-all duration-200 disabled:opacity-50"
-                            >
-                                {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                                <span className="hidden sm:inline">Exportar</span>
-                                <span className="sm:hidden">PDF</span>
-                            </button>
+                            <div className="flex gap-1">
+                                <button
+                                    onClick={() => (activeTab === 'HISTORY' && historyMode === 'ITEM') ? handleExportHistoryPDF() : handleExportPDF()}
+                                    disabled={isExporting}
+                                    className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 dark:from-slate-700 dark:to-slate-800 dark:hover:from-slate-600 dark:hover:to-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 transition-all duration-200 disabled:opacity-50"
+                                >
+                                    {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                                    <span className="hidden sm:inline">Exportar</span>
+                                    <span className="sm:hidden">PDF</span>
+                                </button>
+                                <button
+                                    onClick={() => setShowMarginSettings(!showMarginSettings)}
+                                    className={`px-3 py-3 rounded-xl border-2 transition-all ${showMarginSettings ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600'}`}
+                                    title="Ajustar Margens"
+                                >
+                                    <Settings size={18} />
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -1130,6 +1149,54 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                 onChange={e => setTimeEnd(e.target.value)}
                                 className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
                             />
+                        </div>
+                    </div>
+                )}
+
+                {/* Margin Settings Panel */}
+                {showMarginSettings && (
+                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-top-2">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Settings size={14} className="text-blue-500" />
+                            <h4 className="text-[10px] font-black uppercase text-slate-600 tracking-widest">Ajuste de Margens do PDF (mm)</h4>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div>
+                                <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Topo</label>
+                                <input
+                                    type="number"
+                                    value={pdfMargins.top}
+                                    onChange={e => setPdfMargins({ ...pdfMargins, top: parseInt(e.target.value) || 0 })}
+                                    className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Inferior</label>
+                                <input
+                                    type="number"
+                                    value={pdfMargins.bottom}
+                                    onChange={e => setPdfMargins({ ...pdfMargins, bottom: parseInt(e.target.value) || 0 })}
+                                    className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Esquerda</label>
+                                <input
+                                    type="number"
+                                    value={pdfMargins.left}
+                                    onChange={e => setPdfMargins({ ...pdfMargins, left: parseInt(e.target.value) || 0 })}
+                                    className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Direita</label>
+                                <input
+                                    type="number"
+                                    value={pdfMargins.right}
+                                    onChange={e => setPdfMargins({ ...pdfMargins, right: parseInt(e.target.value) || 0 })}
+                                    className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
                         </div>
                     </div>
                 )}
