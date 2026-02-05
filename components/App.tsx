@@ -1751,7 +1751,9 @@ export function App() {
     setSaving(true);
     try {
       await supabase.from('incidents').update({ status: 'APPROVED', approved_by: user?.name, approved_at: new Date().toISOString() }).eq('id', id);
-      fetchIncidents(); handleNavigate('HISTORY');
+      fetchIncidents();
+      setPendingSubTab('INCIDENTS');
+      handleNavigate('PENDING_APPROVALS');
     } catch (err: any) { showError("Falha", err.message); } finally { setSaving(false); }
   };
 
