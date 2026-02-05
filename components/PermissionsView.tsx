@@ -53,6 +53,7 @@ const PERMISSION_GROUPS = [
       { key: 'MANAGE_SECTORS', label: 'Gerenciar Setores' },
       { key: 'MANAGE_JOB_TITLES', label: 'Gerenciar Cargos e Funções' },
       { key: 'MANAGE_ALTERATION_TYPES', label: 'Gerenciar Tipos de Alteração' },
+      { key: 'MANAGE_ESCALAS', label: 'Gerenciar Escalas de Serviço' },
       { key: 'MANAGE_VEHICLES', label: 'Gerenciar Veículos' },
       { key: 'MANAGE_VESTS', label: 'Gerenciar Coletes' },
       { key: 'MANAGE_RADIOS', label: 'Gerenciar Rádios' },

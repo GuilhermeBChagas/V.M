@@ -46,6 +46,7 @@ export type PermissionKey =
   | 'MANAGE_SECTORS'
   | 'MANAGE_JOB_TITLES'
   | 'MANAGE_ALTERATION_TYPES'
+  | 'MANAGE_ESCALAS'
   | 'MANAGE_ANNOUNCEMENTS'
   | 'ACCESS_TOOLS'
   | 'EXPORT_REPORTS';
@@ -166,6 +167,26 @@ export interface Radio {
   serialNumber: string;  // Numero de Serie
 }
 
+export interface Escala {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  description?: string;
+}
+
+export interface EscalaReminder {
+  id: string;
+  escalaId: string;
+  name: string;
+  minutesBeforeEnd: number;
+  message: string;
+  actionType: 'MESSAGE' | 'NAVIGATE';
+  actionPayload?: any; // e.g. { view: 'IMPORT_EXPORT' }
+  isActive: boolean;
+  lastTriggeredDate?: string; // To prevent multiple triggers on same day
+}
+
 export interface Equipment {
   id: string;
   name: string;
@@ -263,4 +284,6 @@ export type ViewState =
   | 'LOAN_HISTORY'
   | 'ANNOUNCEMENTS'
   | 'IMPORT_EXPORT'
+  | 'ESCALAS' | 'ESCALA_FORM'
+  | 'ESCALA_REMINDERS'
   | 'MAP';

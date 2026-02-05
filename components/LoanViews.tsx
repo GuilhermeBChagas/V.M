@@ -153,7 +153,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             : `Relatorio_Historico_${historyItemId}_${new Date().toISOString().split('T')[0]}.pdf`;
 
         const opt = {
-            margin: [2, 6, 0, 6],
+            margin: [12, 8, 12, 8],
             filename: filename,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },

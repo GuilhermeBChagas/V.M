@@ -5,7 +5,7 @@ import { announcementService } from '../services/announcementService';
 
 interface NotificationItem {
     id: string;
-    type: 'INCIDENT' | 'LOAN' | 'ANNOUNCEMENT' | 'USER_REGISTRATION';
+    type: 'INCIDENT' | 'LOAN' | 'ANNOUNCEMENT' | 'USER_REGISTRATION' | 'SCHEDULE_REMINDER';
     title: string;
     description: string;
     timestamp: string;
@@ -18,8 +18,10 @@ interface NotificationCenterProps {
     incidents: Incident[];
     loans: LoanRecord[];
     pendingUsers?: User[];
+    extraNotifications?: NotificationItem[];
     canManageUsers?: boolean;
     onNavigate: (view: string, data?: any) => void;
+    onDismissExtra?: (id: string) => void;
     onAnnouncementRead: () => void;
 }
 
@@ -28,8 +30,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     incidents,
     loans,
     pendingUsers = [],
+    extraNotifications = [],
     canManageUsers = false,
     onNavigate,
+    onDismissExtra,
     onAnnouncementRead
 }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -138,6 +142,13 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 });
             }
 
+            // 5. Extra Notifications (Scale/Reminders from Parent)
+            extraNotifications.forEach(notif => {
+                if (!dismissedIds.includes(notif.id)) {
+                    allNotifications.push(notif);
+                }
+            });
+
             // Sort by Date Descending
             allNotifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
@@ -150,10 +161,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     };
 
     useEffect(() => {
-        if (isOpen || incidents || loans || pendingUsers.length > 0) { // Refetch when data changes or menu opens
+        if (isOpen || incidents || loans || pendingUsers.length > 0 || extraNotifications.length > 0) { // Refetch when data changes or menu opens
             fetchNotifications();
         }
-    }, [isOpen, incidents, loans, pendingUsers, dismissedIds]); // Added dismissedIds dep to refresh filter
+    }, [isOpen, incidents, loans, pendingUsers, extraNotifications, dismissedIds]); // Added dismissedIds dep to refresh filter
 
     const handleItemClick = async (notif: NotificationItem) => {
         // 1. Mark as Read locally/remotely
@@ -198,6 +209,13 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 onNavigate('USERS');
                 setIsOpen(false);
                 break;
+            case 'SCHEDULE_REMINDER':
+                if (notif.data && notif.data.actionType === 'NAVIGATE') {
+                    // Impõe o HISTÓRICO DE ATENDIMENTOS como destino padrão
+                    onNavigate('HISTORY');
+                }
+                setIsOpen(false);
+                break;
         }
     };
 
@@ -217,6 +235,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             case 'LOAN': return <Shield size={16} className="text-blue-500" />;
             case 'ANNOUNCEMENT': return <Megaphone size={16} className="text-purple-500" />;
             case 'USER_REGISTRATION': return <Shield size={16} className="text-rose-500" />;
+            case 'SCHEDULE_REMINDER': return <Calendar size={16} className="text-indigo-500" />;
             default: return <Bell size={16} />;
         }
     };
@@ -298,12 +317,23 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                                     </p>
 
                                     <div className="mt-3 flex justify-end items-center gap-2">
-                                        {notif.status === 'READ' && (
+                                        {(notif.status === 'READ' || notif.type === 'SCHEDULE_REMINDER') && (
                                             <button
-                                                onClick={(e) => handleDismiss(e, notif.id)}
+                                                onClick={(e) => {
+                                                    handleDismiss(e, notif.id);
+                                                    if (notif.type === 'SCHEDULE_REMINDER') onDismissExtra?.(notif.id);
+                                                }}
                                                 className="flex items-center gap-1 px-3 py-1.5 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg text-[9px] font-black uppercase transition-colors"
                                             >
-                                                <Trash2 size={10} /> Remover
+                                                <Trash2 size={10} /> {notif.type === 'SCHEDULE_REMINDER' ? 'Ignorar' : 'Remover'}
+                                            </button>
+                                        )}
+                                        {notif.type === 'SCHEDULE_REMINDER' && notif.data?.actionType === 'NAVIGATE' && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleItemClick(notif); }}
+                                                className="flex items-center gap-1 px-3 py-1.5 bg-indigo-500 text-white hover:bg-indigo-600 rounded-lg text-[9px] font-black uppercase transition-all active:scale-95 shadow-lg shadow-indigo-500/20"
+                                            >
+                                                {notif.data.actionPayload?.view === 'HISTORY' ? 'Exportar Agora' : 'Acessar'}
                                             </button>
                                         )}
                                         {notif.status === 'UNREAD' && (

@@ -22,9 +22,9 @@ import { LoanViews } from './LoanViews';
 import { MapView } from './MapView';
 import AnnouncementManager from './AnnouncementManager';
 import { announcementService } from '../services/announcementService';
-import { User, Building, Incident, ViewState, UserRole, Sector, JobTitle, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides } from '../types';
+import { User, Building, Incident, ViewState, UserRole, Sector, JobTitle, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides, Escala, EscalaReminder } from '../types';
 import { MENU_STRUCTURE, MenuItemDef } from '../constants/menuStructure';
-import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Check, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, WifiOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone } from 'lucide-react';
+import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Check, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, ArrowLeft, CloudOff, WifiOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone, ShieldCheck } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
 import CryptoJS from 'crypto-js';
@@ -77,6 +77,7 @@ const DEFAULT_PERMISSIONS: SystemPermissionMap = {
   MANAGE_SECTORS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   MANAGE_JOB_TITLES: [UserRole.ADMIN, UserRole.SUPERVISOR],
   MANAGE_ALTERATION_TYPES: [UserRole.ADMIN, UserRole.SUPERVISOR],
+  MANAGE_ESCALAS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   MANAGE_ANNOUNCEMENTS: [UserRole.ADMIN, UserRole.SUPERVISOR],
   ACCESS_TOOLS: [UserRole.ADMIN],
   EXPORT_REPORTS: [UserRole.ADMIN, UserRole.SUPERVISOR]
@@ -231,16 +232,20 @@ const IncidentHistory: React.FC<{
   canApprove: boolean;
   canExport: boolean;
   canViewAll?: boolean;
+  jobTitles: JobTitle[];
 }> = (props) => {
   const { incidents, buildings, onView, onEdit, onDelete, onApprove,
     filterStatus, currentUser, customLogo, customLogoLeft, loans = [], onConfirmLoanBatch,
-    onLoadMore, hasMore, isLoadingMore, canEdit, canDelete, canApprove, canExport, canViewAll = false } = props;
+    onLoadMore, hasMore, isLoadingMore, canEdit, canDelete, canApprove, canExport, canViewAll = false, jobTitles } = props;
   const [search, setSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
   const [timeStart, setTimeStart] = useState('');
   const [timeEnd, setTimeEnd] = useState('');
+  const [exportIP, setExportIP] = useState<string>('');
+  const [exportDate, setExportDate] = useState<string>('');
+  const [exportHash, setExportHash] = useState<string>('');
 
   const [statusFilter, setStatusFilter] = useState<'APPROVED' | 'CANCELLED' | 'PENDING'>(
     filterStatus === 'PENDING' ? 'PENDING' : 'APPROVED'
@@ -249,6 +254,17 @@ const IncidentHistory: React.FC<{
   useEffect(() => {
     setStatusFilter(filterStatus === 'PENDING' ? 'PENDING' : 'APPROVED');
   }, [filterStatus]);
+
+  const fetchClientIP = async () => {
+    try {
+      const res = await fetch('https://api.ipify.org?format=json');
+      if (res.ok) {
+        const data = await res.json();
+        return data.ip || '---';
+      }
+    } catch (e) { console.warn('Falha IP:', e); }
+    return '---';
+  };
 
   const printRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -303,18 +319,44 @@ const IncidentHistory: React.FC<{
     );
   });
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (!printRef.current || typeof html2pdf === 'undefined') return;
     setIsExporting(true);
-    const element = printRef.current;
-    const opt = {
-      margin: [5, 5, 5, 5],
-      filename: `Relatorio_Atendimentos_${new Date().toISOString().split('T')[0]}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-    };
-    html2pdf().set(opt).from(element).save().then(() => setIsExporting(false));
+
+    // Captura metadados para assinatura
+    const ip = await fetchClientIP();
+    const now = new Date();
+    const isoDate = now.toISOString();
+    const formattedDate = now.toLocaleString('pt-BR');
+
+    // --- ASSINATURA ELETRÔNICA DE SEGURANÇA (HASHING) ---
+    // Snapshot dos dados do relatório para integridade
+    const dataSnapshot = `REPORT_EXPORT|USER:${currentUser?.id}|DATE:${isoDate}|IP:${ip}|COUNT:${displayIncidents.length}`;
+    const hash = CryptoJS.SHA256(dataSnapshot).toString();
+
+    setExportIP(ip);
+    setExportDate(formattedDate);
+    setExportHash(hash);
+
+    // Pequeno delay para garantir que o React renderizou o IP/Data no DOM oculto
+    setTimeout(() => {
+      const element = printRef.current;
+      const opt = {
+        margin: [15, 8, 15, 8],
+        filename: `Relatorio_Atendimentos_${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+          scrollY: 0,
+          windowWidth: document.documentElement.offsetWidth
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['css', 'legacy'] }
+      };
+      html2pdf().set(opt).from(element).save().then(() => setIsExporting(false));
+    }, 100);
   };
 
   return (
@@ -476,10 +518,9 @@ const IncidentHistory: React.FC<{
 
       {/* Hidden Export Area */}
       <div className="hidden">
-        <div ref={printRef} className="p-6 bg-white text-black" style={{ width: '280mm', minHeight: '180mm', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-          {/* Cabecalho Institucional conforme imagem */}
-          <div className="flex justify-center items-center mb-8 gap-12">
-            <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center">
+        <div ref={printRef} className="p-6 bg-white text-black" style={{ width: '280mm', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+          <div className="flex justify-center items-start mb-4 gap-12 pt-4">
+            <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center mt-1">
               {customLogoLeft ? (
                 <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Esquerda" />
               ) : (
@@ -499,7 +540,7 @@ const IncidentHistory: React.FC<{
               <h3 className="text-[12px] font-bold uppercase text-blue-600 mt-1 tracking-wider">
                 CENTRO DE MONITORAMENTO MUNICIPAL
               </h3>
-              <div className="mt-8 inline-block px-8 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-[13px] font-black uppercase tracking-[0.15em] text-slate-700 shadow-sm">
+              <div className="mt-3 inline-block px-8 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-[13px] font-black uppercase tracking-[0.15em] text-slate-700 shadow-sm">
                 Relatório Geral de Atendimentos
               </div>
               {(dateStart || dateEnd) && (
@@ -509,7 +550,7 @@ const IncidentHistory: React.FC<{
               )}
             </div>
 
-            <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center">
+            <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center mt-1">
               {customLogo ? (
                 <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão Direita" />
               ) : (
@@ -520,9 +561,8 @@ const IncidentHistory: React.FC<{
             </div>
           </div>
 
-          {/* Tabela de Dados */}
           <table className="w-full border-collapse border border-slate-900">
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr className="bg-slate-100">
                 <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[80px]">Número R.A</th>
                 <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[150px]">Local</th>
@@ -551,9 +591,44 @@ const IncidentHistory: React.FC<{
             </tbody>
           </table>
 
-          <div className="mt-6 flex justify-between text-[8px] font-black uppercase text-slate-400">
-            <span>Relatório gerado em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</span>
-            <span>Página 1 de 1</span>
+          <div className="mt-8 flex justify-between items-end border-t border-slate-100 pt-6">
+            <div className="text-[8px] font-black uppercase text-slate-400">
+              <span>Gerado em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</span><br />
+              <span>Sistema Vigilante Municipal</span>
+            </div>
+
+            {/* Assinatura Digital do Exportador */}
+            <div className="flex flex-col items-center min-w-[280px]">
+              <span className="text-[12px] font-black text-slate-900 uppercase leading-none mb-1">
+                {currentUser?.name || '---'}
+              </span>
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3">
+                {jobTitles.find(jt => jt.id === currentUser?.jobTitleId)?.name ||
+                  (currentUser?.role === 'Nível 5' ? 'ADMINISTRADOR' : 'OPERADOR')}
+              </span>
+
+              <div className="flex flex-col items-center border-t border-slate-200 pt-2 w-full">
+                <span className="text-[7px] font-bold uppercase text-slate-500 tracking-widest flex items-center gap-1 mb-0.5">
+                  <ShieldCheck size={10} className="text-blue-600" /> ASSINADO ELETRONICAMENTE
+                </span>
+                <span className="text-[8px] font-mono font-bold text-slate-400 block uppercase">
+                  DATA: {exportDate || new Date().toLocaleString('pt-BR')}
+                </span>
+                {exportIP && (
+                  <span className="text-[7px] font-mono text-slate-400 block mt-0.5">
+                    IP: {exportIP}
+                  </span>
+                )}
+                {exportHash && (
+                  <div className="mt-1.5 flex flex-col items-center">
+                    <span className="text-[5px] font-black text-slate-300 uppercase leading-none mb-0.5 tracking-tighter">Assinatura Digital de Integridade</span>
+                    <span className="text-[5px] font-mono text-slate-400 break-all text-center max-w-[220px] leading-tight">
+                      {exportHash}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1004,6 +1079,9 @@ export function App() {
   const [radios, setRadios] = useState<Radio[]>([]);
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [loans, setLoans] = useState<LoanRecord[]>([]);
+  const [escalas, setEscalas] = useState<Escala[]>([]);
+  const [escalaReminders, setEscalaReminders] = useState<EscalaReminder[]>([]);
+  const [triggeredReminders, setTriggeredReminders] = useState<any[]>([]);
   const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0);
   const [announcementsRevision, setAnnouncementsRevision] = useState(0);
 
@@ -1022,6 +1100,7 @@ export function App() {
 
   const fetchLockRef = useRef(false);
   const [dbError, setDbError] = useState<string | null>(null);
+  const [reminderManagingEscala, setReminderManagingEscala] = useState<Escala | null>(null);
   const [showDbSetup, setShowDbSetup] = useState(false);
   const [isLocalMode, setIsLocalMode] = useState(false);
   const [unsyncedIncidents, setUnsyncedIncidents] = useState<Incident[]>([]);
@@ -1039,6 +1118,7 @@ export function App() {
   const [editingRadio, setEditingRadio] = useState<Radio | null>(null);
 
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
+  const [editingEscala, setEditingEscala] = useState<Escala | null>(null);
 
   // Cancellation Modal State
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; incidentId: string; reason: string }>({ isOpen: false, incidentId: '', reason: '' });
@@ -1068,7 +1148,7 @@ export function App() {
     try {
       let finalData: Incident[] = [];
       // Columns for LIST view - exclude heavy description and photos
-      const listColumns = 'id, ra_code, building_id, user_id, operator_name, date, start_time, end_time, alteration_type, status, timestamp, is_edited, last_edited_at, edited_by, created_ip, updated_ip, approved_ip, signature_hash, approved_by, approved_at';
+      const listColumns = 'id, ra_code, building_id, user_id, operator_name, date, start_time, end_time, alteration_type, status, timestamp, is_edited, last_edited_at, edited_by, created_ip, updated_ip, approved_ip, signature_hash, approved_by, approved_at, created_at';
 
       if (!isLoadMore) {
         const [pendingRes, historyRes] = await Promise.all([
@@ -1142,6 +1222,27 @@ export function App() {
     }
   }, [loanPage]);
 
+  const fetchEscalaReminders = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from('escala_reminders').select('*');
+      if (error) throw error;
+      if (data) setEscalaReminders(data);
+    } catch (e) {
+      console.warn("Falha ao buscar lembretes de escala.");
+    }
+  }, []);
+
+  const fetchEscalas = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from('escalas').select('*').order('name', { ascending: true });
+      if (error) throw error;
+      if (data) setEscalas(data);
+      fetchEscalaReminders();
+    } catch (e) {
+      console.warn("Falha ao buscar escalas. Tabela pode não existir ainda.");
+    }
+  }, [fetchEscalaReminders]);
+
   const fetchLogs = useCallback(async () => {
     try {
       const { data, error } = await supabase.from('system_logs').select('id, userId, userName, action, details, timestamp').order('timestamp', { ascending: false }).limit(100);
@@ -1163,7 +1264,8 @@ export function App() {
     if (bRes.data) setBuildings([...bRes.data].sort((a, b) => a.buildingNumber.localeCompare(b.buildingNumber, undefined, { numeric: true })));
     if (atRes.data) setAlterationTypes(atRes.data);
     if (jtRes.data && jtRes.data.value) setJobTitles(JSON.parse(jtRes.data.value));
-  }, []);
+    fetchEscalas();
+  }, [fetchEscalas]);
 
   const fetchAssets = useCallback(async () => {
     try {
@@ -1209,6 +1311,49 @@ export function App() {
     const targetUser = logUser || user;
     if (!targetUser) return;
     try { await supabase.from('system_logs').insert({ userId: targetUser.id, userName: targetUser.name, action, details, timestamp: new Date().toISOString() }); } catch (e) { }
+  };
+
+  const handleSaveEscala = async (escala: Escala) => {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('escalas').upsert(escala);
+      if (error) throw error;
+      fetchEscalas();
+      handleNavigate('ESCALAS');
+    } catch (e: any) { showError("Erro", e.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleDeleteEscala = async (id: string) => {
+    showConfirm("Remover Escala", "Confirmar exclusão desta escala?", async () => {
+      setSaving(true);
+      try {
+        const { error } = await supabase.from('escalas').delete().eq('id', id);
+        if (error) throw error;
+        fetchEscalas();
+      } catch (e: any) { showError("Erro", e.message); }
+      finally { setSaving(false); }
+    });
+  };
+
+  const handleSaveEscalaReminder = async (reminder: EscalaReminder) => {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('escala_reminders').upsert(reminder);
+      if (error) throw error;
+      fetchEscalaReminders();
+    } catch (e: any) { showError("Erro", e.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleDeleteEscalaReminder = async (id: string) => {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('escala_reminders').delete().eq('id', id);
+      if (error) throw error;
+      fetchEscalaReminders();
+    } catch (e: any) { showError("Erro", e.message); }
+    finally { setSaving(false); }
   };
 
   const showAlert = (title: string, message: string) => { setModalConfig({ isOpen: true, type: 'alert', title, message }); };
@@ -1648,6 +1793,82 @@ export function App() {
       clearInterval(heartbeat);
     };
   }, [unsyncedIncidents, saving]);
+
+  // --- ESCALA REMINDERS CHECKER ---
+  const triggeredIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!user || escalas.length === 0 || escalaReminders.length === 0) return;
+
+    const checkReminders = () => {
+      const now = new Date();
+      const currentDay = now.toISOString().split('T')[0];
+      const newTriggers: any[] = [];
+
+      escalaReminders.filter(r => r.isActive).forEach(reminder => {
+        const escala = escalas.find(e => e.id === reminder.escalaId);
+        if (!escala) return;
+
+        try {
+          const [endH, endM] = escala.endTime.split(':').map(Number);
+
+          // Calcula o alvo de encerramento mais próximo (hoje ou amanhã)
+          let endTarget = new Date();
+          endTarget.setHours(endH, endM, 0, 0);
+
+          // Se o alvo de hoje já passou há muito tempo (mais de 1h), 
+          // ou se estamos verificando uma escala que termina de manhã cedo e agora é noite,
+          // o alvo real pode ser o próximo dia.
+          // Mas para simplificar: se agora > endTarget, o próximo é amanhã.
+          // Exceto se estivermos "dentro" do intervalo de aviso (ex: 18:45 para as 19:00).
+
+          const triggerWindowMs = reminder.minutesBeforeEnd * 60000;
+          const triggerTarget = new Date(endTarget.getTime() - triggerWindowMs);
+
+          // Caso especial: se agora está entre trigger e end, dispara.
+          let shouldTrigger = false;
+
+          if (now >= triggerTarget && now < endTarget) {
+            shouldTrigger = true;
+          }
+          // Lógica para escalas que atravessam a meia-noite (fim as 07:00, agora é 06:45)
+          // Se o endTarget já passou hoje (ex: 07:00 passou e agora é 06:45?? Não, 06:45 vem ANTES de 07:00).
+          // O único problema é se o triggerTarget for ontem (ex: escala acaba as 00:15, trigger 30 min antes = 23:45 ontem).
+          else if (triggerTarget > endTarget) { // Trigger window cross midnight
+            const prevDayTrigger = new Date(triggerTarget.getTime() - 86400000);
+            if (now >= prevDayTrigger && now < endTarget) {
+              shouldTrigger = true;
+            }
+          }
+
+          if (shouldTrigger) {
+            const triggerId = `${reminder.id}_${currentDay}`;
+            if (!triggeredIdsRef.current.has(triggerId)) {
+              triggeredIdsRef.current.add(triggerId);
+              newTriggers.push({
+                id: triggerId,
+                type: 'SCHEDULE_REMINDER',
+                title: reminder.name,
+                description: reminder.message,
+                timestamp: now.toISOString(),
+                status: 'UNREAD',
+                data: { ...reminder, actionType: 'NAVIGATE', navigateTo: 'HISTORY' } // Force navigateTo HISTORY for old reminders
+              });
+            }
+          }
+        } catch (e) { console.warn("Error calculating reminder time", e); }
+      });
+
+      if (newTriggers.length > 0) {
+        setTriggeredReminders(prev => [...newTriggers, ...prev]);
+      }
+    };
+
+    const interval = setInterval(checkReminders, 20000); // Check every 20s
+    checkReminders();
+
+    return () => clearInterval(interval);
+  }, [user, escalas, escalaReminders]);
 
 
   const handleConfirmLoanBatch = async (batchId: string) => {
@@ -2237,7 +2458,7 @@ export function App() {
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
         return <IncidentForm user={user!} users={users} incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleBack(); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} />;
-      case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} />;
+      case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} jobTitles={jobTitles} />;
       case 'PENDING_APPROVALS':
         return (
           <div className="space-y-4 animate-fade-in">
@@ -2259,9 +2480,9 @@ export function App() {
                   onConfirmLoanBatch={handleConfirmLoanBatch}
                   canEdit={can('EDIT_INCIDENT')}
                   canDelete={can('DELETE_INCIDENT')}
-                  canApprove={can('APPROVE_INCIDENT')}
                   canExport={can('EXPORT_REPORTS')}
                   canViewAll={can('VIEW_ALL_PENDING_INCIDENTS') || can('APPROVE_INCIDENT')}
+                  jobTitles={jobTitles}
                 />
               ) : (
                 <LoanViews
@@ -2307,6 +2528,32 @@ export function App() {
       case 'SECTOR_FORM': return <SectorForm initialData={editingSector} onSave={handleSaveSector} onCancel={handleBack} onDelete={handleDeleteSector} />;
       case 'ALTERATION_TYPES': return <AlterationTypeManager types={alterationTypes} onAdd={async (name) => { const newType = { id: crypto.randomUUID(), name, order: alterationTypes.length }; await handleSaveAlterationType(newType); }} onEdit={(t) => { setEditingAlterationType(t); setView('ALTERATION_TYPE_FORM'); }} onDelete={handleDeleteAlterationType} onReorder={handleReorderAlterationTypes} canManage={can('MANAGE_ALTERATION_TYPES')} />;
       case 'ALTERATION_TYPE_FORM': return <AlterationTypeForm initialData={editingAlterationType} onSave={handleSaveAlterationType} onCancel={handleBack} onDelete={handleDeleteAlterationType} />;
+      case 'ESCALAS': return <EscalaList escalas={escalas} onEdit={(e) => { setEditingEscala(e); handleNavigate('ESCALA_FORM'); }} onDelete={handleDeleteEscala} onAdd={() => { setEditingEscala(null); handleNavigate('ESCALA_FORM'); }} onManageReminders={(e) => { setReminderManagingEscala(e); handleNavigate('ESCALA_REMINDERS'); }} canEdit={can('MANAGE_ESCALAS')} canDelete={can('MANAGE_ESCALAS')} />;
+      case 'ESCALA_FORM':
+        return <EscalaForm initialData={editingEscala} onSave={handleSaveEscala} onCancel={() => handleNavigate('ESCALAS')} isLoading={saving} />;
+      case 'ESCALA_REMINDERS':
+        return reminderManagingEscala ? (
+          <EscalaReminderManager
+            escala={reminderManagingEscala}
+            reminders={escalaReminders.filter(r => r.escalaId === reminderManagingEscala.id)}
+            onSave={handleSaveEscalaReminder}
+            onDelete={handleDeleteEscalaReminder}
+            onTest={(r) => {
+              setTriggeredReminders(prev => [{
+                id: `test_${Date.now()}`,
+                type: 'SCHEDULE_REMINDER',
+                title: `[TESTE] ${r.name}`,
+                description: r.message,
+                timestamp: new Date().toISOString(),
+                status: 'UNREAD',
+                data: r
+              }, ...prev]);
+              showAlert("Teste Enviado", "Uma notificação de teste foi adicionada ao seu painel.");
+            }}
+            onBack={() => { setReminderManagingEscala(null); handleNavigate('ESCALAS'); }}
+            isLoading={saving}
+          />
+        ) : null;
       case 'CHARTS': return <ChartsView incidents={incidents} buildings={buildings} sectors={sectors} />;
       case 'MAP':
         if (!can('VIEW_MAP')) return <div className="flex flex-col items-center justify-center h-full text-slate-400 font-bold uppercase tracking-widest p-8">Acesso não autorizado</div>;
@@ -2414,6 +2661,7 @@ export function App() {
       case 'RadioIcon': return <RadioIcon size={16} />;
       case 'Package': return <Package size={16} />;
       case 'Wrench': return <Wrench size={20} />;
+      case 'Clock': return <Clock size={16} />;
       default: return null;
     }
   };
@@ -2442,6 +2690,7 @@ export function App() {
       case 'reg_types': return view === 'ALTERATION_TYPES' || view === 'ALTERATION_TYPE_FORM';
       case 'reg_sectors': return view === 'SECTORS' || view === 'SECTOR_FORM';
       case 'reg_users': return view === 'USERS' || view === 'USER_FORM';
+      case 'reg_escalas': return view === 'ESCALAS' || view === 'ESCALA_FORM' || view === 'ESCALA_REMINDERS';
       case 'reg_job_titles': return view === 'JOB_TITLES' || view === 'JOB_TITLE_FORM';
       case 'reg_vehicles': return view === 'VEHICLES' || view === 'VEHICLE_FORM';
       case 'reg_vests': return view === 'VESTS' || view === 'VEST_FORM';
@@ -2472,6 +2721,7 @@ export function App() {
     'reg_types': () => { setViewHistory([]); handleNavigate('ALTERATION_TYPES', true); },
     'reg_sectors': () => { setViewHistory([]); handleNavigate('SECTORS', true); },
     'reg_users': () => { setViewHistory([]); handleNavigate('USERS', true); },
+    'reg_escalas': () => { setViewHistory([]); handleNavigate('ESCALAS', true); },
     'reg_job_titles': () => { setViewHistory([]); handleNavigate('JOB_TITLES', true); },
     'reg_vehicles': () => { setViewHistory([]); handleNavigate('VEHICLES', true); },
     'reg_vests': () => { setViewHistory([]); handleNavigate('VESTS', true); },
@@ -2582,6 +2832,7 @@ export function App() {
               incidents={incidents}
               loans={loans}
               pendingUsers={users.filter(u => u.status === 'PENDING')}
+              extraNotifications={triggeredReminders}
               canManageUsers={can('MANAGE_USERS')}
               onNavigate={(viewName, data) => {
                 if (viewName === 'PENDING_APPROVALS' && data?.tab) {
@@ -2589,6 +2840,7 @@ export function App() {
                 }
                 handleNavigate(viewName as ViewState, data ? false : true);
               }}
+              onDismissExtra={(id) => setTriggeredReminders(prev => prev.filter(t => t.id !== id))}
               onAnnouncementRead={fetchAnnouncementsCount}
             />
             <button
@@ -2675,3 +2927,412 @@ export function App() {
     </div>
   );
 }
+
+const EscalaList: React.FC<{
+  escalas: Escala[],
+  onEdit: (e: Escala) => void,
+  onDelete: (id: string) => void,
+  onAdd: () => void,
+  onManageReminders: (e: Escala) => void,
+  canEdit: boolean,
+  canDelete: boolean
+}> = ({ escalas, onEdit, onDelete, onAdd, onManageReminders, canEdit, canDelete }) => {
+  const [search, setSearch] = useState('');
+  const filtered = escalas.filter(e => normalizeString(e.name).includes(normalizeString(search)));
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400">
+            <Clock size={22} strokeWidth={2} />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+              Escalas de Serviço
+            </h2>
+            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
+              Total: {escalas.length} escalas cadastradas
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Buscar escala por nome..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-12 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all"
+            />
+          </div>
+          {canEdit && (
+            <button onClick={onAdd} className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 active:scale-95 transition-all duration-200">
+              <Plus size={16} strokeWidth={3} />
+              <span>Nova Escala</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {filtered.map(escala => (
+          <div key={escala.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all group">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                  <Clock size={16} />
+                </div>
+                <h3 className="font-black text-slate-800 dark:text-slate-100 uppercase text-xs tracking-tight">{escala.name}</h3>
+              </div>
+              <div className="flex gap-1">
+                {canEdit && (
+                  <button
+                    onClick={() => { onManageReminders(escala); }}
+                    className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
+                    title="Configurar Lembretes"
+                  >
+                    <Bell size={14} />
+                  </button>
+                )}
+                {canEdit && (
+                  <button onClick={() => onEdit(escala)} className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all">
+                    <Pencil size={14} />
+                  </button>
+                )}
+                {canDelete && (
+                  <button onClick={() => onDelete(escala.id)} className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all">
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                <div className="flex flex-col">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Horário da Escala</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase">{escala.startTime} ÀS {escala.endTime}</span>
+                </div>
+              </div>
+              {escala.description && (
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed italic">
+                  {escala.description}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="sm:col-span-2 lg:col-span-3 py-12 flex flex-col items-center justify-center text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+            <Clock size={40} className="mb-4 opacity-20" />
+            <p className="font-black uppercase text-[10px] tracking-[0.2em]">Nenhuma escala encontrada</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const EscalaForm: React.FC<{ initialData: Escala | null, onSave: (e: Escala) => void, onCancel: () => void, onDelete?: (id: string) => void, isLoading?: boolean }> = ({ initialData, onSave, onCancel, onDelete, isLoading }) => {
+  const [formData, setFormData] = useState<Escala>(initialData || {
+    id: crypto.randomUUID(),
+    name: '',
+    startTime: '07:00',
+    endTime: '19:00',
+    description: ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) return;
+    onSave(formData);
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
+        <div className="bg-indigo-600 p-8 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
+            <Clock size={120} strokeWidth={1} />
+          </div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="px-2.5 py-1 bg-white/20 backdrop-blur-md rounded text-[10px] font-black uppercase tracking-widest">Configuração</span>
+            </div>
+            <h2 className="text-2xl font-black uppercase tracking-tight">{initialData ? 'Editar Escala' : 'Nova Escala de Serviço'}</h2>
+            <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mt-1 opacity-80">Defina o nome e horários da escala</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Nome da Escala</label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={e => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
+                className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 dark:text-white transition-all placeholder:text-slate-400 placeholder:font-normal"
+                placeholder="EX: ESCALA 12X36 - DIA A"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Hora de Início</label>
+                <div className="relative">
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input
+                    type="time"
+                    required
+                    value={formData.startTime}
+                    onChange={e => setFormData({ ...formData, startTime: e.target.value })}
+                    className="w-full pl-12 pr-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 dark:text-white transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Hora de Término</label>
+                <div className="relative">
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input
+                    type="time"
+                    required
+                    value={formData.endTime}
+                    onChange={e => setFormData({ ...formData, endTime: e.target.value })}
+                    className="w-full pl-12 pr-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 dark:text-white transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Descrição / Observações (Opcional)</label>
+              <textarea
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 dark:text-white transition-all placeholder:text-slate-400 placeholder:font-normal min-h-[100px]"
+                placeholder="Detalhes adicionais sobre a escala..."
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 px-8 py-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex-[2] px-8 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-500/25 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isLoading ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle size={18} />}
+              {initialData ? 'Atualizar Escala' : 'Salvar Escala'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const EscalaReminderManager: React.FC<{
+  escala: Escala,
+  reminders: EscalaReminder[],
+  onSave: (r: EscalaReminder) => void,
+  onDelete: (id: string) => void,
+  onBack: () => void,
+  onTest?: (r: EscalaReminder) => void,
+  isLoading: boolean
+}> = ({ escala, reminders, onSave, onDelete, onBack, isLoading, onTest }) => {
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingReminder, setEditingReminder] = useState<EscalaReminder | null>(null);
+
+  const defaultReminder: EscalaReminder = {
+    id: crypto.randomUUID(),
+    escalaId: escala.id,
+    name: 'Lembrete de Encerramento',
+    minutesBeforeEnd: 30,
+    message: 'Atenção: A escala encerra em 30 minutos. Favor realizar a exportação dos relatórios.',
+    actionType: 'NAVIGATE',
+    actionPayload: { view: 'HISTORY' },
+    isActive: true
+  };
+
+  const [formData, setFormData] = useState<EscalaReminder>(defaultReminder);
+
+  const handleStartEdit = (reminder: EscalaReminder) => {
+    setEditingReminder(reminder);
+    setFormData({ ...reminder });
+    setIsAdding(true);
+  };
+
+  const handleCancel = () => {
+    setIsAdding(false);
+    setEditingReminder(null);
+    setFormData(defaultReminder);
+  };
+
+  const handleToggleActive = (reminder: EscalaReminder) => {
+    onSave({ ...reminder, isActive: !reminder.isActive });
+  };
+
+  return (
+    <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-indigo-600 group"
+          >
+            <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
+            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
+          </button>
+          <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
+          <div>
+            <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Lembretes Automáticos</h2>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{escala.name} ({escala.startTime} - {escala.endTime})</p>
+          </div>
+        </div>
+        {!isAdding && (
+          <button
+            onClick={() => { setFormData({ ...defaultReminder, id: crypto.randomUUID() }); setIsAdding(true); }}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
+          >
+            <Plus size={16} strokeWidth={3} /> Novo Lembrete
+          </button>
+        )}
+      </div>
+
+      {isAdding && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-2 border-indigo-100 dark:border-indigo-900/30 shadow-xl animate-in zoom-in-95 duration-200">
+          <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase mb-4 flex items-center gap-2">
+            {editingReminder ? <Pencil className="text-indigo-500" size={18} /> : <Plus className="text-indigo-500" size={18} />}
+            {editingReminder ? 'Editar Lembrete' : 'Configurar Novo Lembrete'}
+          </h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Título do Lembrete</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Minutos antes do fim</label>
+              <input
+                type="number"
+                value={formData.minutesBeforeEnd}
+                onChange={e => setFormData({ ...formData, minutesBeforeEnd: parseInt(e.target.value) })}
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Tipo de Ação</label>
+              <select
+                value={formData.actionType}
+                onChange={e => {
+                  const val = e.target.value as 'MESSAGE' | 'NAVIGATE';
+                  setFormData({
+                    ...formData,
+                    actionType: val,
+                    actionPayload: val === 'NAVIGATE' ? { view: 'HISTORY' } : undefined
+                  });
+                }}
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white appearance-none"
+              >
+                <option value="MESSAGE">Apenas Mensagem</option>
+                <option value="NAVIGATE">Mensagem + Botão Exportar</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Mensagem da Notificação</label>
+              <textarea
+                value={formData.message}
+                onChange={e => setFormData({ ...formData, message: e.target.value })}
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white min-h-[80px]"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+            <button onClick={handleCancel} className="px-6 py-2.5 text-xs font-black uppercase text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">Cancelar</button>
+            <button
+              onClick={() => { onSave(formData); handleCancel(); }}
+              className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/25"
+            >
+              {editingReminder ? 'Atualizar' : 'Confirmar'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-4">
+        {reminders.map(reminder => (
+          <div key={reminder.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between group hover:border-indigo-200 dark:hover:border-indigo-800 transition-all">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-xl ${reminder.isActive ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                <Clock size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight flex items-center gap-2">
+                  {reminder.name}
+                  {!reminder.isActive && <span className="text-[9px] bg-slate-200 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">Inativo</span>}
+                </h4>
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Gatilho: {reminder.minutesBeforeEnd} min antes do encerramento</p>
+                <p className="text-[10px] text-slate-400 mt-1 italic leading-tight">"{reminder.message}"</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onTest?.(reminder)}
+                className="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-all"
+                title="Testar Notificação"
+              >
+                <Megaphone size={18} />
+              </button>
+              <button
+                onClick={() => handleStartEdit(reminder)}
+                className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
+                title="Editar Lembrete"
+              >
+                <Pencil size={18} />
+              </button>
+              <button
+                onClick={() => handleToggleActive(reminder)}
+                className={`p-2 rounded-lg transition-all ${reminder.isActive ? 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                title={reminder.isActive ? "Desativar" : "Ativar"}
+              >
+                <CheckCircle size={18} />
+              </button>
+              <button
+                onClick={() => onDelete(reminder.id)}
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                title="Excluir"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {reminders.length === 0 && !isAdding && (
+          <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400">
+            <Bell size={40} className="mb-4 opacity-10" />
+            <p className="text-xs font-black uppercase tracking-widest font-sans">Nenhum lembrete configurado</p>
+            <button onClick={() => setIsAdding(true)} className="mt-4 text-[10px] font-black text-indigo-500 uppercase hover:underline">Configurar seu primeiro lembrete</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
