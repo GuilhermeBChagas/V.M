@@ -90,6 +90,7 @@ export interface User {
   passwordHash?: string;
   photoUrl?: string; // Foto de perfil
   signatureUrl?: string; // Assinatura digital (PNG)
+  termsAcceptedAt?: string | null; // Data de aceite dos termos
 }
 
 export interface Building {
@@ -199,6 +200,9 @@ export interface LoanRecord {
     driver?: string;
     notes?: string;
   };
+  signatureHash?: string;
+  createdIp?: string;
+  updatedIp?: string;
 }
 
 export interface SystemLog {

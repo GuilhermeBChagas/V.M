@@ -24,7 +24,8 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
         role: UserRole.OPERADOR,
         status: 'ACTIVE',
         photoUrl: '',
-        signatureUrl: ''
+        signatureUrl: '',
+        termsAcceptedAt: undefined
     });
     const [password, setPassword] = useState('');
 
@@ -47,7 +48,8 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                 userCode: initialData.userCode || '',
                 jobTitleId: initialData.jobTitleId || '',
                 photoUrl: initialData.photoUrl || '',
-                signatureUrl: initialData.signatureUrl || ''
+                signatureUrl: initialData.signatureUrl || '',
+                termsAcceptedAt: initialData.termsAcceptedAt
             });
         } else {
             setFormData(prev => ({ ...prev, id: crypto.randomUUID() }));
@@ -84,7 +86,8 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                 status: formData.status as 'ACTIVE' | 'PENDING' | 'BLOCKED',
                 passwordHash: password || undefined,
                 photoUrl: formData.photoUrl,
-                signatureUrl: formData.signatureUrl
+                signatureUrl: formData.signatureUrl,
+                termsAcceptedAt: formData.termsAcceptedAt
             });
         } else {
             alert("Preencha Nome, CPF e Matrícula.");
@@ -206,6 +209,46 @@ export const UserForm: React.FC<UserFormProps> = ({ initialData, onSave, onDelet
                         <div className="space-y-2">
                             <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-widest">Assinatura Digital (PNG Base64)</label>
                             <input name="signatureUrl" value={formData.signatureUrl || ''} onChange={handleChange} className="block w-full rounded-xl border-slate-300 dark:border-slate-600 shadow-sm border p-3 bg-white dark:bg-slate-800 dark:text-white font-bold text-xs outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Base64 da assinatura..." />
+                        </div>
+                    </div>
+
+                    <div className="md:col-span-2 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h3 className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest mb-1">Termos de Uso e Assinatura</h3>
+                                <div className="flex items-center gap-2 mt-2">
+                                    {formData.termsAcceptedAt ? (
+                                        <>
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Aceito em: {new Date(formData.termsAcceptedAt).toLocaleString('pt-BR')}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                                            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">Pendente de Aceite</span>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                {formData.termsAcceptedAt ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, termsAcceptedAt: null }))}
+                                        className="text-[10px] font-bold text-red-500 hover:text-red-600 uppercase border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                                    >
+                                        Revogar Aceite
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, termsAcceptedAt: new Date().toISOString() }))}
+                                        className="text-[10px] font-bold text-blue-500 hover:text-blue-600 uppercase border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/10 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
+                                    >
+                                        Marcar como Aceito
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
 

@@ -267,7 +267,7 @@ export const Auth: React.FC<AuthProps> = ({
                                  <UserIcon className="absolute left-4 top-3 text-slate-500" size={18} />
                                  <input type="text" required disabled={isLoading} value={regName} onChange={e => setRegName(e.target.value)} className="w-full pl-12 py-3 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="Nome Completo" />
                               </div>
-                              <div className="grid grid-cols-2 gap-4">
+                              <div className="grid grid-cols-[1.6fr_1fr] gap-4">
                                  <input type="text" disabled={isLoading} value={regCpf} onChange={handleRegCpfChange} maxLength={14} className="w-full p-3 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white text-center outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="CPF" />
                                  <input type="text" disabled={isLoading} value={regMatricula} onChange={e => setRegMatricula(e.target.value)} className="w-full p-3 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white text-center outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="Matrícula" />
                               </div>

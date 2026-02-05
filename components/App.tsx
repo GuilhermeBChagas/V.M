@@ -988,6 +988,10 @@ export function App() {
   const [loans, setLoans] = useState<LoanRecord[]>([]);
   const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0);
   const [announcementsRevision, setAnnouncementsRevision] = useState(0);
+
+  // Privacy Terms State
+  const [pendingPrivacyUser, setPendingPrivacyUser] = useState<User | null>(null);
+  const [pendingPrivacyIP, setPendingPrivacyIP] = useState<string>('');
   const [lastAnnouncementUpdate, setLastAnnouncementUpdate] = useState<string | null>(null);
 
   // Pagination
@@ -1161,7 +1165,7 @@ export function App() {
   const fetchUsers = useCallback(async () => {
     try {
       const { data, error } = await supabase.from('users')
-        .select('id, name, role, user_code, job_title_id, photo_url, status, email, cpf, matricula')
+        .select('id, name, role, user_code, job_title_id, photo_url, signature_url, terms_accepted_at, status, email, cpf, matricula, password_hash')
         .order('name', { ascending: true })
         .limit(200);
       if (error) throw error;
@@ -1170,7 +1174,9 @@ export function App() {
         userCode: u.user_code,
         jobTitleId: u.job_title_id,
         photoUrl: u.photo_url,
-        signatureUrl: u.signature_url
+        signatureUrl: u.signature_url,
+        termsAcceptedAt: u.terms_accepted_at,
+        passwordHash: u.password_hash
       })) : [];
       setUsers(mappedUsers as User[]);
       localStorage.setItem('cached_users', JSON.stringify(mappedUsers));
@@ -1840,135 +1846,176 @@ export function App() {
     return 'Não identificado';
   };
 
-  const handleLogin = async (identifier: string, password: string) => {
-    let clientIP = await fetchClientIP();
+  const finalizeLogin = async (targetUser: User, clientIP: string, isOffline: boolean = false) => {
+    try {
+      setUser(targetUser);
+      localStorage.setItem('vigilante_session', JSON.stringify(targetUser));
+      localStorage.setItem('app_version', APP_VERSION);
 
-    if (isLocalMode && identifier === '00') {
-      if (password === 'admin') {
-        const emergencyUser: User = { id: 'emergency-master', name: 'SUPERVISOR (CONTINGÊNCIA)', role: UserRole.ADMIN, cpf: '000.000.000-00', matricula: 'EMERGENCY', userCode: '00', status: 'ACTIVE' };
-        setUser(emergencyUser); localStorage.setItem('vigilante_session', JSON.stringify(emergencyUser)); localStorage.setItem('app_version', APP_VERSION);
-        createLog('LOGIN', `Acesso de contingência (Admin) - IP: ${clientIP}`, emergencyUser);
-        return;
-      } else { throw new Error("Senha de contingência incorreta."); }
+      const logMsg = isOffline
+        ? `Acesso Offline (Cache) - IP: ${clientIP}`
+        : `Acesso realizado via credenciais - IP: ${clientIP}`;
+
+      await createLog('LOGIN', logMsg, targetUser);
+
+      if (isOffline) showAlert("Modo Offline", "Login realizado com credenciais em cache.");
+      // Limpa estado pendente se houver
+      setPendingPrivacyUser(null);
+      setPendingPrivacyIP('');
+    } catch (e) {
+      console.error("Erro ao finalizar login:", e);
     }
+  };
+
+  const handleLogin = async (identifier: string, password: string) => {
+    setSaving(true);
+    try {
+      let clientIP = await fetchClientIP();
+
+      if (isLocalMode && identifier === '00') {
+        if (password === 'admin') {
+          const emergencyUser: User = { id: 'emergency-master', name: 'SUPERVISOR (CONTINGÊNCIA)', role: UserRole.ADMIN, cpf: '000.000.000-00', matricula: 'EMERGENCY', userCode: '00', status: 'ACTIVE' };
+          setUser(emergencyUser); localStorage.setItem('vigilante_session', JSON.stringify(emergencyUser)); localStorage.setItem('app_version', APP_VERSION);
+          createLog('LOGIN', `Acesso de contingência (Admin) - IP: ${clientIP}`, emergencyUser);
+          return;
+        } else { throw new Error("Senha de contingência incorreta."); }
+      }
 
 
-    // Busca user no banco (Online) ou Cache (Offline)
-    let dbData = null;
-    let isOfflineLogin = false;
+      // Busca user no banco (Online) ou Cache (Offline)
+      let dbData = null;
+      let isOfflineLogin = false;
+
+      try {
+        if (!navigator.onLine) throw new Error("Offline");
+        // Tentar buscar por email primeiro (seguro)
+        let { data, error } = await supabase.from('users').select('*').eq('email', identifier).maybeSingle();
+
+        // Se não achou, tenta os outros campos um por um (para evitar erro de sintaxe no OR complexo)
+        if (!data) {
+          const { data: d2 } = await supabase.from('users').select('*').eq('cpf', identifier).maybeSingle();
+          data = d2;
+        }
+        if (!data) {
+          const { data: d3 } = await supabase.from('users').select('*').eq('matricula', identifier).maybeSingle();
+          data = d3;
+        }
+        if (!data) {
+          const { data: d4 } = await supabase.from('users').select('*').eq('user_code', identifier).maybeSingle();
+          data = d4;
+        }
+
+        if (error && error.code !== 'PGRST116') throw error; // Se erro não for "Not found", lança
+        dbData = data;
+      } catch (err) {
+        // Fallback para cache local
+        isOfflineLogin = true;
+        const cachedUsers = JSON.parse(localStorage.getItem('cached_users') || '[]');
+        const val = identifier.trim().toLowerCase();
+        dbData = cachedUsers.find((u: any) =>
+          (u.email || '').trim().toLowerCase() === val ||
+          (u.cpf || '').trim().toLowerCase() === val ||
+          (u.matricula || '').trim().toLowerCase() === val ||
+          (u.userCode || '').trim().toLowerCase() === val
+        );
+        // Mapeamento inverso para manter compatibilidade com lógica abaixo (que espera snake_case do banco em alguns casos)
+        if (dbData) {
+          // Se veio do cache (já mapeado), ajusta para parecer o retorno bruto se necessário, ou ajusta o código abaixo
+          // O código abaixo espera propriedades snake_case para re-mapear.
+          // Como o cache já está mapeado (camelCase), precisamos garantir que o dbUser seja montado corretamente.
+        }
+      }
+
+      if (!dbData) throw new Error(isOfflineLogin ? "Usuário não encontrado localmente (verifique a internet)." : "Usuário não cadastrado.");
+
+      // Mapeamento manual para garantir compatibilidade com a interface User
+      const dbUser: User = {
+        ...dbData,
+        userCode: dbData.user_code || dbData.userCode,
+        jobTitleId: dbData.job_title_id || dbData.jobTitleId,
+        photoUrl: dbData.photo_url || dbData.photoUrl,
+        signatureUrl: dbData.signature_url || dbData.signatureUrl,
+        // Garantir que campos obrigatórios existam
+        name: dbData.name,
+        role: dbData.role,
+        id: dbData.id,
+        passwordHash: dbData.passwordHash || dbData.password_hash, // Suporte a ambos
+        termsAcceptedAt: dbData.terms_accepted_at || dbData.termsAcceptedAt
+      };
+
+      // Validação de Senha 
+      if (dbUser.passwordHash && dbUser.passwordHash !== password) throw new Error("Senha incorreta.");
+
+      // --- TERMO DE ACEITE DE ASSINATURA ELETRÔNICA ---
+      const hasAcceptedTerms = dbUser.termsAcceptedAt;
+
+      if (!hasAcceptedTerms) {
+        // Se não aceitou, interrompe e mostra modal
+        setPendingPrivacyUser(dbUser);
+        setPendingPrivacyIP(clientIP);
+        return;
+      }
+
+      // Se já aceitou, finaliza
+      await finalizeLogin(dbUser, clientIP, isOfflineLogin);
+    } catch (err: any) {
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAcceptTerms = async () => {
+    if (!pendingPrivacyUser) return;
 
     try {
-      if (!navigator.onLine) throw new Error("Offline");
-      const { data, error } = await supabase.from('users')
-        .select('*')
-        .or(`email.eq.${identifier},cpf.eq.${identifier},matricula.eq.${identifier},user_code.eq.${identifier}`)
-        .single();
+      const now = new Date().toISOString();
+      // Persistir no Banco
+      const { error } = await supabase.from('users').update({ terms_accepted_at: now }).eq('id', pendingPrivacyUser.id);
+      if (error) throw error;
 
-      if (error && error.code !== 'PGRST116') throw error; // Se erro não for "Not found", lança
-      dbData = data;
-    } catch (err) {
-      // Fallback para cache local
-      isOfflineLogin = true;
-      const cachedUsers = JSON.parse(localStorage.getItem('cached_users') || '[]');
-      const val = identifier.trim().toLowerCase();
-      dbData = cachedUsers.find((u: any) =>
-        (u.email || '').trim().toLowerCase() === val ||
-        (u.cpf || '').trim().toLowerCase() === val ||
-        (u.matricula || '').trim().toLowerCase() === val ||
-        (u.userCode || '').trim().toLowerCase() === val
-      );
-      // Mapeamento inverso para manter compatibilidade com lógica abaixo (que espera snake_case do banco em alguns casos)
-      if (dbData) {
-        // Se veio do cache (já mapeado), ajusta para parecer o retorno bruto se necessário, ou ajusta o código abaixo
-        // O código abaixo espera propriedades snake_case para re-mapear.
-        // Como o cache já está mapeado (camelCase), precisamos garantir que o dbUser seja montado corretamente.
-      }
+      const updatedUser = { ...pendingPrivacyUser, termsAcceptedAt: now };
+      const isOffline = !navigator.onLine;
+      await finalizeLogin(updatedUser, pendingPrivacyIP, isOffline);
+    } catch (err: any) {
+      showError("Erro", "Falha ao registrar aceite: " + err.message);
     }
+  };
 
-    if (!dbData) throw new Error(isOfflineLogin ? "Usuário não encontrado localmente (verifique a internet)." : "Usuário não cadastrado.");
-
-    // --- TERMO DE ACEITE DE ASSINATURA ELETRÔNICA ---
-    const hasAcceptedTerms = localStorage.getItem(`terms_accepted_${dbData.id}`);
-    if (!hasAcceptedTerms) {
-      // Exibir Modal de Aceite (Simplificado via window.confirm para este passo, idealmente um Modal dedicado)
-      // Em um app real, isso seria um estado de UI. Para resolver RÁPIDO AGORA, usaremos confirm intercalado ou injetaremos um modal de React se possível.
-      // Como handleLogin é async, podemos pausar.
-
-      // NOTA: window.confirm bloqueia a thread, não é o ideal em UX moderna mas cumpre o "Aceite Prévio" legalmente se o texto for claro.
-      // Vamos usar uma abordagem melhor: setar um estado e não logar ainda.
-      // Mas como a função handleLogin espera resolver tudo, vamos fazer um "hack" jurídico aceitável:
-
-      // PORMENOR: O usuário DEVE clicar em "Aceitar".
-      // Vamos simular isso injetando o termo na primeira vez.
-
-      const legalTermText = `TERMO DE RECONHECIMENTO DE ASSINATURA ELETRÔNICA\n\n` +
-        `Ao prosseguir, eu, portador do CPF/Matrícula informado:\n\n` +
-        `1. DECLARO que minha senha pessoal é intransferível.\n` +
-        `2. RECONHEÇO que toda ação, validação ou registro feito com minha senha nesta plataforma equivale à minha ASSINATURA MANUSCRITA para todos os fins legais (Art. 10, § 2º, MP 2.200-2/2001).\n` +
-        `3. ACEITO que o sistema registre meu IP (${clientIP}) e crie Hashes Criptográficos para garantir a integridade dos meus atos.\n\n` +
-        `Deseja ACEITAR e continuar?`;
-
-      if (!window.confirm(legalTermText)) {
-        throw new Error("Login cancelado: É necessário aceitar os termos de assinatura eletrônica para acessar o sistema.");
-      }
-      localStorage.setItem(`terms_accepted_${dbData.id}`, 'true');
-    }
-
-    // Validação de Senha (Hash Check) - Mantida a lógica anterior
-    if (!isOfflineLogin && !dbData.password_hash) {
-      // Primeiro acesso ou senha não definida (fluxo legado ou simplificado)
-      // Se for primeiro acesso, poderia jogar para tela de criar senha.
-      // Assumindo fluxo atual:
-    } else if (!isOfflineLogin && dbData.password_hash) {
-      // Comparar senha (aqui assumimos texto plano para demo ou hash simples se estivesse implementado)
-      // Na implementação atual do handleLogin anterior, não vi checagem de hash bcrypt, e sim comparação direta ou mock.
-      // Se o sistema usa Supabase Auth real, o login seria via supabase.auth.signInWithPassword.
-      // Baseado no código lido (linha 1836 do original não mostrada por completo, mas inferida), parece ser checagem customizada ou confia no retorno.
-      // Pela leitura anterior do handleLogin (passo 31), ele faz:
-      // if (dbUser.passwordHash && dbUser.passwordHash !== password) throw new Error("Senha incorreta.");
-    }
-
-
-    // Mapeamento manual para garantir compatibilidade com a interface User
-    // Se isOfflineLogin = true, dbData já pode estar em camelCase se veio do fetchUsers->cache
-    const dbUser: User = {
-      ...dbData,
-      userCode: dbData.user_code || dbData.userCode,
-      jobTitleId: dbData.job_title_id || dbData.jobTitleId,
-      photoUrl: dbData.photo_url || dbData.photoUrl,
-      signatureUrl: dbData.signature_url || dbData.signatureUrl,
-      // Garantir que campos obrigatórios existam
-      name: dbData.name,
-      role: dbData.role,
-      id: dbData.id,
-      passwordHash: dbData.passwordHash || dbData.password_hash // Suporte a ambos
-    };
-    if (dbUser.passwordHash && dbUser.passwordHash !== password) throw new Error("Senha incorreta.");
-    setUser(dbUser);
-    localStorage.setItem('vigilante_session', JSON.stringify(dbUser));
-    localStorage.setItem('app_version', APP_VERSION);
-    createLog('LOGIN', isOfflineLogin ? `Acesso Offline (Cache) - IP: ${clientIP}` : `Acesso realizado via credenciais - IP: ${clientIP}`, dbUser);
-    if (isOfflineLogin) showAlert("Modo Offline", "Login realizado com credenciais em cache.");
+  const handleCancelTerms = () => {
+    setPendingPrivacyUser(null);
+    setPendingPrivacyIP('');
+    showError("Acesso Negado", "O termo de aceite é obrigatório.");
   };
 
   const handleLogout = async () => { if (user) await createLog('LOGOUT', 'Saiu do sistema'); setUser(null); localStorage.removeItem('vigilante_session'); handleNavigate('DASHBOARD'); };
 
+
   const handleRegister = async (userData: Omit<User, 'id'>) => {
+    setSaving(true);
     try {
-      const { userCode, jobTitleId, photoUrl, signatureUrl, ...rest } = userData;
-      const { data, error } = await supabase.from('users').insert({
+      const { userCode, jobTitleId, photoUrl, signatureUrl, passwordHash, email, ...rest } = userData;
+
+      // Sanitize Payload
+      const payload = {
         ...rest,
+        id: crypto.randomUUID(), // Gera ID manualmente para evitar erro se o banco não tiver default
+        email: email || null, // Convert empty string to null
         user_code: userCode,
         job_title_id: jobTitleId,
         photo_url: photoUrl,
         signature_url: signatureUrl,
+        password_hash: passwordHash,
         status: 'PENDING'
-      }).select().single();
+      };
+
+      const { data, error } = await supabase.from('users').insert(payload).select().single();
       if (error) throw error;
       if (data) createLog('USER_REGISTER', `Novo cadastro: ${userData.name}`, data as User);
       showAlert("Sucesso", "Cadastro realizado. Aguarde aprovação.");
     }
     catch (err: any) { showError("Erro", err.message); }
+    finally { setSaving(false); }
   };
 
   const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
@@ -2051,7 +2098,7 @@ export function App() {
       case 'BUILDINGS': return <BuildingList buildings={buildings} sectors={sectors} onEdit={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} onDelete={handleDeleteBuilding} onAdd={() => { setEditingBuilding(null); handleNavigate('BUILDING_FORM'); }} onRefresh={fetchStaticData} canEdit={can('MANAGE_BUILDINGS')} canDelete={can('MANAGE_BUILDINGS')} />;
       case 'BUILDING_FORM': return <BuildingForm initialData={editingBuilding} sectors={sectors} onSave={async (b) => { setSaving(true); try { await supabase.from('buildings').upsert(b); fetchStaticData(); handleNavigate('BUILDINGS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={handleBack} onDelete={handleDeleteBuilding} isLoading={saving} />;
       case 'USERS': return <UserList users={users} jobTitles={jobTitles} onEdit={(u) => { setEditingUser(u); handleNavigate('USER_FORM'); }} onDelete={handleDeleteUser} onAdd={() => { setEditingUser(null); handleNavigate('USER_FORM'); }} onRefresh={fetchUsers} canEdit={can('MANAGE_USERS')} canDelete={can('MANAGE_USERS')} />;
-      case 'USER_FORM': return <UserForm initialData={editingUser} jobTitles={jobTitles} onSave={async (u) => { setSaving(true); try { const { userCode, jobTitleId, photoUrl, signatureUrl, ...rest } = u; await supabase.from('users').upsert({ ...rest, user_code: userCode, job_title_id: jobTitleId, photo_url: photoUrl, signature_url: signatureUrl }); fetchUsers(); handleNavigate('USERS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={handleBack} onDelete={handleDeleteUser} isLoading={saving} />;
+      case 'USER_FORM': return <UserForm initialData={editingUser} jobTitles={jobTitles} onSave={async (u) => { setSaving(true); try { const { userCode, jobTitleId, photoUrl, signatureUrl, termsAcceptedAt, ...rest } = u; await supabase.from('users').upsert({ ...rest, user_code: userCode, job_title_id: jobTitleId, photo_url: photoUrl, signature_url: signatureUrl, terms_accepted_at: termsAcceptedAt }); fetchUsers(); handleNavigate('USERS'); } catch (e: any) { showError("Erro", e.message); } finally { setSaving(false); } }} onCancel={handleBack} onDelete={handleDeleteUser} isLoading={saving} />;
       case 'JOB_TITLES': return <JobTitleList jobTitles={jobTitles} onEdit={(t) => { setEditingJobTitle(t); handleNavigate('JOB_TITLE_FORM'); }} onDelete={handleDeleteJobTitle} onAdd={() => { setEditingJobTitle(null); handleNavigate('JOB_TITLE_FORM'); }} canEdit={can('MANAGE_JOB_TITLES')} canDelete={can('MANAGE_JOB_TITLES')} />;
       case 'JOB_TITLE_FORM': return <JobTitleForm initialData={editingJobTitle} onSave={handleSaveJobTitle} onCancel={handleBack} onDelete={handleDeleteJobTitle} />;
       case 'VEHICLES': return <VehicleList items={vehicles} onAdd={() => { setEditingVehicle(null); handleNavigate('VEHICLE_FORM'); }} onEdit={(i) => { setEditingVehicle(i); handleNavigate('VEHICLE_FORM'); }} onDelete={(id) => handleDeleteAsset('vehicles', id, 'Veículo')} canEdit={can('MANAGE_VEHICLES')} canDelete={can('MANAGE_VEHICLES')} />;
@@ -2100,7 +2147,36 @@ export function App() {
       />;
     }
   };
-  if (!user) return <Auth onLogin={handleLogin} onRegister={handleRegister} darkMode={darkMode} onToggleDarkMode={() => setDarkMode(!darkMode)} customLogo={customLogoRight} onShowSetup={() => setShowDbSetup(true)} systemVersion={DISPLAY_VERSION} users={users} isLocalMode={isLocalMode} onToggleLocalMode={handleToggleLocalMode} unsyncedCount={unsyncedIncidents.length} onSync={handleSyncData} />;
+  if (!user) {
+    return (
+      <>
+        <Auth
+          onLogin={handleLogin}
+          onRegister={handleRegister}
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkMode(!darkMode)}
+          customLogo={customLogoRight}
+          onShowSetup={() => setShowDbSetup(true)}
+          systemVersion={DISPLAY_VERSION}
+          users={users}
+          isLocalMode={isLocalMode}
+          onToggleLocalMode={handleToggleLocalMode}
+          unsyncedCount={unsyncedIncidents.length}
+          onSync={handleSyncData}
+          isLoading={saving}
+        />
+        <Modal
+          isOpen={modalConfig.isOpen}
+          type={modalConfig.type}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          onConfirm={modalConfig.onConfirm}
+          onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+        />
+        {showDbSetup && <DatabaseSetup onClose={() => setShowDbSetup(false)} />}
+      </>
+    );
+  }
 
   const pendingIncidentsCount = incidents.filter(i => {
     if (i.status !== 'PENDING') return false;
