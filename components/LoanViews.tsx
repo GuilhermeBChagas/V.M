@@ -1557,15 +1557,15 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                                                     ))}
                                                                                     {/* Empty rows to fill a fixed page size (exactly 15 rows) */}
                                                                                     {Array.from({ length: Math.max(0, pageSize - chunk.length) }).map((_, i) => (
-                                                                                        <tr key={`empty-${i}`} className="h-6">
-                                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                                        <tr key={`empty-${i}`} className="uppercase font-bold text-slate-900">
+                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
+                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-left">&nbsp;</td>
+                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
+                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
+                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
+                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
+                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
+                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-left pl-2">&nbsp;</td>
                                                                                         </tr>
                                                                                     ))}
                                                                                 </tbody>
