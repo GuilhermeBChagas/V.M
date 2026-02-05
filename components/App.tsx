@@ -124,6 +124,10 @@ const mapLoan = (l: any): LoanRecord => ({
   assetDescription: l.asset_description || l.description || l.assetDescription, // Mapped to support both column names
   checkoutTime: l.checkout_time || l.checkoutTime,
   returnTime: l.return_time || l.returnTime,
+  // Novos campos de auditoria
+  signatureHash: l.signature_hash || l.signatureHash,
+  createdIp: l.created_ip || l.createdIp,
+  updatedIp: l.updated_ip || l.updatedIp,
 });
 
 const mapVehicle = (v: any): Vehicle => ({

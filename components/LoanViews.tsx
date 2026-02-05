@@ -343,7 +343,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             const { error } = await supabase.from('loan_records').insert(newLoans);
             if (error) throw error;
 
-            onLogAction('LOAN_CREATE', `Criou cautela para ${receiver?.name} com ${newLoans.length} itens.`);
+            onLogAction('LOAN_CREATE', `Criou cautela para ${receiver?.name} com ${newLoans.length} itens. (Assinatura do Lote: ${batchId})`);
             setActiveTab('ACTIVE');
             setReceiverId('');
             setUserSearch('');
@@ -393,17 +393,18 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
                     const returnTs = new Date().toISOString();
                     const hashPayload = `RETURN|ID:${loan.id}|TS:${returnTs}|IP:${clientIP}`;
+                    const signatureHash = CryptoJS.SHA256(hashPayload).toString();
 
                     const { error } = await supabase.from('loan_records').update({
                         status: 'COMPLETED',
                         return_time: returnTs,
                         updated_ip: clientIP,
-                        signature_hash: CryptoJS.SHA256(hashPayload).toString() // Update hash to reflect return
+                        signature_hash: signatureHash // Update hash to reflect return
                     }).eq('id', loan.id);
 
                     if (error) throw error;
 
-                    onLogAction('LOAN_RETURN', `Recebeu devolução: ${loan.assetDescription}`);
+                    onLogAction('LOAN_RETURN', `Recebeu devolução: ${loan.assetDescription} com Assinatura Digital (Hash: ${signatureHash})`);
                     setTimeout(() => onRefresh(), 200);
                 } catch (err: any) {
                     console.error("Erro ao devolver:", err);
@@ -445,13 +446,14 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
             const returnTs = new Date().toISOString();
             const hashPayload = `RETURN_VEHICLE|ID:${vehicleReturnData.loanId}|KM:${vehicleReturnData.kmEnd}|TS:${returnTs}|IP:${clientIP}`;
+            const signatureHash = CryptoJS.SHA256(hashPayload).toString();
 
             const { error: loanError } = await supabase.from('loan_records').update({
                 status: 'COMPLETED',
                 return_time: returnTs,
                 meta: metaUpdate,
                 updated_ip: clientIP,
-                signature_hash: CryptoJS.SHA256(hashPayload).toString()
+                signature_hash: signatureHash
             }).eq('id', vehicleReturnData.loanId);
 
             if (loanError) throw loanError;
@@ -488,7 +490,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                 ? `Recebeu devolução de lote com Viatura: ${vehicleReturnData.model} (KM: ${vehicleReturnData.kmEnd}) + ${vehicleReturnData.batchIdsToComplete!.length} itens.`
                 : `Recebeu veículo: ${vehicleReturnData.model}. KM Final: ${vehicleReturnData.kmEnd}`;
 
-            onLogAction('LOAN_RETURN', logMsg);
+            onLogAction('LOAN_RETURN', `${logMsg} com Assinatura Digital (Hash: ${signatureHash})`);
             setShowVehicleReturnModal(false);
             setVehicleReturnData(null);
 
@@ -678,15 +680,17 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     } catch (e) { }
 
                     const returnTs = new Date().toISOString();
+                    const signatureHash = CryptoJS.SHA256(`BATCH_RETURN|IDS:${ids.join(',')}|TS:${returnTs}|IP:${clientIP}`).toString();
 
                     const { error } = await supabase.from('loan_records').update({
                         status: 'COMPLETED',
                         return_time: returnTs,
-                        updated_ip: clientIP
+                        updated_ip: clientIP,
+                        signature_hash: signatureHash
                     }).in('id', ids);
 
                     if (error) throw error;
-                    onLogAction('LOAN_RETURN', `Recebeu devolução de lote (${nonVehicleLoans.length} itens) de ${receiverName}`);
+                    onLogAction('LOAN_RETURN', `Recebeu devolução de lote (${nonVehicleLoans.length} itens) de ${receiverName} com Assinatura Digital (Hash: ${signatureHash})`);
 
                     // Proceed to vehicles if any
                     setTimeout(() => {
@@ -711,9 +715,24 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
         setIsSubmitting(true);
         try {
-            const { error } = await supabase.from('loan_records').update({ status: 'ACTIVE' }).eq('id', loan.id);
+            let clientIP = 'Não identificado';
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                if (res.ok) clientIP = (await res.json()).ip;
+            } catch (e) { }
+
+            const confirmTs = new Date().toISOString();
+            const hashPayload = `CONFIRM|ID:${loan.id}|TS:${confirmTs}|IP:${clientIP}`;
+            const signatureHash = CryptoJS.SHA256(hashPayload).toString();
+
+            const { error } = await supabase.from('loan_records').update({
+                status: 'ACTIVE',
+                updated_ip: clientIP,
+                signature_hash: signatureHash
+            }).eq('id', loan.id);
+
             if (error) throw error;
-            onLogAction('LOAN_CONFIRM', `Confirmou item: ${loan.assetDescription}`);
+            onLogAction('LOAN_CONFIRM', `Confirmou item: ${loan.assetDescription} com Assinatura Digital (Hash: ${signatureHash})`);
             onRefresh();
         } catch (err: any) {
             alert('Erro: ' + err.message);
@@ -790,15 +809,17 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     } catch (e) { }
 
                     const confirmTs = new Date().toISOString();
+                    const signatureHash = CryptoJS.SHA256(`BATCH_CONFIRM|IDS:${ids.join(',')}|TS:${confirmTs}|IP:${clientIP}`).toString();
 
                     // Generate distinct hash for each confirmation? ideally yes, but for batch update we might just log IP
                     // For simplicity, we just update status and IP.
                     const { error } = await supabase.from('loan_records').update({
                         status: 'ACTIVE',
-                        updated_ip: clientIP
+                        updated_ip: clientIP,
+                        signature_hash: signatureHash
                     }).in('id', ids);
                     if (error) throw error;
-                    onLogAction('LOAN_CONFIRM', `Confirmou lote de ${loansToConfirm.length} itens para ${receiverName}`);
+                    onLogAction('LOAN_CONFIRM', `Confirmou lote de ${loansToConfirm.length} itens para ${receiverName} com Assinatura Digital (Hash: ${signatureHash})`);
                     onRefresh();
                 } catch (err: any) {
                     alert('Erro ao confirmar lote: ' + err.message);
