@@ -5,7 +5,7 @@ import { announcementService } from '../services/announcementService';
 
 interface NotificationItem {
     id: string;
-    type: 'INCIDENT' | 'LOAN' | 'ANNOUNCEMENT';
+    type: 'INCIDENT' | 'LOAN' | 'ANNOUNCEMENT' | 'USER_REGISTRATION';
     title: string;
     description: string;
     timestamp: string;
@@ -17,6 +17,8 @@ interface NotificationCenterProps {
     currentUser: User;
     incidents: Incident[];
     loans: LoanRecord[];
+    pendingUsers?: User[];
+    canManageUsers?: boolean;
     onNavigate: (view: string, data?: any) => void;
     onAnnouncementRead: () => void;
 }
@@ -25,6 +27,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     currentUser,
     incidents,
     loans,
+    pendingUsers = [],
+    canManageUsers = false,
     onNavigate,
     onAnnouncementRead
 }) => {
@@ -117,6 +121,23 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 }
             });
 
+            // 4. User Registrations (Only for those who can manage users)
+            if (canManageUsers) {
+                pendingUsers.forEach(u => {
+                    if (u.status === 'PENDING' && !dismissedIds.includes(u.id)) {
+                        allNotifications.push({
+                            id: u.id,
+                            type: 'USER_REGISTRATION',
+                            title: 'Novo Cadastro de Usuário',
+                            description: `${u.name} solicitou acesso ao sistema.`,
+                            timestamp: new Date().toISOString(), // User object might not have createdAt, using now for priority
+                            status: 'UNREAD',
+                            data: u
+                        });
+                    }
+                });
+            }
+
             // Sort by Date Descending
             allNotifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
@@ -129,10 +150,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     };
 
     useEffect(() => {
-        if (isOpen || incidents || loans) { // Refetch when data changes or menu opens
+        if (isOpen || incidents || loans || pendingUsers.length > 0) { // Refetch when data changes or menu opens
             fetchNotifications();
         }
-    }, [isOpen, incidents, loans, dismissedIds]); // Added dismissedIds dep to refresh filter
+    }, [isOpen, incidents, loans, pendingUsers, dismissedIds]); // Added dismissedIds dep to refresh filter
 
     const handleItemClick = async (notif: NotificationItem) => {
         // 1. Mark as Read locally/remotely
@@ -173,6 +194,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 onNavigate('ANNOUNCEMENTS'); // Or open modal if passed?
                 setIsOpen(false);
                 break;
+            case 'USER_REGISTRATION':
+                onNavigate('USERS');
+                setIsOpen(false);
+                break;
         }
     };
 
@@ -191,6 +216,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             case 'INCIDENT': return <FileText size={16} className="text-orange-500" />;
             case 'LOAN': return <Shield size={16} className="text-blue-500" />;
             case 'ANNOUNCEMENT': return <Megaphone size={16} className="text-purple-500" />;
+            case 'USER_REGISTRATION': return <Shield size={16} className="text-rose-500" />;
             default: return <Bell size={16} />;
         }
     };
@@ -238,7 +264,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                             {/* Unread Accent Bar */}
                             {notif.status === 'UNREAD' && (
                                 <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${notif.type === 'INCIDENT' ? 'bg-orange-500' :
-                                    notif.type === 'LOAN' ? 'bg-blue-500' : 'bg-purple-500'
+                                    notif.type === 'LOAN' ? 'bg-blue-500' :
+                                        notif.type === 'USER_REGISTRATION' ? 'bg-rose-500' : 'bg-purple-500'
                                     }`} />
                             )}
 
@@ -299,8 +326,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             <button
                 onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
                 className={`p-2.5 rounded-xl relative transition-all duration-300 group ${isOpen
-                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 scale-105'
-                        : 'bg-white dark:bg-slate-800 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border border-slate-200 dark:border-slate-700 hover:border-indigo-200 shadow-sm'
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 scale-105'
+                    : 'bg-white dark:bg-slate-800 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border border-slate-200 dark:border-slate-700 hover:border-indigo-200 shadow-sm'
                     }`}
             >
                 <Bell size={20} strokeWidth={isOpen ? 2.5 : 2} className={isOpen ? 'animate-wiggle' : 'group-hover:animate-wiggle'} />

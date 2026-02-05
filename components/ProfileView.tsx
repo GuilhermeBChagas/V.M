@@ -15,7 +15,8 @@ import {
     CheckCircle,
     AlertCircle,
     PenTool,
-    ShieldCheck
+    ShieldCheck,
+    Hash
 } from 'lucide-react';
 
 interface ProfileViewProps {
@@ -235,17 +236,26 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, jobTitles, onUpd
                                     <p className="text-sm font-bold text-slate-800 dark:text-white">{user.cpf}</p>
                                 </div>
                             </div>
-                            {user.email && (
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                                        <Mail size={14} className="text-slate-400" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">E-mail</p>
-                                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate" title={user.email}>{user.email}</p>
-                                    </div>
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm font-mono flex items-center justify-center">
+                                    <Hash size={14} className="text-slate-400" />
                                 </div>
-                            )}
+                                <div className="flex-1">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Login Rápido</p>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-white">{user.userCode || '--'}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                                    <Mail size={14} className="text-slate-400" />
+                                </div>
+                                <div className="flex-1 min-w-0 text-left">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">E-mail</p>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-white truncate" title={user.email || 'Não definido'}>
+                                        {user.email || 'Não definido'}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

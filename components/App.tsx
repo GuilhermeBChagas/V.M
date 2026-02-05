@@ -24,7 +24,7 @@ import AnnouncementManager from './AnnouncementManager';
 import { announcementService } from '../services/announcementService';
 import { User, Building, Incident, ViewState, UserRole, Sector, JobTitle, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides } from '../types';
 import { MENU_STRUCTURE, MenuItemDef } from '../constants/menuStructure';
-import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, WifiOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone } from 'lucide-react';
+import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Check, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, CloudOff, WifiOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
 import CryptoJS from 'crypto-js';
@@ -779,19 +779,33 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
                 <tr
                   key={u.id}
                   onClick={() => canEdit && onEdit(u)}
-                  className={`transition-all duration-200 group ${canEdit ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-brand-900/10' : ''}`}
+                  className={`transition-all duration-200 group ${canEdit ? 'cursor-pointer' : ''} 
+                    ${u.status === 'PENDING'
+                      ? 'bg-amber-50/70 dark:bg-amber-900/20 border-l-[4px] border-amber-500 shadow-sm'
+                      : 'hover:bg-slate-50 dark:hover:bg-brand-900/10 border-l-[4px] border-transparent'}
+                  `}
                 >
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-brand-700 dark:text-brand-400 font-black text-sm uppercase border border-slate-200 dark:border-slate-700 group-hover:bg-brand-600 group-hover:text-white group-hover:border-brand-500 transition-all overflow-hidden">
+                      <div className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-brand-700 dark:text-brand-400 font-black text-sm uppercase border border-slate-200 dark:border-slate-700 group-hover:bg-brand-600 group-hover:text-white group-hover:border-brand-500 transition-all overflow-hidden relative shadow-inner">
                         {u.photoUrl ? (
                           <img src={u.photoUrl} alt={u.name} className="h-full w-full object-cover" />
                         ) : (
                           u.name.charAt(0)
                         )}
+                        {u.status === 'PENDING' && (
+                          <div className="absolute inset-0 bg-amber-500/10 animate-pulse" />
+                        )}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase leading-none group-hover:text-brand-700 dark:group-hover:text-brand-400 transition-colors">{u.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase leading-none group-hover:text-brand-700 dark:group-hover:text-brand-400 transition-colors">{u.name}</p>
+                          {u.status === 'PENDING' && (
+                            <span className="px-1.5 py-0.5 bg-amber-500 text-white text-[9px] font-black rounded shadow-sm uppercase tracking-tighter animate-pulse flex items-center gap-1">
+                              <Bell size={8} /> Novo
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-400 uppercase font-bold mt-1 tracking-wider">Matrícula: {u.matricula}</p>
                         <p className="text-xs text-brand-600 dark:text-brand-400 uppercase font-black tracking-wider mt-0.5">
                           {jobTitles.find(t => t.id === u.jobTitleId)?.name || ''}
@@ -1355,14 +1369,12 @@ export function App() {
         setAnnouncementsRevision(prev => prev + 1);
       })
       // 2. Escuta quando O PRÓPRIO USUÁRIO marca algo como lido
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'announcement_reads',
-        filter: `user_id=eq.${user.id}`
-      }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcement_reads', filter: `user_id=eq.${user.id}` }, () => {
         fetchAnnouncementsCount();
         setAnnouncementsRevision(prev => prev + 1);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
+        fetchUsers();
       })
       .subscribe();
 
@@ -1870,10 +1882,12 @@ export function App() {
   const handleLogin = async (identifier: string, password: string) => {
     setSaving(true);
     try {
+      const id = identifier.trim();
+      const pwd = password.trim();
       let clientIP = await fetchClientIP();
 
-      if (isLocalMode && identifier === '00') {
-        if (password === 'admin') {
+      if (isLocalMode && id === '00') {
+        if (pwd === 'admin') {
           const emergencyUser: User = { id: 'emergency-master', name: 'SUPERVISOR (CONTINGÊNCIA)', role: UserRole.ADMIN, cpf: '000.000.000-00', matricula: 'EMERGENCY', userCode: '00', status: 'ACTIVE' };
           setUser(emergencyUser); localStorage.setItem('vigilante_session', JSON.stringify(emergencyUser)); localStorage.setItem('app_version', APP_VERSION);
           createLog('LOGIN', `Acesso de contingência (Admin) - IP: ${clientIP}`, emergencyUser);
@@ -1889,19 +1903,19 @@ export function App() {
       try {
         if (!navigator.onLine) throw new Error("Offline");
         // Tentar buscar por email primeiro (seguro)
-        let { data, error } = await supabase.from('users').select('*').eq('email', identifier).maybeSingle();
+        let { data, error } = await supabase.from('users').select('*').eq('email', id).maybeSingle();
 
         // Se não achou, tenta os outros campos um por um (para evitar erro de sintaxe no OR complexo)
         if (!data) {
-          const { data: d2 } = await supabase.from('users').select('*').eq('cpf', identifier).maybeSingle();
+          const { data: d2 } = await supabase.from('users').select('*').eq('cpf', id).maybeSingle();
           data = d2;
         }
         if (!data) {
-          const { data: d3 } = await supabase.from('users').select('*').eq('matricula', identifier).maybeSingle();
+          const { data: d3 } = await supabase.from('users').select('*').eq('matricula', id).maybeSingle();
           data = d3;
         }
         if (!data) {
-          const { data: d4 } = await supabase.from('users').select('*').eq('user_code', identifier).maybeSingle();
+          const { data: d4 } = await supabase.from('users').select('*').eq('user_code', id).maybeSingle();
           data = d4;
         }
 
@@ -1911,7 +1925,7 @@ export function App() {
         // Fallback para cache local
         isOfflineLogin = true;
         const cachedUsers = JSON.parse(localStorage.getItem('cached_users') || '[]');
-        const val = identifier.trim().toLowerCase();
+        const val = id.toLowerCase();
         dbData = cachedUsers.find((u: any) =>
           (u.email || '').trim().toLowerCase() === val ||
           (u.cpf || '').trim().toLowerCase() === val ||
@@ -1944,7 +1958,11 @@ export function App() {
       };
 
       // Validação de Senha 
-      if (dbUser.passwordHash && dbUser.passwordHash !== password) throw new Error("Senha incorreta.");
+      if (dbUser.passwordHash && dbUser.passwordHash !== pwd) throw new Error("Senha incorreta.");
+
+      // Verificação de Status
+      if (dbUser.status === 'PENDING') throw new Error("Seu cadastro ainda está em análise pela administração. Você será notificado assim que for aprovado.");
+      if (dbUser.status === 'BLOCKED') throw new Error("Sua conta está bloqueada ou suspensa. Entre em contato com o suporte.");
 
       // --- TERMO DE ACEITE DE ASSINATURA ELETRÔNICA ---
       const hasAcceptedTerms = dbUser.termsAcceptedAt;
@@ -2019,6 +2037,97 @@ export function App() {
   };
 
   const closeModal = () => setModalConfig(prev => ({ ...prev, isOpen: false }));
+
+  const renderPrivacyModal = () => (
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 transform animate-in zoom-in-95 duration-300">
+        <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 bg-brand-600">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/20 rounded-xl text-white">
+              <Shield size={32} strokeWidth={1.5} />
+            </div>
+            <div>
+              <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">Termo de Aceite</h2>
+              <p className="text-white/80 text-xs font-bold uppercase tracking-widest mt-1">Assinatura Eletrônica e Privacidade</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+          <section className="space-y-4">
+            <div className="flex items-start gap-4">
+              <div className="mt-1 p-1 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded">
+                <Check size={16} strokeWidth={3} />
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">1. Validade Jurídica</h4>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Ao utilizar este sistema, você concorda que as assinaturas eletrônicas aqui geradas possuem plena validade jurídica para todos os fins, equivalente à assinatura manuscrita.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="mt-1 p-1 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded">
+                <Check size={16} strokeWidth={3} />
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">2. Integridade dos Dados</h4>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Cada registro é selado com um hash criptográfico de integridade e armazena metadados de auditoria, incluindo data, hora e endereço IP do autor e do validador.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="mt-1 p-1 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded">
+                <Check size={16} strokeWidth={3} />
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">3. Responsabilidade</h4>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  O uso de sua senha pessoal é intransferível. Você é integralmente responsável por todos os atos registrados em seu nome através de seu código de acesso.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="mt-1 p-1 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded">
+                <Check size={16} strokeWidth={3} />
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">4. Privacidade</h4>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Seus dados profissionais e biometria digital (assinatura) são utilizados exclusivamente para as finalidades de auditoria e geração dos relatórios de serviço.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed italic text-center">
+              "Declaro que li e compreendo os termos acima, aceitando que o uso de minhas credenciais neste sistema constitui minha manifestação inequívoca de vontade e autoria."
+            </p>
+          </div>
+        </div>
+
+        <div className="p-6 md:p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col sm:flex-row gap-4">
+          <button
+            onClick={handleCancelTerms}
+            className="flex-1 px-6 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-700 transition-all active:scale-95"
+          >
+            Não Aceito
+          </button>
+          <button
+            onClick={handleAcceptTerms}
+            className="flex-1 px-6 py-4 bg-brand-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-brand-700 shadow-lg shadow-brand-500/25 transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            Li e Aceito os Termos <Check size={16} strokeWidth={3} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderContent = () => {
     switch (view) {
@@ -2174,6 +2283,9 @@ export function App() {
           onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
         />
         {showDbSetup && <DatabaseSetup onClose={() => setShowDbSetup(false)} />}
+
+        {/* TERMO DE ACEITE NO LOGIN */}
+        {pendingPrivacyUser && renderPrivacyModal()}
       </>
     );
   }
@@ -2193,8 +2305,9 @@ export function App() {
       return false;
     }).map(l => l.batchId || l.id)
   )).length;
+  const pendingUsersCount = users.filter(u => u.status === 'PENDING').length;
   // Badge total é a soma
-  const totalPendingBadge = pendingIncidentsCount + pendingLoansCount;
+  const totalPendingBadge = pendingIncidentsCount + pendingLoansCount + (can('MANAGE_USERS') ? pendingUsersCount : 0);
 
   // --- DYNAMIC SIDEBAR HELPERS ---
 
@@ -2385,6 +2498,8 @@ export function App() {
               currentUser={user}
               incidents={incidents}
               loans={loans}
+              pendingUsers={users.filter(u => u.status === 'PENDING')}
+              canManageUsers={can('MANAGE_USERS')}
               onNavigate={(viewName, data) => {
                 if (viewName === 'PENDING_APPROVALS' && data?.tab) {
                   setPendingSubTab(data.tab);
@@ -2426,6 +2541,9 @@ export function App() {
       </div>
       {showDbSetup && <DatabaseSetup onClose={() => setShowDbSetup(false)} />}
       <Modal isOpen={modalConfig.isOpen} type={modalConfig.type} title={modalConfig.title} message={modalConfig.message} onConfirm={modalConfig.onConfirm} onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} />
+
+      {/* TERMO DE ACEITE NO DASHBOARD (Fallback) */}
+      {pendingPrivacyUser && renderPrivacyModal()}
 
       {/* MODAL DE CANCELAMENTO */}
       {cancelModal.isOpen && (
