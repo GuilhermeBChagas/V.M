@@ -484,22 +484,36 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                                             <span className="text-[7px] md:text-[9px] uppercase font-bold text-slate-600">
                                                 {author?.name || '---'}
                                             </span>
-                                            <span className="text-[6px] md:text-[7px] uppercase font-medium text-slate-400">
-                                                EM {new Date(incident.created_at || incident.timestamp).toLocaleDateString('pt-BR')} ÀS {new Date(incident.created_at || incident.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
+                                            <div className="flex flex-col gap-0.5 mt-0.5">
+                                                <span className="text-[6px] md:text-[7px] uppercase font-medium text-slate-400">
+                                                    EM {new Date(incident.timestamp!).toLocaleDateString('pt-BR')} ÀS {new Date(incident.timestamp!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                                {incident.createdIp && (
+                                                    <span className="text-[6px] md:text-[7px] font-mono text-slate-400">
+                                                        IP: {incident.createdIp}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
                                     {incident.isEdited && (
                                         <div className="flex flex-col gap-0.5 mt-1 pt-1 border-t border-slate-100">
                                             <span className="text-[6px] md:text-[8px] font-bold uppercase text-slate-400 mr-2 tracking-wide">EDITADO PELO USUÁRIO:</span>
-                                            <div className="flex items-baseline gap-1">
+                                            <div className="flex items-baseline gap-1 flex-wrap">
                                                 <span className="text-[7px] md:text-[9px] uppercase font-bold text-slate-600">
                                                     {incident.editedBy || '---'}
                                                 </span>
-                                                <span className="text-[6px] md:text-[7px] uppercase font-medium text-slate-400">
-                                                    EM {new Date(incident.lastEditedAt!).toLocaleDateString('pt-BR')} ÀS {new Date(incident.lastEditedAt!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
+                                                <div className="flex flex-col gap-0.5 mt-0.5">
+                                                    <span className="text-[6px] md:text-[7px] uppercase font-medium text-slate-400">
+                                                        EM {new Date(incident.lastEditedAt!).toLocaleDateString('pt-BR')} ÀS {new Date(incident.lastEditedAt!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                    {incident.updatedIp && (
+                                                        <span className="text-[6px] md:text-[7px] font-mono text-slate-400">
+                                                            IP: {incident.updatedIp}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -527,9 +541,14 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                                             <span className="text-[6px] md:text-[7px] font-bold uppercase text-slate-500 tracking-widest flex items-center gap-1 mb-0.5">
                                                 <ShieldCheck size={10} className="text-blue-600" /> ASSINADO ELETRONICAMENTE
                                             </span>
-                                            <span className="text-[6px] md:text-[8px] font-mono font-bold text-slate-400">
+                                            <span className="text-[6px] md:text-[8px] font-mono font-bold text-slate-400 block">
                                                 DATA: {new Date(incident.approvedAt!).toLocaleDateString('pt-BR')} ÀS {new Date(incident.approvedAt!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
+                                            {incident.approvedIp && (
+                                                <span className="text-[6px] md:text-[7px] font-mono text-slate-400 block mt-0.5">
+                                                    IP: {incident.approvedIp}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (

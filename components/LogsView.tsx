@@ -152,7 +152,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ logs, onTestLog }) => {
                 <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="px-6 py-3 whitespace-nowrap"><div className="flex items-center gap-2">{getActionIcon(log.action)}<span className="text-xs font-bold uppercase">{getActionLabel(log.action)}</span></div></td>
                   <td className="px-6 py-3 whitespace-nowrap text-xs font-medium">{log.userName}</td>
-                  <td className="px-6 py-3 text-xs text-slate-500 whitespace-pre-wrap break-words max-w-sm">{log.details}</td>
+                  <td className="px-6 py-3 text-xs text-slate-500 whitespace-pre-wrap break-words max-w-none">{log.details}</td>
                   <td className="px-6 py-3 text-right text-[10px] font-mono font-bold text-slate-400">{new Date(log.timestamp).toLocaleString('pt-BR')}</td>
                 </tr>
               ))}

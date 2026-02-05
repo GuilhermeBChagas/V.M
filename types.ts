@@ -134,6 +134,10 @@ export interface Incident {
   cancellationReason?: string;
   cancelledBy?: string;
   cancelledAt?: string;
+  signatureHash?: string; // Hash SHA-256 para integridade e não-repúdio
+  createdIp?: string;
+  updatedIp?: string;
+  approvedIp?: string;
   isLocal?: boolean; // Flag para indicar que o dado só existe localmente
 }
 
