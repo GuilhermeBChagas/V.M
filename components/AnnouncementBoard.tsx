@@ -87,7 +87,7 @@ const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({ currentUser, onVi
                     <p className="text-xs font-bold uppercase tracking-widest opacity-60">Nenhum comunicado ativo</p>
                 </div>
             ) : (
-                <div className="space-y-3 flex-1 overflow-y-auto max-h-[400px] pr-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+                <div className="space-y-3 flex-1 overflow-y-auto overflow-x-hidden max-h-[400px] pr-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
                     {announcements.slice(0, 5).map(ann => (
                         <AnnouncementCard
                             key={ann.id}

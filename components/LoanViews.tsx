@@ -1509,7 +1509,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                                         <th className="border-r border-b border-slate-900 p-2 text-center w-20">HORA CHEGADA</th>
                                                                         <th className="border-r border-b border-slate-900 p-2 text-center w-20">KM CHEGADA</th>
                                                                         <th className="border-r border-b border-slate-900 p-2 text-center w-20">TOTAL KM</th>
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-left w-48">MOTORISTA / ASSINATURA</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-left w-48">MOTORISTA</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -1536,14 +1536,14 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                                             <td className="border-r border-b border-slate-900 p-1.5 text-center">
                                                                                 {(item.meta?.kmEnd && item.meta?.kmStart) ? (item.meta.kmEnd - item.meta.kmStart).toLocaleString('pt-BR') : '-'}
                                                                             </td>
-                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-left">
-                                                                                {/* Blank For Signature */}
+                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-left pl-2">
+                                                                                {item.receiverName}
                                                                             </td>
                                                                         </tr>
                                                                     ))}
                                                                     {/* Empty rows to fill a fixed page size (approx 12 rows total to allow footer space) */}
-                                                                    {Array.from({ length: Math.max(0, 12 - itemHistoryResults.length) }).map((_, i) => (
-                                                                        <tr key={`empty-${i}`} className="h-8">
+                                                                    {Array.from({ length: Math.max(0, 15 - itemHistoryResults.length) }).map((_, i) => (
+                                                                        <tr key={`empty-${i}`} className="h-6">
                                                                             <td className="border-r border-b border-slate-900"></td>
                                                                             <td className="border-r border-b border-slate-900"></td>
                                                                             <td className="border-r border-b border-slate-900"></td>
@@ -1597,10 +1597,169 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                         </table>
                                                     )}
 
-                                                    <div className="mt-8 pt-4 flex justify-between text-[8px] text-slate-400 uppercase font-bold border-t border-slate-200">
+                                                    <div className="mt-4 pt-4 flex justify-between text-[8px] text-slate-400 uppercase font-bold border-t border-slate-200">
                                                         <span>CENTRO DE MONITORAMENTO - S.M.S.P.T</span>
                                                         <span>EMITIDO EM {new Date().toLocaleDateString('pt-BR')} ÀS {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                                                     </div>
+
+                                                    {/* PAGE 2 - FUEL CONTROL (Only for Vehicles) */}
+                                                    {historyItemType === 'VEHICLE' && (
+                                                        <div style={{ pageBreakBefore: 'always', paddingTop: '20px' }} className="relative">
+                                                            {/* HEADER (Replicated) */}
+                                                            <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12 mt-4">
+                                                                <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                                    {customLogoLeft ? (
+                                                                        <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Muni" />
+                                                                    ) : (
+                                                                        <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                            <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                <div className="text-center min-w-0 flex-1">
+                                                                    <h1 className="text-[14px] font-black uppercase text-slate-900 leading-tight tracking-tight whitespace-nowrap">
+                                                                        PREFEITURA MUNICIPAL DE ARAPONGAS
+                                                                    </h1>
+                                                                    <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-wide mt-1">
+                                                                        SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
+                                                                    </h2>
+                                                                    <h3 className="text-[10px] font-bold uppercase text-blue-600 mt-0.5 tracking-wider">
+                                                                        CENTRO DE MONITORAMENTO MUNICIPAL
+                                                                    </h3>
+                                                                </div>
+
+                                                                <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                                    {customLogo ? (
+                                                                        <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão GCM" />
+                                                                    ) : (
+                                                                        <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                            <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* LINES */}
+                                                            <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '6px' }}></div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                                                                <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                                <h2 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+                                                                    CONTROLE DE ABASTECIMENTO
+                                                                </h2>
+                                                                <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                            </div>
+                                                            <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
+
+                                                            {/* FUEL HEADER INFO */}
+                                                            <div className="mb-4 font-black uppercase text-[10px] text-slate-900 border border-slate-900">
+                                                                <div className="grid grid-cols-12 bg-slate-100 border-b border-slate-900 divide-x divide-slate-900">
+                                                                    <div className="col-span-5 p-2 flex items-center gap-2">
+                                                                        <span className="text-slate-500 font-bold">VEÍCULO:</span>
+                                                                        <span className="text-[14px]">{vehicles.find(v => v.id === historyItemId)?.model}</span>
+                                                                    </div>
+                                                                    <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                        <span className="text-slate-500 font-bold">PLACA:</span>
+                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.plate}</span>
+                                                                    </div>
+                                                                    <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                        <span className="text-slate-500 font-bold">Nº FROTA:</span>
+                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fleetNumber || vehicles.find(v => v.id === historyItemId)?.prefix}</span>
+                                                                    </div>
+                                                                    <div className="col-span-3 p-2 flex items-center gap-2 justify-center">
+                                                                        <span className="text-slate-500 font-bold">COMBUSTÍVEL:</span>
+                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fuelType || 'FLEX'}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="grid grid-cols-2 bg-slate-100 divide-x divide-slate-900">
+                                                                    <div className="p-2 flex items-center gap-2">
+                                                                        <span className="text-slate-500 font-bold">MÊS/ANO REF.:</span>
+                                                                        <span className="text-[12px]">
+                                                                            {historyStartDate ? new Date(historyStartDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase() : new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="p-2 flex items-center gap-2">
+                                                                        <span className="text-slate-500 font-bold">SECRETARIA:</span>
+                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.department || 'SESTRAN'}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* FUEL TABLE */}
+                                                            <table className="w-full border-collapse border-t border-l border-slate-900 text-[10px] mb-0">
+                                                                <thead>
+                                                                    <tr className="bg-slate-200 text-slate-900 uppercase font-black">
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-24">QUANT. LITROS</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-32">Nº CUPOM ABAST.</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center">FORNECEDOR</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-24">KILOMETRAGEM</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-48">MOTORISTA</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {itemHistoryResults.filter(item => item.meta?.fuelRefill).map((item, idx) => (
+                                                                        <tr key={idx} className="uppercase font-bold text-slate-900 text-center">
+                                                                            <td className="border-r border-b border-slate-900 p-1.5">{new Date(item.returnTime || item.checkoutTime).getDate().toString().padStart(2, '0')}</td>
+                                                                            <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.fuelLiters ? Number(item.meta.fuelLiters).toLocaleString('pt-BR') : '-'}</td>
+                                                                            <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.couponNumber || '-'}</td>
+                                                                            <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.supplier || '-'}</td>
+                                                                            <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.fuelKm ? Number(item.meta.fuelKm).toLocaleString('pt-BR') : (item.meta?.kmEnd ? Number(item.meta.kmEnd).toLocaleString('pt-BR') : '-')}</td>
+                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-left pl-4">{item.meta?.driver || item.receiverName}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                    {/* Empty Rows 15 rows approx */}
+                                                                    {Array.from({ length: Math.max(0, 12 - itemHistoryResults.filter(item => item.meta?.fuelRefill).length) }).map((_, i) => (
+                                                                        <tr key={`empty-fuel-${i}`} className="h-6">
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+
+                                                            {/* OIL CONTROL HEADER & TABLE */}
+                                                            <div className="bg-slate-200 border-l border-r border-b border-slate-900 p-1 text-center font-black uppercase text-[10px] text-slate-900">
+                                                                CONTROLE DE ÓLEO LUBRIFICANTE
+                                                            </div>
+                                                            <table className="w-full border-collapse border-l border-slate-900 text-[10px] mb-4">
+                                                                <thead>
+                                                                    <tr className="bg-slate-100 text-slate-900 uppercase font-black">
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-24">QUANT. LITROS</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center">TIPO DE ÓLEO</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center">FORNECEDOR</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-24">KILOMETRAGEM</th>
+                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-48">MOTORISTA</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {/* Empty rows for Oil (3 rows as per image approx) */}
+                                                                    {Array.from({ length: 3 }).map((_, i) => (
+                                                                        <tr key={`empty-oil-${i}`} className="h-6">
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                            <td className="border-r border-b border-slate-900"></td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+
+
+
+                                                            {/* FOOTER WARNING */}
+                                                            <div className="text-[8px] text-slate-500 text-justify leading-tight border-t border-slate-200 pt-2">
+                                                                ATENÇÃO: As informações aqui prestadas, para fins de direito, estão sujeitas ao art. 299 Decreto Lei 2.848/1940 (Código Penal). Concomitante ao art. 216, inciso XV. Lei 4451/2016 (Estatuto).
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
