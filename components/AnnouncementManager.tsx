@@ -365,7 +365,7 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
                     <div className="p-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 backdrop-blur-sm">
                         <h3 className="font-black text-slate-600 dark:text-slate-400 uppercase text-[10px] tracking-[0.2em]">Detalhamento por Usuário</h3>
                     </div>
-                    <div className="overflow-x-auto max-h-[600px] custom-scrollbar">
+                    <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left border-collapse min-w-[300px]">
                             <thead className="text-[10px] text-slate-400 uppercase bg-slate-50/50 dark:bg-slate-900/50 sticky top-0 border-b border-slate-100 dark:border-slate-800 backdrop-blur-md z-10">
                                 <tr>
