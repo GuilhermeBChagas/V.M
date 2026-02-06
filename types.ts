@@ -220,6 +220,14 @@ export interface LoanRecord {
     supplier?: string;
     driver?: string;
     notes?: string;
+    pendingHandoverToUserId?: string;
+    handoverHistory?: Array<{
+      fromId: string;
+      fromName: string;
+      toId: string;
+      toName: string;
+      timestamp: string;
+    }>;
   };
   signatureHash?: string;
   createdIp?: string;
