@@ -149,6 +149,9 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         driver: string
     } | null>(null);
 
+    // State for Mobile Interaction
+    const [activeMobileLoanId, setActiveMobileLoanId] = useState<string | null>(null);
+
     const [showQRScanner, setShowQRScanner] = useState(false);
 
     // PDF Export Logic (using existing isExporting state)
@@ -2187,7 +2190,14 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                             <div className="p-2 flex-1 overflow-y-auto max-h-[350px]">
                                                 <div className="grid grid-cols-2 gap-2 h-full content-start">
                                                     {group.loans.map(loan => (
-                                                        <div key={loan.id} className="bg-slate-50/40 dark:bg-slate-800/20 rounded-xl p-2 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-800 min-h-[75px] relative group transition-all hover:bg-white dark:hover:bg-slate-800 shadow-sm">
+                                                        <div
+                                                            key={loan.id}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setActiveMobileLoanId(prev => prev === loan.id ? null : loan.id);
+                                                            }}
+                                                            className="bg-slate-50/40 dark:bg-slate-800/20 rounded-xl p-2 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-800 min-h-[75px] relative group transition-all hover:bg-white dark:hover:bg-slate-800 shadow-sm cursor-pointer"
+                                                        >
                                                             <div className={`mb-1 ${group.type === 'PENDING' ? 'text-amber-500' : group.type === 'HISTORY' ? 'text-slate-400' : 'text-emerald-500'}`}>
                                                                 {getAssetIcon(loan.assetType, 20)}
                                                             </div>
@@ -2205,25 +2215,25 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
                                                             {/* Individual Action (Overlay) */}
                                                             {((group.type === 'PENDING' && ((canApprove && currentUser.id === group.receiverId) || (canCreate && currentUser.id === loan.operatorId))) || (group.type === 'ACTIVE' && (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')))) && (
-                                                                <div className="absolute inset-0 bg-slate-900/90 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-[2px] z-10 p-1.5 gap-1 font-black uppercase">
+                                                                <div className={`absolute inset-0 bg-slate-900/90 rounded-xl flex items-center justify-center transition-all duration-200 backdrop-blur-[2px] z-10 p-1.5 gap-1 font-black uppercase ${activeMobileLoanId === loan.id ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'} md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto`}>
                                                                     {group.type === 'PENDING' ? (
                                                                         <>
                                                                             {currentUser.id === group.receiverId && canApprove && (
                                                                                 <>
-                                                                                    <div className="flex gap-1.5 w-full h-full p-1 items-center">
+                                                                                    <div className="flex gap-1 w-full h-full items-center">
                                                                                         <button
                                                                                             disabled={isSubmitting}
                                                                                             onClick={(e) => { e.stopPropagation(); handleConfirm(loan); }}
-                                                                                            className="flex-1 h-full bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-1"
+                                                                                            className="flex-1 h-full bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-0.5"
                                                                                         >
-                                                                                            <CheckCircle size={15} /> Aceitar
+                                                                                            <CheckCircle size={14} /> Aceitar
                                                                                         </button>
                                                                                         <button
                                                                                             disabled={isSubmitting}
                                                                                             onClick={(e) => { e.stopPropagation(); handleReject(loan); }}
-                                                                                            className="flex-1 h-full bg-red-600 hover:bg-red-500 text-white text-[11px] font-black rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-1"
+                                                                                            className="flex-1 h-full bg-red-600 hover:bg-red-500 text-white text-[9px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-0.5"
                                                                                         >
-                                                                                            <XCircle size={15} /> Recusar
+                                                                                            <XCircle size={14} /> Recusar
                                                                                         </button>
                                                                                     </div>
                                                                                 </>
@@ -2234,24 +2244,24 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                                         </>
                                                                     ) : (
                                                                         (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')) && (
-                                                                            <div className="flex gap-1.5 w-full h-full p-1 items-center">
+                                                                            <div className="flex gap-1 w-full h-full items-center">
                                                                                 {loan.assetType === 'VEHICLE' && (
                                                                                     <button
                                                                                         disabled={isSubmitting}
                                                                                         onClick={(e) => { e.stopPropagation(); handleRefuel(loan); }}
-                                                                                        className={`flex-1 h-full bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-1 ${!canReturn ? 'w-full' : ''}`}
+                                                                                        className={`flex-1 h-full bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-0.5 ${!canReturn ? 'w-full' : ''}`}
                                                                                         title="Abastecer"
                                                                                     >
-                                                                                        <Fuel size={15} /> Abastecer
+                                                                                        <Fuel size={14} /> Abastecer
                                                                                     </button>
                                                                                 )}
                                                                                 {canReturn && (
                                                                                     <button
                                                                                         disabled={isSubmitting}
                                                                                         onClick={(e) => { e.stopPropagation(); handleReturn(loan); }}
-                                                                                        className="flex-1 h-full bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-1"
+                                                                                        className="flex-1 h-full bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex flex-col items-center justify-center gap-0.5"
                                                                                     >
-                                                                                        <CheckCircle size={15} /> Devolver
+                                                                                        <CheckCircle size={14} /> Devolver
                                                                                     </button>
                                                                                 )}
                                                                             </div>
