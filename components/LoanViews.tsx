@@ -6,7 +6,8 @@ import {
     ArrowRightLeft, History, Plus, Search, User as UserIcon,
     Car, Shield, Radio as RadioIcon, Package, CheckCircle,
     XCircle, Clock, Calendar, ChevronRight, ChevronDown, CornerDownLeft,
-    AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download, X, QrCode, Settings, Printer, ArrowLeft
+    AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download, X, QrCode, Settings, Printer, ArrowLeft,
+    Square, MousePointer2, Info, FileText, Minus, Maximize
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { normalizeString } from '../utils/stringUtils';
@@ -81,6 +82,36 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     }, [pdfMargins]);
 
     const [showExportPreview, setShowExportPreview] = useState(false);
+    const [pdfScale, setPdfScale] = useState(100);
+    const [pdfOrientation, setPdfOrientation] = useState<'portrait' | 'landscape'>('portrait');
+    const [pdfPaperSize, setPdfPaperSize] = useState<'A4' | 'LETTER' | 'LEGAL'>('A4');
+    const [pdfUnit, setPdfUnit] = useState<'mm' | 'cm' | 'in'>('mm');
+    const [showMarginGuides, setShowMarginGuides] = useState(false);
+    const [exportIP, setExportIP] = useState('...');
+    const [exportHash, setExportHash] = useState('...');
+    const [exportDate, setExportDate] = useState('...');
+
+    useEffect(() => {
+        if (showExportPreview) {
+            setExportDate(new Date().toLocaleString('pt-BR'));
+            const raw = Date.now().toString() + Math.random().toString();
+            const hash = CryptoJS.SHA256(raw).toString();
+            setExportHash(hash);
+
+            fetch('https://api.ipify.org?format=json')
+                .then(res => res.json())
+                .then(data => setExportIP(data.ip))
+                .catch(() => setExportIP('Indisponível'));
+        }
+    }, [showExportPreview]);
+
+    const applyPreset = (type: 'normal' | 'narrow' | 'wide') => {
+        switch (type) {
+            case 'normal': setPdfMargins({ top: 15, right: 15, bottom: 15, left: 15 }); break;
+            case 'narrow': setPdfMargins({ top: 5, right: 5, bottom: 5, left: 5 }); break;
+            case 'wide': setPdfMargins({ top: 25, right: 25, bottom: 25, left: 25 }); break;
+        }
+    };
 
     useEffect(() => {
         if (onFilterChange) {
@@ -196,50 +227,50 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         }
 
         setIsExporting(true);
-        const element = reportRef.current;
+        setShowMarginGuides(false); // Hide guides for export
 
-        // Ensure element is visible during capture
-        const parent = element.parentElement;
-        const wasHidden = parent?.classList.contains('hidden');
-        if (wasHidden && parent) parent.classList.remove('hidden');
+        // Give a small delay for guides to hide
+        setTimeout(() => {
+            const element = document.getElementById('history-export-container');
+            if (!element) return;
 
-        const filename = historyItemType === 'VEHICLE'
-            ? `Diario_Bordo_${historyItemId}_${new Date().toISOString().split('T')[0]}.pdf`
-            : `Relatorio_Historico_${historyItemId}_${new Date().toISOString().split('T')[0]}.pdf`;
+            const filename = historyItemType === 'VEHICLE'
+                ? `Diario_Bordo_${historyItemId}_${new Date().toISOString().split('T')[0]}.pdf`
+                : `Relatorio_Historico_${historyItemId}_${new Date().toISOString().split('T')[0]}.pdf`;
 
-        const opt = {
-            margin: 0, // Margins are now handled by the page padding for WYSIWYG accuracy
-            filename: filename,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: {
-                scale: 2,
-                useCORS: true,
-                letterRendering: true,
-                scrollY: 0,
-                onclone: (doc: Document) => {
-                    const el = doc.getElementById('loan-report-history');
-                    if (el) {
-                        el.style.gap = '0px';
-                        // Remove shadows from pages for clean print
-                        const pages = el.querySelectorAll('.report-page');
-                        pages.forEach((p: any) => {
-                            p.style.boxShadow = 'none';
-                            p.style.border = 'none';
-                        });
+            const opt = {
+                margin: 0,
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: (pdfScale / 100) * 2,
+                    useCORS: true,
+                    letterRendering: true,
+                    scrollY: 0,
+                    onclone: (doc: Document) => {
+                        const el = doc.getElementById('history-export-container');
+                        if (el) {
+                            el.style.transform = 'none';
+                            el.style.scale = '1';
+                            el.style.gap = '0px';
+                            const pages = el.querySelectorAll('.report-page');
+                            pages.forEach((p: any) => {
+                                p.style.boxShadow = 'none';
+                                p.style.border = 'none';
+                            });
+                        }
                     }
-                }
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-        };
+                },
+                jsPDF: { unit: pdfUnit, format: pdfPaperSize.toLowerCase(), orientation: pdfOrientation }
+            };
 
-        html2pdf().set(opt).from(element).save().then(() => {
-            if (wasHidden && parent) parent.classList.add('hidden');
-            setIsExporting(false);
-        }).catch((err: any) => {
-            console.error(err);
-            if (wasHidden && parent) parent.classList.add('hidden');
-            setIsExporting(false);
-        });
+            html2pdf().set(opt).from(element).save().then(() => {
+                setIsExporting(false);
+            }).catch((err: any) => {
+                console.error(err);
+                setIsExporting(false);
+            });
+        }, 150);
     };
 
     // --- ITEM HISTORY STATE ---
@@ -1735,448 +1766,614 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
                                             {/* Export Preview Modal */}
                                             {showExportPreview && (
-                                                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-                                                    <div className="bg-white dark:bg-slate-900 w-full max-w-[95vw] h-[90vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+                                                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md animate-in fade-in zoom-in-95 duration-300">
+                                                    <div className="bg-white dark:bg-slate-900 w-full max-w-[98vw] h-[95vh] rounded-3xl flex flex-col shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-200 dark:border-slate-800">
                                                         {/* Modal Header */}
-                                                        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
-                                                                    <Printer size={20} className="text-slate-600 dark:text-slate-300" />
+                                                        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 z-10">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="p-3 bg-brand-50 dark:bg-brand-900/20 rounded-2xl text-brand-600 dark:text-brand-400 shadow-sm border border-brand-100 dark:border-brand-900/30">
+                                                                    <Printer size={24} strokeWidth={2.5} />
                                                                 </div>
                                                                 <div>
-                                                                    <h3 className="font-bold text-slate-800 dark:text-white uppercase">Visualizar Relatório</h3>
-                                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Verifique o layout antes de exportar</p>
+                                                                    <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Visualizar Relatório</h3>
+                                                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Ajuste o layout e as margens para impressão perfeita</p>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex items-center gap-2">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="h-10 w-px bg-slate-200 dark:bg-slate-800 hidden md:block mx-2"></div>
                                                                 <button
                                                                     onClick={handleExportHistoryPDF}
                                                                     disabled={isExporting}
-                                                                    className="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-black uppercase flex items-center gap-2 transition-all shadow-lg hover:shadow-brand-500/25 active:scale-95 disabled:opacity-50 disabled:cursor-wait"
+                                                                    className="px-8 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 transition-all shadow-xl shadow-brand-500/30 active:scale-95 disabled:opacity-50 disabled:cursor-wait"
                                                                 >
-                                                                    {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                                                                    {isExporting ? 'GERANDO PDF...' : 'EXPORTAR PDF'}
+                                                                    {isExporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} strokeWidth={2.5} />}
+                                                                    {isExporting ? 'PROCESSANDO...' : 'EXPORTAR PDF'}
                                                                 </button>
                                                                 <button
                                                                     onClick={() => setShowExportPreview(false)}
-                                                                    className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition-colors"
+                                                                    className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl text-slate-400 dark:text-slate-500 transition-all active:scale-90"
                                                                 >
-                                                                    <X size={20} />
+                                                                    <X size={24} strokeWidth={2.5} />
                                                                 </button>
                                                             </div>
                                                         </div>
 
-                                                        {/* Modal Body - Full Width Preview */}
+                                                        {/* Modal Body - Split View */}
                                                         <div className="flex-1 flex overflow-hidden">
-                                                            {/* Preview Area - Centered & Scrolled */}
-                                                            <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-4 md:p-8 overflow-auto flex justify-center">
-                                                                <div className="origin-top scale-[0.6] md:scale-[0.85] lg:scale-100 transition-transform duration-300">
-                                                                    <div ref={reportRef} id="loan-report-history" className="flex flex-col items-center gap-8 bg-transparent transform-gpu" style={{
-                                                                        width: 'fit-content',
-                                                                        padding: 0
-                                                                    }}>
-                                                                        {(() => {
-                                                                            const pageSize = 12;
-                                                                            const historyChunks = [];
-                                                                            if (itemHistoryResults.length === 0) {
-                                                                                historyChunks.push([]);
-                                                                            } else {
-                                                                                for (let i = 0; i < itemHistoryResults.length; i += pageSize) {
-                                                                                    historyChunks.push(itemHistoryResults.slice(i, i + pageSize));
-                                                                                }
-                                                                            }
+                                                            {/* Sidebar Controls - Modern UX */}
+                                                            <div className="w-85 border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-8 overflow-y-auto space-y-8 no-scrollbar">
 
-                                                                            return historyChunks.map((chunk, pageIndex) => (
-                                                                                <div key={pageIndex} className="report-page bg-white shadow-2xl flex flex-col justify-between" style={{
-                                                                                    width: '297mm',
-                                                                                    height: '210mm',
-                                                                                    overflow: 'hidden',
-                                                                                    paddingTop: `${pdfMargins.top}mm`,
-                                                                                    paddingBottom: `${pdfMargins.bottom}mm`,
-                                                                                    paddingLeft: `${pdfMargins.left}mm`,
-                                                                                    paddingRight: `${pdfMargins.right}mm`,
-                                                                                    position: 'relative',
-                                                                                    pageBreakAfter: 'always',
-                                                                                    fontFamily: "'Inter', sans-serif"
-                                                                                }}>
-                                                                                    <div className="h-full flex flex-col justify-between">
-                                                                                        <div>
-                                                                                            {/* HEADER (Same as IncidentDetail) */}
-                                                                                            <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12 mt-4">
-                                                                                                {/* Logo Esquerda (Muni) */}
-                                                                                                <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                                                                                    {customLogoLeft ? (
-                                                                                                        <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Muni" />
-                                                                                                    ) : (
-                                                                                                        <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
-                                                                                                            <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
-                                                                                                        </div>
-                                                                                                    )}
-                                                                                                </div>
+                                                                {/* Margins Section */}
+                                                                <section className="space-y-4">
+                                                                    <div className="flex items-center justify-between mb-2">
+                                                                        <h4 className="flex items-center gap-2 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
+                                                                            <Square size={14} className="text-brand-500" /> Margens ({pdfUnit})
+                                                                        </h4>
+                                                                        <button
+                                                                            onClick={() => setShowMarginGuides(!showMarginGuides)}
+                                                                            className={`p-1.5 rounded-lg border transition-all ${showMarginGuides ? 'bg-brand-50 border-brand-200 text-brand-600' : 'bg-white border-slate-200 text-slate-400'}`}
+                                                                            title="Mostrar Guias"
+                                                                        >
+                                                                            <MousePointer2 size={14} />
+                                                                        </button>
+                                                                    </div>
 
-                                                                                                <div className="text-center min-w-0 flex-1">
-                                                                                                    <h1 className="text-[14px] font-black uppercase text-slate-900 leading-tight tracking-tight whitespace-nowrap">
-                                                                                                        PREFEITURA MUNICIPAL DE ARAPONGAS
-                                                                                                    </h1>
-                                                                                                    <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-wide mt-1">
-                                                                                                        SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
-                                                                                                    </h2>
-                                                                                                    <h3 className="text-[10px] font-bold uppercase text-blue-600 mt-0.5 tracking-wider">
-                                                                                                        CENTRO DE MONITORAMENTO MUNICIPAL
-                                                                                                    </h3>
-                                                                                                </div>
+                                                                    {/* Preset Selector */}
+                                                                    <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-200/50 dark:bg-slate-800/50 rounded-2xl">
+                                                                        {(['normal', 'narrow', 'wide'] as const).map(p => (
+                                                                            <button
+                                                                                key={p}
+                                                                                onClick={() => applyPreset(p)}
+                                                                                className="px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm"
+                                                                            >
+                                                                                {p === 'normal' ? 'Normal' : p === 'narrow' ? 'Estreita' : 'Larga'}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
 
-                                                                                                {/* Logo Direita (GCM) */}
-                                                                                                <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                                                                                    {customLogo ? (
-                                                                                                        <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão GCM" />
-                                                                                                    ) : (
-                                                                                                        <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
-                                                                                                            <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
-                                                                                                        </div>
-                                                                                                    )}
-                                                                                                </div>
-                                                                                            </div>
+                                                                    {/* Modern Margin Grid */}
+                                                                    <div className="grid grid-cols-2 gap-x-4 gap-y-6 bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm relative">
+                                                                        {/* Top */}
+                                                                        <div className="col-span-2 flex flex-col items-center">
+                                                                            <label className="text-[9px] font-black text-slate-400 uppercase mb-2">Topo</label>
+                                                                            <div className="flex items-center gap-2 w-32 bg-slate-50 dark:bg-slate-900 rounded-xl p-1 border border-slate-100 dark:border-slate-700">
+                                                                                <button onClick={() => setPdfMargins(m => ({ ...m, top: Math.max(0, m.top - 1) }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Minus size={12} /></button>
+                                                                                <input type="number" value={pdfMargins.top} onChange={e => setPdfMargins(m => ({ ...m, top: parseInt(e.target.value) || 0 }))} className="w-full text-center text-xs font-black bg-transparent outline-none" />
+                                                                                <button onClick={() => setPdfMargins(m => ({ ...m, top: m.top + 1 }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Plus size={12} /></button>
+                                                                            </div>
+                                                                        </div>
+                                                                        {/* Left & Right */}
+                                                                        <div className="flex flex-col items-center">
+                                                                            <label className="text-[9px] font-black text-slate-400 uppercase mb-2">Esquerda</label>
+                                                                            <div className="flex items-center gap-2 w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-1 border border-slate-100 dark:border-slate-700">
+                                                                                <button onClick={() => setPdfMargins(m => ({ ...m, left: Math.max(0, m.left - 1) }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Minus size={10} /></button>
+                                                                                <input type="number" value={pdfMargins.left} onChange={e => setPdfMargins(m => ({ ...m, left: parseInt(e.target.value) || 0 }))} className="w-full text-center text-xs font-black bg-transparent outline-none px-0" />
+                                                                                <button onClick={() => setPdfMargins(m => ({ ...m, left: m.left + 1 }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Plus size={10} /></button>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex flex-col items-center">
+                                                                            <label className="text-[9px] font-black text-slate-400 uppercase mb-2">Direita</label>
+                                                                            <div className="flex items-center gap-2 w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-1 border border-slate-100 dark:border-slate-700">
+                                                                                <button onClick={() => setPdfMargins(m => ({ ...m, right: Math.max(0, m.right - 1) }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Minus size={10} /></button>
+                                                                                <input type="number" value={pdfMargins.right} onChange={e => setPdfMargins(m => ({ ...m, right: parseInt(e.target.value) || 0 }))} className="w-full text-center text-xs font-black bg-transparent outline-none px-0" />
+                                                                                <button onClick={() => setPdfMargins(m => ({ ...m, right: m.right + 1 }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Plus size={10} /></button>
+                                                                            </div>
+                                                                        </div>
+                                                                        {/* Bottom */}
+                                                                        <div className="col-span-2 flex flex-col items-center mt-2">
+                                                                            <label className="text-[9px] font-black text-slate-400 uppercase mb-2">Base</label>
+                                                                            <div className="flex items-center gap-2 w-32 bg-slate-50 dark:bg-slate-900 rounded-xl p-1 border border-slate-100 dark:border-slate-700">
+                                                                                <button onClick={() => setPdfMargins(m => ({ ...m, bottom: Math.max(0, m.bottom - 1) }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Minus size={12} /></button>
+                                                                                <input type="number" value={pdfMargins.bottom} onChange={e => setPdfMargins(m => ({ ...m, bottom: parseInt(e.target.value) || 0 }))} className="w-full text-center text-xs font-black bg-transparent outline-none" />
+                                                                                <button onClick={() => setPdfMargins(m => ({ ...m, bottom: m.bottom + 1 }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Plus size={12} /></button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </section>
 
-                                                                                            {/* LINHA DE DIVISÃO SUPERIOR (AZUL) */}
-                                                                                            <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '6px' }}></div>
+                                                                {/* Page Setup Section */}
+                                                                <section className="space-y-6">
+                                                                    <h4 className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                                                                        <Layers size={14} className="text-brand-500" /> Configuração de Página
+                                                                    </h4>
 
-                                                                                            {/* TÍTULO COM LINHAS LATERAIS */}
-                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-                                                                                                <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
-                                                                                                <h2 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-                                                                                                    {historyItemType === 'VEHICLE' ? 'DIÁRIO DE BORDO' : 'RELATÓRIO DE CAUTELAS'}
-                                                                                                </h2>
-                                                                                                <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
-                                                                                            </div>
+                                                                    {/* Orientation Toggle */}
+                                                                    <div className="space-y-3">
+                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Orientação</label>
+                                                                        <div className="flex p-1 bg-slate-200/50 dark:bg-slate-800/50 rounded-2xl relative">
+                                                                            <button
+                                                                                onClick={() => setPdfOrientation('portrait')}
+                                                                                className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all z-10 ${pdfOrientation === 'portrait' ? 'bg-white dark:bg-slate-700 shadow-md text-brand-600 dark:text-brand-400' : 'text-slate-500'}`}
+                                                                            >
+                                                                                <FileText size={16} /> Retrato
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => setPdfOrientation('landscape')}
+                                                                                className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all z-10 ${pdfOrientation === 'landscape' ? 'bg-white dark:bg-slate-700 shadow-md text-brand-600 dark:text-brand-400' : 'text-slate-500'}`}
+                                                                            >
+                                                                                <FileText size={16} className="rotate-90" /> Paisagem
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
 
-                                                                                            {/* LINHA DE DIVISÃO INFERIOR (AZUL) */}
-                                                                                            <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
+                                                                    {/* Paper Size & Scale */}
+                                                                    <div className="grid grid-cols-1 gap-6">
+                                                                        <div className="space-y-3">
+                                                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Tamanho do Papel</label>
+                                                                            <select
+                                                                                value={pdfPaperSize}
+                                                                                onChange={e => setPdfPaperSize(e.target.value as any)}
+                                                                                className="w-full p-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl text-[11px] font-black uppercase outline-none focus:ring-2 focus:ring-brand-500/20"
+                                                                            >
+                                                                                <option value="A4">A4 (210x297mm)</option>
+                                                                                <option value="LETTER">Carta (216x279mm)</option>
+                                                                                <option value="LEGAL">Ofício (216x356mm)</option>
+                                                                            </select>
+                                                                        </div>
 
-                                                                                            {/* VEHICLE SPECIFIC HEADER */}
-                                                                                            {historyItemType === 'VEHICLE' ? (
-                                                                                                <div className="mb-4 font-black uppercase text-[10px] text-slate-900 border border-slate-900">
-                                                                                                    <div className="grid grid-cols-12 bg-slate-100 border-b border-slate-900 divide-x divide-slate-900">
-                                                                                                        <div className="col-span-5 p-2 flex items-center gap-2">
-                                                                                                            <span className="text-slate-500 font-bold">VEÍCULO:</span>
-                                                                                                            <span className="text-[14px]">{vehicles.find(v => v.id === historyItemId)?.model}</span>
-                                                                                                        </div>
-                                                                                                        <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
-                                                                                                            <span className="text-slate-500 font-bold">PLACA:</span>
-                                                                                                            <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.plate}</span>
-                                                                                                        </div>
-                                                                                                        <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
-                                                                                                            <span className="text-slate-500 font-bold">Nº FROTA:</span>
-                                                                                                            <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fleetNumber || vehicles.find(v => v.id === historyItemId)?.prefix}</span>
-                                                                                                        </div>
-                                                                                                        <div className="col-span-3 p-2 flex items-center gap-2 justify-center">
-                                                                                                            <span className="text-slate-500 font-bold">COMBUSTÍVEL:</span>
-                                                                                                            <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fuelType || 'FLEX'}</span>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                    <div className="grid grid-cols-2 bg-slate-100 divide-x divide-slate-900">
-                                                                                                        <div className="p-2 flex items-center gap-2">
-                                                                                                            <span className="text-slate-500 font-bold">MÊS/ANO REF.:</span>
-                                                                                                            <span className="text-[12px]">
-                                                                                                                {historyStartDate ? new Date(historyStartDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase() : new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
-                                                                                                            </span>
-                                                                                                        </div>
-                                                                                                        <div className="p-2 flex items-center gap-2">
-                                                                                                            <span className="text-slate-500 font-bold">SECRETARIA:</span>
-                                                                                                            <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.department || 'SESTRAN'}</span>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            ) : (
-                                                                                                /* GENERIC HEADER ITEM DISPLAY */
-                                                                                                <div className="mb-6 bg-slate-50 border border-slate-200 rounded p-4 text-center shadow-sm">
-                                                                                                    <span className="text-[15px] font-black uppercase text-slate-900 tracking-wide">
-                                                                                                        {historyItemType === 'VEST' ? 'COLETE ' + vests.find(v => v.id === historyItemId)?.number :
-                                                                                                            historyItemType === 'RADIO' ? 'RÁDIO ' + radios.find(v => v.id === historyItemId)?.number :
-                                                                                                                equipments.find(e => e.id === historyItemId)?.name || '---'}
-                                                                                                    </span>
-                                                                                                </div>
-                                                                                            )}
+                                                                        <div className="space-y-3">
+                                                                            <div className="flex items-center justify-between pl-1">
+                                                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escala de Conteúdo</label>
+                                                                                <span className="text-[11px] font-black text-brand-600">{pdfScale}%</span>
+                                                                            </div>
+                                                                            <input
+                                                                                type="range" min="50" max="150" step="5"
+                                                                                value={pdfScale}
+                                                                                onChange={e => setPdfScale(parseInt(e.target.value))}
+                                                                                className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-brand-500"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
 
-                                                                                            {/* TABLE */}
-                                                                                            {historyItemType === 'VEHICLE' ? (
-                                                                                                /* VEHICLE DIARY TABLE */
-                                                                                                <div>
-                                                                                                    <table className="w-full border-collapse border-t border-l border-slate-900 text-[10px]">
-                                                                                                        <thead>
-                                                                                                            <tr className="bg-slate-200 text-slate-900 uppercase font-black">
-                                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
-                                                                                                                <th className="border-r border-b border-slate-900 p-2 text-left">DESTINO / MOTIVO</th>
-                                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-20">HORA SAÍDA</th>
-                                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-20">KM SAÍDA</th>
-                                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-20">HORA CHEGADA</th>
-                                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-20">KM CHEGADA</th>
-                                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-20">TOTAL KM</th>
-                                                                                                                <th className="border-r border-b border-slate-900 p-2 text-left w-48">MOTORISTA</th>
-                                                                                                            </tr>
-                                                                                                        </thead>
-                                                                                                        <tbody>
-                                                                                                            {chunk.map((item, idx) => (
-                                                                                                                <tr key={idx} className="uppercase font-bold text-slate-900">
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-center">
-                                                                                                                        {new Date(item.checkoutTime).getDate().toString().padStart(2, '0')}
-                                                                                                                    </td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-left text-[9px] truncate max-w-[200px]">
-                                                                                                                        {item.meta?.reason || '---'}
-                                                                                                                    </td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-center">
-                                                                                                                        {new Date(item.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                                                                    </td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-center">
-                                                                                                                        {item.meta?.kmStart ? Number(item.meta.kmStart).toLocaleString('pt-BR') : '-'}
-                                                                                                                    </td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-center">
-                                                                                                                        {item.returnTime ? new Date(item.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
-                                                                                                                    </td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-center">
-                                                                                                                        {item.meta?.kmEnd ? Number(item.meta.kmEnd).toLocaleString('pt-BR') : '-'}
-                                                                                                                    </td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-center">
-                                                                                                                        {(item.meta?.kmEnd && item.meta?.kmStart) ? (item.meta.kmEnd - item.meta.kmStart).toLocaleString('pt-BR') : '-'}
-                                                                                                                    </td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-left pl-2">
-                                                                                                                        {item.receiverName}
-                                                                                                                    </td>
-                                                                                                                </tr>
-                                                                                                            ))}
-                                                                                                            {/* Empty rows to fill a fixed page size (exactly 15 rows) */}
-                                                                                                            {Array.from({ length: Math.max(0, pageSize - chunk.length) }).map((_, i) => (
-                                                                                                                <tr key={`empty-${i}`} className="uppercase font-bold text-slate-900">
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-left">&nbsp;</td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
-                                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-left pl-2">&nbsp;</td>
-                                                                                                                </tr>
-                                                                                                            ))}
-                                                                                                        </tbody>
-                                                                                                    </table>
-                                                                                                </div>
-                                                                                            ) : (
-                                                                                                /* GENERIC TABLE FOR OTHER ITEMS */
-                                                                                                <table className="w-full border-collapse border border-slate-800 text-[9px]">
-                                                                                                    <thead>
-                                                                                                        <tr className="bg-slate-100 text-slate-900 uppercase font-black">
-                                                                                                            <th className="border border-slate-400 p-2 text-center w-20">Retirada</th>
-                                                                                                            <th className="border border-slate-400 p-2 text-center w-20">Devolução</th>
-                                                                                                            <th className="border border-slate-400 p-2 text-left">Responsável</th>
-                                                                                                            <th className="border border-slate-400 p-2 text-center">Status</th>
-                                                                                                            <th className="border border-slate-400 p-2 text-center">Obs</th>
-                                                                                                        </tr>
-                                                                                                    </thead>
-                                                                                                    <tbody>
-                                                                                                        {chunk.map((item, idx) => (
-                                                                                                            <tr key={idx} className="uppercase font-medium text-slate-900">
-                                                                                                                <td className="border border-slate-300 p-1 text-center leading-tight">
-                                                                                                                    {new Date(item.checkoutTime).toLocaleDateString()}<br />
-                                                                                                                    <span className="text-[8px] text-slate-500">{new Date(item.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                                                                                </td>
-                                                                                                                <td className="border border-slate-300 p-1 text-center leading-tight">
-                                                                                                                    {item.returnTime ? (
-                                                                                                                        <>
-                                                                                                                            {new Date(item.returnTime).toLocaleDateString()}<br />
-                                                                                                                            <span className="text-[8px] text-slate-500">{new Date(item.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                                                                                        </>
-                                                                                                                    ) : '-'}
-                                                                                                                </td>
-                                                                                                                <td className="border border-slate-300 p-1 text-left font-bold">{item.receiverName}</td>
-                                                                                                                <td className="border border-slate-300 p-1 text-center font-bold">
-                                                                                                                    {item.status === 'COMPLETED' ? 'DEVOLVIDO' : item.status === 'ACTIVE' ? 'EM USO' : item.status}
-                                                                                                                </td>
-                                                                                                                <td className="border border-slate-300 p-1 text-center">
-                                                                                                                    {item.meta?.notes || '-'}
-                                                                                                                </td>
-                                                                                                            </tr>
-                                                                                                        ))}
-                                                                                                    </tbody>
-                                                                                                </table>
-                                                                                            )}
-                                                                                        </div>
+                                                                    {/* Unit Switcher */}
+                                                                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Info size={14} className="text-slate-400" />
+                                                                                <span className="text-[10px] font-bold text-slate-400 uppercase">Unidade de Medida</span>
+                                                                            </div>
+                                                                            <div className="flex gap-2">
+                                                                                {(['mm', 'cm', 'in'] as const).map(u => (
+                                                                                    <button
+                                                                                        key={u}
+                                                                                        onClick={() => setPdfUnit(u)}
+                                                                                        className={`w-8 h-8 rounded-lg text-[9px] font-black uppercase flex items-center justify-center border transition-all ${pdfUnit === u ? 'bg-brand-600 border-brand-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400'}`}
+                                                                                    >
+                                                                                        {u}
+                                                                                    </button>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </section>
 
-                                                                                    </div>
-                                                                                </div>
-                                                                            ));
-                                                                        })()}
+                                                                {/* Traceability Summary in Sidebar */}
+                                                                <div className="pt-8 mt-8 border-t border-slate-100 dark:border-slate-800">
+                                                                    <div className="bg-slate-100/50 dark:bg-slate-800/50 p-4 rounded-3xl space-y-3">
+                                                                        <div className="flex items-center gap-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                                                                            <Shield size={10} /> Metadados de Auditoria
+                                                                        </div>
+                                                                        <div className="space-y-1">
+                                                                            <p className="text-[7px] text-slate-500 font-bold uppercase truncate">IP: <span className="text-slate-700 dark:text-slate-300">{exportIP}</span></p>
+                                                                            <p className="text-[7px] text-slate-500 font-bold uppercase truncate">Hash: <span className="text-slate-700 dark:text-slate-300">{exportHash.substring(0, 20)}...</span></p>
+                                                                            <p className="text-[7px] text-slate-500 font-bold uppercase">Data: <span className="text-slate-700 dark:text-slate-300">{exportDate}</span></p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
 
-                                                                        {/* PAGE 2 - FUEL CONTROL (Only for Vehicles) */}
-                                                                        {historyItemType === 'VEHICLE' && (
-                                                                            <div className="report-page bg-white shadow-2xl flex flex-col justify-between" style={{
-                                                                                width: '297mm',
-                                                                                height: '210mm',
+                                                            {/* Preview Area (The Canvas) - WYSIWYG */}
+                                                            <div className="flex-1 bg-[#F3F4F6] dark:bg-slate-950 p-12 overflow-y-auto no-scrollbar scroll-smooth flex flex-col items-center">
+                                                                {/* Visual Scale Controller Info */}
+                                                                <div className="mb-8 flex items-center gap-3 px-4 py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur rounded-full border border-slate-200 dark:border-slate-800 shadow-sm transition-opacity hover:opacity-100 opacity-60">
+                                                                    <Maximize size={14} className="text-slate-400" />
+                                                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Previsualização fiel à impressão</span>
+                                                                </div>
+
+                                                                <div
+                                                                    ref={printRef}
+                                                                    id="history-export-container"
+                                                                    className="flex flex-col items-center gap-12 bg-transparent transform-gpu"
+                                                                    style={{ scale: pdfScale / 100 }}
+                                                                >
+                                                                    {(() => {
+                                                                        const historyChunks: LoanRecord[][] = [];
+                                                                        const items = [...itemHistoryResults];
+                                                                        
+                                                                        const pageHeight = pdfOrientation === 'portrait' ? 297 : 210;
+                                                                        const safeZone = 15; 
+                                                                        const topMargin = pdfMargins.top;
+                                                                        const bottomMargin = pdfMargins.bottom;
+                                                                        
+                                                                        const firstPageOverhead = (historyItemType === 'VEHICLE' ? 115 : 85);
+                                                                        const tableHeaderHeight = 12;
+                                                                        const rowHeight = 10; 
+                                                                        
+                                                                        let curPage = 0;
+                                                                        while (items.length > 0 || (curPage === 0 && items.length === 0)) {
+                                                                            const availableHeight = pageHeight - topMargin - bottomMargin - safeZone - (curPage === 0 ? firstPageOverhead : tableHeaderHeight);
+                                                                            const rowsThatFit = Math.max(1, Math.floor(availableHeight / rowHeight));
+                                                                            historyChunks.push(items.splice(0, rowsThatFit));
+                                                                            curPage++;
+                                                                        }
+                                                                        return historyChunks.map((chunk, pageIndex) => (
+                                                                            <div key={pageIndex} className="report-page bg-white shadow-2xl overflow-hidden" style={{ width: pdfOrientation === 'portrait' ? '210mm' : '297mm',
+                                                                                height: pdfOrientation === 'portrait' ? '297mm' : '210mm',
                                                                                 paddingTop: `${pdfMargins.top}mm`,
                                                                                 paddingBottom: `${pdfMargins.bottom}mm`,
                                                                                 paddingLeft: `${pdfMargins.left}mm`,
                                                                                 paddingRight: `${pdfMargins.right}mm`,
                                                                                 position: 'relative',
-                                                                                pageBreakAfter: 'always',
                                                                                 fontFamily: "'Inter', sans-serif"
                                                                             }}>
-                                                                                <div className="h-full flex flex-col justify-between">
-                                                                                    {/* HEADER (Replicated) */}
-                                                                                    <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12 mt-4">
-                                                                                        <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                                                                            {customLogoLeft ? (
-                                                                                                <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Muni" />
-                                                                                            ) : (
-                                                                                                <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
-                                                                                                    <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
-                                                                                                </div>
-                                                                                            )}
+                                                                                <div className="h-full flex flex-col">
+                                                                                    <div>
+                                                                                        {pageIndex === 0 && (
+<>
+{/* HEADER (Same as IncidentDetail) */}
+                                                                                        <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12 mt-4">
+                                                                                            {/* Logo Esquerda (Muni) */}
+                                                                                            <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                                                                {customLogoLeft ? (
+                                                                                                    <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Muni" />
+                                                                                                ) : (
+                                                                                                    <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                                                        <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
+                                                                                                    </div>
+                                                                                                )}
+                                                                                            </div>
+
+                                                                                            <div className="text-center min-w-0 flex-1">
+                                                                                                <h1 className="text-[14px] font-black uppercase text-slate-900 leading-tight tracking-tight whitespace-nowrap">
+                                                                                                    PREFEITURA MUNICIPAL DE ARAPONGAS
+                                                                                                </h1>
+                                                                                                <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-wide mt-1">
+                                                                                                    SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
+                                                                                                </h2>
+                                                                                                <h3 className="text-[10px] font-bold uppercase text-blue-600 mt-0.5 tracking-wider">
+                                                                                                    CENTRO DE MONITORAMENTO MUNICIPAL
+                                                                                                </h3>
+                                                                                            </div>
+
+                                                                                            {/* Logo Direita (GCM) */}
+                                                                                            <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                                                                {customLogo ? (
+                                                                                                    <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão GCM" />
+                                                                                                ) : (
+                                                                                                    <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                                                        <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
+                                                                                                    </div>
+                                                                                                )}
+                                                                                            </div>
                                                                                         </div>
 
-                                                                                        <div className="text-center min-w-0 flex-1">
-                                                                                            <h1 className="text-[14px] font-black uppercase text-slate-900 leading-tight tracking-tight whitespace-nowrap">
-                                                                                                PREFEITURA MUNICIPAL DE ARAPONGAS
-                                                                                            </h1>
-                                                                                            <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-wide mt-1">
-                                                                                                SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
+                                                                                        {/* LINHA DE DIVISÃO SUPERIOR (AZUL) */}
+                                                                                        <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '6px' }}></div>
+
+                                                                                        {/* TÍTULO COM LINHAS LATERAIS */}
+                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                                                                                            <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                                                            <h2 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+                                                                                                {historyItemType === 'VEHICLE' ? 'DIÁRIO DE BORDO' : 'RELATÓRIO DE CAUTELAS'}
                                                                                             </h2>
-                                                                                            <h3 className="text-[10px] font-bold uppercase text-blue-600 mt-0.5 tracking-wider">
-                                                                                                CENTRO DE MONITORAMENTO MUNICIPAL
-                                                                                            </h3>
+                                                                                            <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
                                                                                         </div>
 
-                                                                                        <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                                                                            {customLogo ? (
-                                                                                                <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão GCM" />
-                                                                                            ) : (
-                                                                                                <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
-                                                                                                    <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
+                                                                                        {/* LINHA DE DIVISÃO INFERIOR (AZUL) */}
+                                                                                        <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
+
+                                                                                        {/* VEHICLE SPECIFIC HEADER */}
+                                                                                        {historyItemType === 'VEHICLE' ? (
+                                                                                            <div className="mb-4 font-black uppercase text-[10px] text-slate-900 border border-slate-900">
+                                                                                                <div className="grid grid-cols-12 bg-slate-100 border-b border-slate-900 divide-x divide-slate-900">
+                                                                                                    <div className="col-span-5 p-2 flex items-center gap-2">
+                                                                                                        <span className="text-slate-500 font-bold">VEÍCULO:</span>
+                                                                                                        <span className="text-[14px]">{vehicles.find(v => v.id === historyItemId)?.model}</span>
+                                                                                                    </div>
+                                                                                                    <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                                                        <span className="text-slate-500 font-bold">PLACA:</span>
+                                                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.plate}</span>
+                                                                                                    </div>
+                                                                                                    <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                                                        <span className="text-slate-500 font-bold">Nº FROTA:</span>
+                                                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fleetNumber || vehicles.find(v => v.id === historyItemId)?.prefix}</span>
+                                                                                                    </div>
+                                                                                                    <div className="col-span-3 p-2 flex items-center gap-2 justify-center">
+                                                                                                        <span className="text-slate-500 font-bold">COMBUSTÍVEL:</span>
+                                                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fuelType || 'FLEX'}</span>
+                                                                                                    </div>
                                                                                                 </div>
-                                                                                            )}
-                                                                                        </div>
-                                                                                    </div>
-
-                                                                                    {/* LINES */}
-                                                                                    <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '6px' }}></div>
-                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-                                                                                        <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
-                                                                                        <h2 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-                                                                                            CONTROLE DE ABASTECIMENTO
-                                                                                        </h2>
-                                                                                        <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
-                                                                                    </div>
-                                                                                    <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
-
-                                                                                    {/* FUEL HEADER INFO */}
-                                                                                    <div className="mb-4 font-black uppercase text-[10px] text-slate-900 border border-slate-900">
-                                                                                        <div className="grid grid-cols-12 bg-slate-100 border-b border-slate-900 divide-x divide-slate-900">
-                                                                                            <div className="col-span-5 p-2 flex items-center gap-2">
-                                                                                                <span className="text-slate-500 font-bold">VEÍCULO:</span>
-                                                                                                <span className="text-[14px]">{vehicles.find(v => v.id === historyItemId)?.model}</span>
+                                                                                                <div className="grid grid-cols-2 bg-slate-100 divide-x divide-slate-900">
+                                                                                                    <div className="p-2 flex items-center gap-2">
+                                                                                                        <span className="text-slate-500 font-bold">MÊS/ANO REF.:</span>
+                                                                                                        <span className="text-[12px]">
+                                                                                                            {historyStartDate ? new Date(historyStartDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase() : new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                    <div className="p-2 flex items-center gap-2">
+                                                                                                        <span className="text-slate-500 font-bold">SECRETARIA:</span>
+                                                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.department || 'SESTRAN'}</span>
+                                                                                                    </div>
+                                                                                                </div>
                                                                                             </div>
-                                                                                            <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
-                                                                                                <span className="text-slate-500 font-bold">PLACA:</span>
-                                                                                                <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.plate}</span>
-                                                                                            </div>
-                                                                                            <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
-                                                                                                <span className="text-slate-500 font-bold">Nº FROTA:</span>
-                                                                                                <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fleetNumber || vehicles.find(v => v.id === historyItemId)?.prefix}</span>
-                                                                                            </div>
-                                                                                            <div className="col-span-3 p-2 flex items-center gap-2 justify-center">
-                                                                                                <span className="text-slate-500 font-bold">COMBUSTÍVEL:</span>
-                                                                                                <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fuelType || 'FLEX'}</span>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                        <div className="grid grid-cols-2 bg-slate-100 divide-x divide-slate-900">
-                                                                                            <div className="p-2 flex items-center gap-2">
-                                                                                                <span className="text-slate-500 font-bold">MÊS/ANO REF.:</span>
-                                                                                                <span className="text-[12px]">
-                                                                                                    {historyStartDate ? new Date(historyStartDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase() : new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                                                                                        ) : (
+                                                                                            /* GENERIC HEADER ITEM DISPLAY */
+                                                                                            <div className="mb-6 bg-slate-50 border border-slate-200 rounded p-4 text-center shadow-sm">
+                                                                                                <span className="text-[15px] font-black uppercase text-slate-900 tracking-wide">
+                                                                                                    {historyItemType === 'VEST' ? 'COLETE ' + vests.find(v => v.id === historyItemId)?.number :
+                                                                                                        historyItemType === 'RADIO' ? 'RÁDIO ' + radios.find(v => v.id === historyItemId)?.number :
+                                                                                                            equipments.find(e => e.id === historyItemId)?.name || '---'}
                                                                                                 </span>
                                                                                             </div>
-                                                                                            <div className="p-2 flex items-center gap-2">
-                                                                                                <span className="text-slate-500 font-bold">SECRETARIA:</span>
-                                                                                                <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.department || 'SESTRAN'}</span>
+                                                                                        )}
+
+                                                                                        </>
+)}{/* TABLE */}
+                                                                                        {historyItemType === 'VEHICLE' ? (
+                                                                                            /* VEHICLE DIARY TABLE */
+                                                                                            <div>
+                                                                                                <table className="w-full border-collapse border-t border-l border-slate-900 text-[10px]">
+                                                                                                    <thead>
+                                                                                                        <tr className="bg-slate-200 text-slate-900 uppercase font-black">
+                                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
+                                                                                                            <th className="border-r border-b border-slate-900 p-2 text-left">DESTINO / MOTIVO</th>
+                                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-20">HORA SAÍDA</th>
+                                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-20">KM SAÍDA</th>
+                                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-20">HORA CHEGADA</th>
+                                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-20">KM CHEGADA</th>
+                                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-20">TOTAL KM</th>
+                                                                                                            <th className="border-r border-b border-slate-900 p-2 text-left w-48">MOTORISTA</th>
+                                                                                                        </tr>
+                                                                                                    </thead>
+                                                                                                    <tbody>
+                                                                                                        {chunk.map((item, idx) => (
+                                                                                                            <tr key={idx} className="uppercase font-bold text-slate-900" style={{ pageBreakInside: "avoid" }}>
+                                                                                                                <td className="border-r border-b border-slate-900 p-2 text-center">
+                                                                                                                    {new Date(item.checkoutTime).getDate().toString().padStart(2, '0')}
+                                                                                                                </td>
+                                                                                                                <td className="border-r border-b border-slate-900 p-2 text-left">
+                                                                                                                    {item.meta?.reason || '---'}
+                                                                                                                </td>
+                                                                                                                <td className="border-r border-b border-slate-900 p-2 text-center">
+                                                                                                                    {new Date(item.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                                                </td>
+                                                                                                                <td className="border-r border-b border-slate-900 p-2 text-center">
+                                                                                                                    {item.meta?.kmStart ? Number(item.meta.kmStart).toLocaleString('pt-BR') : '-'}
+                                                                                                                </td>
+                                                                                                                <td className="border-r border-b border-slate-900 p-2 text-center">
+                                                                                                                    {item.returnTime ? new Date(item.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                                                                                </td>
+                                                                                                                <td className="border-r border-b border-slate-900 p-2 text-center">
+                                                                                                                    {item.meta?.kmEnd ? Number(item.meta.kmEnd).toLocaleString('pt-BR') : '-'}
+                                                                                                                </td>
+                                                                                                                <td className="border-r border-b border-slate-900 p-2 text-center">
+                                                                                                                    {(item.meta?.kmEnd && item.meta?.kmStart) ? (item.meta.kmEnd - item.meta.kmStart).toLocaleString('pt-BR') : '-'}
+                                                                                                                </td>
+                                                                                                                <td className="border-r border-b border-slate-900 p-2 text-left">
+                                                                                                                    {item.receiverName}
+                                                                                                                </td>
+                                                                                                            </tr>
+                                                                                                        ))}
+                                                                                                    </tbody>
+                                                                                                </table>
                                                                                             </div>
-                                                                                        </div>
+                                                                                        ) : (
+                                                                                            /* GENERIC TABLE FOR OTHER ITEMS */
+                                                                                            <table className="w-full border-collapse border border-slate-800 text-[9px]">
+                                                                                                <thead>
+                                                                                                    <tr className="bg-slate-100 text-slate-900 uppercase font-black">
+                                                                                                        <th className="border border-slate-400 p-2 text-center w-20">Retirada</th>
+                                                                                                        <th className="border border-slate-400 p-2 text-center w-20">Devolução</th>
+                                                                                                        <th className="border border-slate-400 p-2 text-left">Responsável</th>
+                                                                                                        <th className="border border-slate-400 p-2 text-center">Status</th>
+                                                                                                        <th className="border border-slate-400 p-2 text-center">Obs</th>
+                                                                                                    </tr>
+                                                                                                </thead>
+                                                                                                <tbody>
+                                                                                                    {chunk.map((item, idx) => (
+                                                                                                        <tr key={idx} className="uppercase font-medium text-slate-900">
+                                                                                                            <td className="border border-slate-300 p-1 text-center leading-tight">
+                                                                                                                {new Date(item.checkoutTime).toLocaleDateString()}<br />
+                                                                                                                <span className="text-[8px] text-slate-500">{new Date(item.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                                                            </td>
+                                                                                                            <td className="border border-slate-300 p-1 text-center leading-tight">
+                                                                                                                {item.returnTime ? (
+                                                                                                                    <>
+                                                                                                                        {new Date(item.returnTime).toLocaleDateString()}<br />
+                                                                                                                        <span className="text-[8px] text-slate-500">{new Date(item.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                                                                    </>
+                                                                                                                ) : '-'}
+                                                                                                            </td>
+                                                                                                            <td className="border border-slate-300 p-1 text-left font-bold">{item.receiverName}</td>
+                                                                                                            <td className="border border-slate-300 p-1 text-center font-bold">
+                                                                                                                {item.status === 'COMPLETED' ? 'DEVOLVIDO' : item.status === 'ACTIVE' ? 'EM USO' : item.status}
+                                                                                                            </td>
+                                                                                                            <td className="border border-slate-300 p-1 text-center">
+                                                                                                                {item.meta?.notes || '-'}
+                                                                                                            </td>
+                                                                                                        </tr>
+                                                                                                    ))}
+                                                                                                </tbody>
+                                                                                            </table>
+                                                                                        )}
                                                                                     </div>
 
-                                                                                    {/* FUEL TABLE */}
-                                                                                    <table className="w-full border-collapse border-t border-l border-slate-900 text-[10px] mb-0">
-                                                                                        <thead>
-                                                                                            <tr className="bg-slate-200 text-slate-900 uppercase font-black">
-                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
-                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-24">QUANT. LITROS</th>
-                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-32">Nº CUPOM ABAST.</th>
-                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center">FORNECEDOR</th>
-                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-24">KILOMETRAGEM</th>
-                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-48">MOTORISTA</th>
-                                                                                            </tr>
-                                                                                        </thead>
-                                                                                        <tbody>
-                                                                                            {itemHistoryResults.filter(item => item.meta?.fuelRefill).map((item, idx) => (
-                                                                                                <tr key={idx} className="uppercase font-bold text-slate-900 text-center">
-                                                                                                    <td className="border-r border-b border-slate-900 p-1.5">{new Date(item.returnTime || item.checkoutTime).getDate().toString().padStart(2, '0')}</td>
-                                                                                                    <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.fuelLiters ? Number(item.meta.fuelLiters).toLocaleString('pt-BR') : '-'}</td>
-                                                                                                    <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.couponNumber || '-'}</td>
-                                                                                                    <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.supplier || '-'}</td>
-                                                                                                    <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.fuelKm ? Number(item.meta.fuelKm).toLocaleString('pt-BR') : (item.meta?.kmEnd ? Number(item.meta.kmEnd).toLocaleString('pt-BR') : '-')}</td>
-                                                                                                    <td className="border-r border-b border-slate-900 p-1.5 text-left pl-4">{item.meta?.driver || item.receiverName}</td>
-                                                                                                </tr>
-                                                                                            ))}
-                                                                                            {/* Empty Rows 15 rows approx */}
-                                                                                            {Array.from({ length: Math.max(0, 12 - itemHistoryResults.filter(item => item.meta?.fuelRefill).length) }).map((_, i) => (
-                                                                                                <tr key={`empty-fuel-${i}`} className="h-6">
-                                                                                                    <td className="border-r border-b border-slate-900"></td>
-                                                                                                    <td className="border-r border-b border-slate-900"></td>
-                                                                                                    <td className="border-r border-b border-slate-900"></td>
-                                                                                                    <td className="border-r border-b border-slate-900"></td>
-                                                                                                    <td className="border-r border-b border-slate-900"></td>
-                                                                                                    <td className="border-r border-b border-slate-900"></td>
-                                                                                                </tr>
-                                                                                            ))}
-                                                                                        </tbody>
-                                                                                    </table>
-
-                                                                                    {/* OIL CONTROL HEADER & TABLE */}
-                                                                                    <div className="bg-slate-200 border-l border-r border-b border-slate-900 p-1 text-center font-black uppercase text-[10px] text-slate-900">
-                                                                                        CONTROLE DE ÓLEO LUBRIFICANTE
-                                                                                    </div>
-                                                                                    <table className="w-full border-collapse border-l border-slate-900 text-[10px] mb-4">
-                                                                                        <thead>
-                                                                                            <tr className="bg-slate-100 text-slate-900 uppercase font-black">
-                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
-                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-24">QUANT. LITROS</th>
-                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center">TIPO DE ÓLEO</th>
-                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center">FORNECEDOR</th>
-                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-24">KILOMETRAGEM</th>
-                                                                                                <th className="border-r border-b border-slate-900 p-2 text-center w-48">MOTORISTA</th>
-                                                                                            </tr>
-                                                                                        </thead>
-                                                                                        <tbody>
-                                                                                            {/* Empty rows for Oil (3 rows as per image approx) */}
-                                                                                            {Array.from({ length: 3 }).map((_, i) => (
-                                                                                                <tr key={`empty-oil-${i}`} className="h-6">
-                                                                                                    <td className="border-r border-b border-slate-900"></td>
-                                                                                                    <td className="border-r border-b border-slate-900"></td>
-                                                                                                    <td className="border-r border-b border-slate-900"></td>
-                                                                                                    <td className="border-r border-b border-slate-900"></td>
-                                                                                                    <td className="border-r border-b border-slate-900"></td>
-                                                                                                    <td className="border-r border-b border-slate-900"></td>
-                                                                                                </tr>
-                                                                                            ))}
-                                                                                        </tbody>
-                                                                                    </table>
-
-
-
-                                                                                    {/* FOOTER WARNING */}
-                                                                                    <div className="text-[8px] text-slate-500 text-justify leading-tight border-t border-slate-200 pt-2">
-                                                                                        ATENÇÃO: As informações aqui prestadas, para fins de direito, estão sujeitas ao art. 299 Decreto Lei 2.848/1940 (Código Penal). Concomitante ao art. 216, inciso XV. Lei 4451/2016 (Estatuto).
-                                                                                    </div>
                                                                                 </div>
                                                                             </div>
-                                                                        )}
-                                                                    </div>
+                                                                        ));
+                                                                    })()}
+
+                                                                    {/* PAGE 2 - FUEL CONTROL (Only for Vehicles) */}
+                                                                    {historyItemType === 'VEHICLE' && (
+                                                                        <div className="report-page bg-white shadow-2xl overflow-hidden flex flex-col" style={{
+                                                                            width: pdfOrientation === 'portrait' ? '210mm' : '297mm',
+                                                                            height: pdfOrientation === 'portrait' ? '297mm' : '210mm',
+                                                                            minHeight: '210mm',
+                                                                            paddingTop: `${pdfMargins.top}mm`,
+                                                                            paddingBottom: `${pdfMargins.bottom}mm`,
+                                                                            paddingLeft: `${pdfMargins.left}mm`,
+                                                                            paddingRight: `${pdfMargins.right}mm`,
+                                                                            position: 'relative',
+                                                                            pageBreakAfter: 'always',
+                                                                            fontFamily: "'Inter', sans-serif"
+                                                                        }}>
+                                                                            <div className="h-full flex flex-col">
+                                                                                {/* HEADER (Replicated) */}
+                                                                                <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12 mt-4">
+                                                                                    <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                                                        {customLogoLeft ? (
+                                                                                            <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Muni" />
+                                                                                        ) : (
+                                                                                            <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                                                <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+
+                                                                                    <div className="text-center min-w-0 flex-1">
+                                                                                        <h1 className="text-[14px] font-black uppercase text-slate-900 leading-tight tracking-tight whitespace-nowrap">
+                                                                                            PREFEITURA MUNICIPAL DE ARAPONGAS
+                                                                                        </h1>
+                                                                                        <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-wide mt-1">
+                                                                                            SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
+                                                                                        </h2>
+                                                                                        <h3 className="text-[10px] font-bold uppercase text-blue-600 mt-0.5 tracking-wider">
+                                                                                            CENTRO DE MONITORAMENTO MUNICIPAL
+                                                                                        </h3>
+                                                                                    </div>
+
+                                                                                    <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                                                        {customLogo ? (
+                                                                                            <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão GCM" />
+                                                                                        ) : (
+                                                                                            <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                                                <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                {/* LINES */}
+                                                                                <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '6px' }}></div>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                                                                                    <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                                                    <h2 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+                                                                                        CONTROLE DE ABASTECIMENTO
+                                                                                    </h2>
+                                                                                    <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                                                </div>
+                                                                                <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
+
+                                                                                {/* FUEL HEADER INFO */}
+                                                                                <div className="mb-4 font-black uppercase text-[10px] text-slate-900 border border-slate-900">
+                                                                                    <div className="grid grid-cols-12 bg-slate-100 border-b border-slate-900 divide-x divide-slate-900">
+                                                                                        <div className="col-span-5 p-2 flex items-center gap-2">
+                                                                                            <span className="text-slate-500 font-bold">VEÍCULO:</span>
+                                                                                            <span className="text-[14px]">{vehicles.find(v => v.id === historyItemId)?.model}</span>
+                                                                                        </div>
+                                                                                        <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                                            <span className="text-slate-500 font-bold">PLACA:</span>
+                                                                                            <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.plate}</span>
+                                                                                        </div>
+                                                                                        <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                                            <span className="text-slate-500 font-bold">Nº FROTA:</span>
+                                                                                            <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fleetNumber || vehicles.find(v => v.id === historyItemId)?.prefix}</span>
+                                                                                        </div>
+                                                                                        <div className="col-span-3 p-2 flex items-center gap-2 justify-center">
+                                                                                            <span className="text-slate-500 font-bold">COMBUSTÍVEL:</span>
+                                                                                            <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fuelType || 'FLEX'}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="grid grid-cols-2 bg-slate-100 divide-x divide-slate-900">
+                                                                                        <div className="p-2 flex items-center gap-2">
+                                                                                            <span className="text-slate-500 font-bold">MÊS/ANO REF.:</span>
+                                                                                            <span className="text-[12px]">
+                                                                                                {historyStartDate ? new Date(historyStartDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase() : new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <div className="p-2 flex items-center gap-2">
+                                                                                            <span className="text-slate-500 font-bold">SECRETARIA:</span>
+                                                                                            <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.department || 'SESTRAN'}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                {/* FUEL TABLE */}
+                                                                                <table className="w-full border-collapse border-t border-l border-slate-900 text-[10px] mb-0">
+                                                                                    <thead>
+                                                                                        <tr className="bg-slate-200 text-slate-900 uppercase font-black">
+                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
+                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-24">QUANT. LITROS</th>
+                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-32">Nº CUPOM ABAST.</th>
+                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center">FORNECEDOR</th>
+                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-24">KILOMETRAGEM</th>
+                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-48">MOTORISTA</th>
+                                                                                        </tr>
+                                                                                    </thead>
+                                                                                    <tbody>
+                                                                                        {itemHistoryResults.filter(item => item.meta?.fuelRefill).map((item, idx) => (
+                                                                                            <tr key={idx} className="uppercase font-bold text-slate-900 text-center h-6">
+                                                                                                <td className="border-r border-b border-slate-900 p-1">{new Date(item.checkoutTime).getDate().toString().padStart(2, '0')}</td>
+                                                                                                <td className="border-r border-b border-slate-900 p-1">{item.meta?.fuelLiters || '-'}</td>
+                                                                                                <td className="border-r border-b border-slate-900 p-1">{item.meta?.couponNumber || '-'}</td>
+                                                                                                <td className="border-r border-b border-slate-900 p-1">{item.meta?.supplier || '-'}</td>
+                                                                                                <td className="border-r border-b border-slate-900 p-1">{item.meta?.fuelKm ? Number(item.meta.fuelKm).toLocaleString('pt-BR') : '-'}</td>
+                                                                                                <td className="border-r border-b border-slate-900 p-1 text-left px-2">{item.meta?.driver || item.receiverName}</td>
+                                                                                            </tr>
+                                                                                        ))}
+                                                                                        {/* Empty Rows 15 rows approx */}
+                                                                                        {Array.from({ length: Math.max(0, 12 - itemHistoryResults.filter(item => item.meta?.fuelRefill).length) }).map((_, i) => (
+                                                                                            <tr key={`empty-fuel-${i}`} className="h-6">
+                                                                                                <td className="border-r border-b border-slate-900"></td>
+                                                                                                <td className="border-r border-b border-slate-900"></td>
+                                                                                                <td className="border-r border-b border-slate-900"></td>
+                                                                                                <td className="border-r border-b border-slate-900"></td>
+                                                                                                <td className="border-r border-b border-slate-900"></td>
+                                                                                                <td className="border-r border-b border-slate-900"></td>
+                                                                                            </tr>
+                                                                                        ))}
+                                                                                    </tbody>
+                                                                                </table>
+
+                                                                                {/* OIL CONTROL HEADER & TABLE */}
+                                                                                <div className="bg-slate-200 border-l border-r border-b border-slate-900 p-1 text-center font-black uppercase text-[10px] text-slate-900">
+                                                                                    CONTROLE DE ÓLEO LUBRIFICANTE
+                                                                                </div>
+                                                                                <table className="w-full border-collapse border-l border-slate-900 text-[10px] mb-4">
+                                                                                    <thead>
+                                                                                        <tr className="bg-slate-100 text-slate-900 uppercase font-black">
+                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
+                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-24">QUANT. LITROS</th>
+                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center">TIPO DE ÓLEO</th>
+                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center">FORNECEDOR</th>
+                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-24">KILOMETRAGEM</th>
+                                                                                            <th className="border-r border-b border-slate-900 p-2 text-center w-48">MOTORISTA</th>
+                                                                                        </tr>
+                                                                                    </thead>
+                                                                                    <tbody>
+                                                                                        {/* Empty rows for Oil (3 rows as per image approx) */}
+                                                                                        {Array.from({ length: 3 }).map((_, i) => (
+                                                                                            <tr key={`empty-oil-${i}`} className="h-6">
+                                                                                                <td className="border-r border-b border-slate-900"></td>
+                                                                                                <td className="border-r border-b border-slate-900"></td>
+                                                                                                <td className="border-r border-b border-slate-900"></td>
+                                                                                                <td className="border-r border-b border-slate-900"></td>
+                                                                                                <td className="border-r border-b border-slate-900"></td>
+                                                                                                <td className="border-r border-b border-slate-900"></td>
+                                                                                            </tr>
+                                                                                        ))}
+                                                                                    </tbody>
+                                                                                </table>
+
+
+
+                                                                                {/* FOOTER WARNING */}
+                                                                                <div className="text-[8px] text-slate-500 text-justify leading-tight border-t border-slate-200 pt-2">
+                                                                                    ATENÇÃO: As informações aqui prestadas, para fins de direito, estão sujeitas ao art. 299 Decreto Lei 2.848/1940 (Código Penal). Concomitante ao art. 216, inciso XV. Lei 4451/2016 (Estatuto).
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -2187,394 +2384,265 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                     )}
                                 </>
                             )}
-
-                            {/* UNIFIED GRID VIEW (Conditionally Rendered) */}
-                            {(!activeTab || activeTab !== 'HISTORY' || historyMode === 'USER') && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-                                    {groupedLoans.map((group) => (
-                                        <div
-                                            key={group.id}
-                                            onClick={() => setSelectedGroup(group)}
-                                            className={`rounded-2xl border-2 overflow-hidden flex flex-col shadow-sm transition-all hover:shadow-md cursor-pointer ${group.type === 'PENDING'
-                                                ? 'border-amber-400 bg-white dark:bg-slate-900 shadow-amber-500/5'
-                                                : group.type === 'HISTORY'
-                                                    ? 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-slate-500/5 opacity-80 hover:opacity-100'
-                                                    : 'border-emerald-400 bg-white dark:bg-slate-900 shadow-emerald-500/5'
-                                                }`}
-                                        >
-                                            {/* Header */}
-                                            <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center text-lg font-black shadow-sm ${group.type === 'PENDING' ? 'bg-amber-100 text-amber-600' : group.type === 'HISTORY' ? 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400' : 'bg-emerald-100 text-emerald-600'}`}>
-                                                        {group.receiverName.charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <div className="flex flex-col min-w-0 flex-1">
-                                                        <h3 className="text-xs md:text-sm font-black text-slate-800 dark:text-slate-100 uppercase leading-tight mb-1 tracking-tight truncate" title={group.receiverName}>
-                                                            {group.receiverName}
-                                                        </h3>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md border ${group.type === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200'
-                                                                : group.type === 'HISTORY' ? 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
-                                                                    : 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                                                }`}>
-                                                                {group.type === 'PENDING' ? 'AGUARDANDO' : group.type === 'HISTORY' ? (group.loans.some(l => l.status === 'REJECTED') ? 'RECUSADO' : 'DEVOLVIDO') : 'EM POSSE'}
-                                                            </span>
-                                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                                                <Clock size={10} className="opacity-60" />
-                                                                {new Date(group.loans[0].checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Items Grid */}
-                                            <div className="p-2 flex-1 overflow-y-auto max-h-[350px]">
-                                                <div className="grid grid-cols-2 gap-2 h-full content-start">
-                                                    {group.loans.map(loan => (
-                                                        <div
-                                                            key={loan.id}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setActiveMobileLoanId(prev => prev === loan.id ? null : loan.id);
-                                                            }}
-                                                            className="bg-slate-50/40 dark:bg-slate-800/20 rounded-xl p-2 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-800 min-h-[75px] relative group transition-all hover:bg-white dark:hover:bg-slate-800 shadow-sm cursor-pointer"
-                                                        >
-                                                            <div className={`mb-1 ${group.type === 'PENDING' ? 'text-amber-500' : group.type === 'HISTORY' ? 'text-slate-400' : 'text-emerald-500'}`}>
-                                                                {getAssetIcon(loan.assetType, 20)}
-                                                            </div>
-                                                            <p className="text-[8px] font-black text-slate-800 dark:text-slate-200 uppercase leading-tight mb-0.5 line-clamp-2 px-1">
-                                                                {loan.assetDescription}
-                                                            </p>
-                                                            {loan.assetType === 'VEHICLE' && (
-                                                                <span className="text-[7px] font-bold text-slate-400 uppercase">{loan.meta?.kmStart} KM</span>
-                                                            )}
-                                                            {(loan.assetType === 'VEST' || loan.assetDescription.includes('(M)') || loan.assetDescription.includes('(G)')) && (
-                                                                <span className="text-[7px] font-bold text-slate-400 uppercase opacity-60">
-                                                                    TAM: ({loan.assetDescription.match(/\((.*?)\)/)?.[1] || '---'})
-                                                                </span>
-                                                            )}
-
-                                                            {/* Individual Action (Overlay) */}
-                                                            {((group.type === 'PENDING' && ((canApprove && currentUser.id === group.receiverId) || (canCreate && currentUser.id === loan.operatorId))) || (group.type === 'ACTIVE' && (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')))) && (
-                                                                <div className={`absolute inset-0 bg-slate-900/90 rounded-xl flex items-center justify-center transition-all duration-200 backdrop-blur-[2px] z-10 p-1.5 gap-1 font-black uppercase ${activeMobileLoanId === loan.id ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'} md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto`}>
-                                                                    {group.type === 'PENDING' ? (
-                                                                        <div className="flex flex-col gap-1 w-full h-full p-1 justify-center items-center overflow-hidden">
-                                                                            {currentUser.id === group.receiverId && canApprove && (
-                                                                                <>
-                                                                                    <button
-                                                                                        disabled={isSubmitting}
-                                                                                        onClick={(e) => { e.stopPropagation(); handleConfirm(loan); }}
-                                                                                        className="w-full flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
-                                                                                    >
-                                                                                        <CheckCircle size={12} className="flex-shrink-0" /> <span className="truncate">{loan.status === 'ACTIVE' ? 'ACEITAR TROCA' : 'ACEITAR'}</span>
-                                                                                    </button>
-                                                                                    <button
-                                                                                        disabled={isSubmitting}
-                                                                                        onClick={(e) => { e.stopPropagation(); handleReject(loan); }}
-                                                                                        className="w-full flex-1 bg-red-600 hover:bg-red-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
-                                                                                    >
-                                                                                        <XCircle size={12} className="flex-shrink-0" /> <span className="truncate">{loan.status === 'ACTIVE' ? 'RECUSAR TROCA' : 'RECUSAR'}</span>
-                                                                                    </button>
-                                                                                </>
-                                                                            )}
-                                                                            {currentUser.id === loan.operatorId && currentUser.id !== group.receiverId && (
-                                                                                <span className="text-white text-[7px] text-center px-1">Aguardando ConfirmaÃ§Ã£o</span>
-                                                                            )}
-                                                                        </div>
-                                                                    ) : (
-                                                                        (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')) && (
-                                                                            <div className="flex flex-col gap-1 w-full h-full p-1 justify-center items-center overflow-hidden">
-                                                                                {loan.assetType === 'VEHICLE' && (
-                                                                                    <>
-                                                                                        {currentUser.id === group.receiverId && (
-                                                                                            <button
-                                                                                                disabled={isSubmitting}
-                                                                                                onClick={(e) => { e.stopPropagation(); handleHandover(loan); }}
-                                                                                                className="w-full flex-1 bg-slate-700 hover:bg-slate-600 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
-                                                                                            >
-                                                                                                <ArrowRightLeft size={12} className="flex-shrink-0" /> <span className="truncate">TROCAR</span>
-                                                                                            </button>
-                                                                                        )}
-                                                                                        <button
-                                                                                            disabled={isSubmitting}
-                                                                                            onClick={(e) => { e.stopPropagation(); handleRefuel(loan); }}
-                                                                                            className="w-full flex-1 bg-blue-600 hover:bg-blue-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
-                                                                                        >
-                                                                                            <Fuel size={12} className="flex-shrink-0" /> <span className="truncate">ABASTECER</span>
-                                                                                        </button>
-                                                                                    </>
-                                                                                )}
-                                                                                {canReturn && (
-                                                                                    <button
-                                                                                        disabled={isSubmitting}
-                                                                                        onClick={(e) => { e.stopPropagation(); handleReturn(loan); }}
-                                                                                        className="w-full flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
-                                                                                    >
-                                                                                        <CheckCircle size={12} className="flex-shrink-0" /> <span className="truncate">DEVOLVER</span>
-                                                                                    </button>
-                                                                                )}
-                                                                            </div>
-                                                                        )
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Footer Action */}
-                                            {group.type !== 'HISTORY' && (
-                                                <div className={`p-2 border-t ${group.type === 'PENDING' ? 'bg-amber-50/20' : 'bg-emerald-50/20'} dark:bg-slate-800/50 border-slate-100 dark:border-slate-800`}>
-                                                    {group.type === 'PENDING' ? (
-                                                        <div className="flex gap-1.5">
-                                                            {currentUser.id === group.receiverId && canApprove && (
-                                                                <button
-                                                                    disabled={isSubmitting}
-                                                                    onClick={(e) => { e.stopPropagation(); handleConfirmBatch(group.loans); }}
-                                                                    className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-amber-500/25 disabled:opacity-50"
-                                                                >
-                                                                    <CheckCircle size={12} /> ACEITAR TUDO
-                                                                </button>
-                                                            )}
-                                                            {group.loans.some(l => l.operator_id === currentUser.id || l.operatorId === currentUser.id) && canCreate && (
-                                                                <button
-                                                                    disabled={isSubmitting}
-                                                                    onClick={(e) => { e.stopPropagation(); handleCancelBatch(group.loans); }}
-                                                                    className="px-2.5 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95 disabled:opacity-50"
-                                                                    title="Cancelar Cautela"
-                                                                >
-                                                                    <XCircle size={16} />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        canReturn && currentUser.id === group.receiverId && (
-                                                            <button
-                                                                disabled={isSubmitting}
-                                                                onClick={(e) => { e.stopPropagation(); handleReturnBatch(group.loans); }}
-                                                                className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
-                                                            >
-                                                                <CornerDownLeft size={16} /> DEVOLVER TODOS
-                                                            </button>
-                                                        )
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* Empty State */}
-                            {(!activeTab || activeTab !== 'HISTORY' || historyMode === 'USER') && groupedLoans.length === 0 && (
-                                <div className="text-center py-20 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
-                                    <div className="w-16 h-16 mx-auto bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-300">
-                                        <ArrowRightLeft size={32} />
-                                    </div>
-                                    <h3 className="text-sm font-black text-slate-400 uppercase">Nenhuma cautela encontrada</h3>
-                                    <p className="text-xs text-slate-400 mt-1">Não há itens ativos ou pendentes no momento.</p>
-                                </div>
-                            )}
                         </div>
                     </>
                 )}
-
-            {/* Custom Overlay for Vehicle Return */}
-            {
-                showVehicleReturnModal && vehicleReturnData && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-                        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-3 bg-green-100 text-green-600 rounded-full"><CornerDownLeft size={24} /></div>
-                                <div>
-                                    <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Devolução de Viatura</h3>
-                                    <p className="text-xs text-slate-500 uppercase">{vehicleReturnData.model}</p>
-                                    {vehicleReturnData.batchIdsToComplete && vehicleReturnData.batchIdsToComplete.length > 0 && (
-                                        <p className="text-[10px] text-blue-500 font-bold uppercase mt-1">+ {vehicleReturnData.batchIdsToComplete.length} itens do lote serão devolvidos.</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="space-y-4 mb-6">
-                                <div>
-                                    <label className="block text-xs font-black text-slate-500 uppercase mb-1">Quilometragem Final (KM)</label>
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            value={vehicleReturnData.kmEnd ? vehicleReturnData.kmEnd.toLocaleString('pt-BR') : ''}
-                                            onChange={(e) => {
-                                                const rawValue = e.target.value.replace(/\D/g, '');
-                                                const numeric = rawValue ? parseInt(rawValue) : 0;
-                                                setVehicleReturnData({ ...vehicleReturnData, kmEnd: numeric });
-                                            }}
-                                            className={`w-full pl-10 p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 font-bold text-lg outline-none focus:ring-2 transition-all ${vehicleReturnData.kmEnd < vehicleReturnData.kmStart
-                                                ? 'border-red-300 focus:ring-red-500 text-red-600'
-                                                : 'border-slate-300 dark:border-slate-600 focus:ring-blue-500 text-slate-800 dark:text-white'
-                                                }`}
-                                        />
-                                        <Gauge className="absolute left-3 top-3.5 text-slate-400" size={20} />
-                                    </div>
-
-                                    <div className="mt-2">
-                                        {vehicleReturnData.kmEnd < vehicleReturnData.kmStart ? (
-                                            <div className="flex items-start gap-2 text-red-600 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-100 dark:border-red-900">
-                                                <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
-                                                <div>
-                                                    <p className="text-[10px] font-black uppercase">Inconsistência</p>
-                                                    <p className="text-[10px]">Menor que saída ({vehicleReturnData.kmStart.toLocaleString('pt-BR')} KM).</p>
+{/* UNIFIED GRID VIEW (Conditionally Rendered) */}
+                        {(!activeTab || activeTab !== 'HISTORY' || historyMode === 'USER') && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+                                {groupedLoans.map((group) => (
+                                    <div
+                                        key={group.id}
+                                        onClick={() => setSelectedGroup(group)}
+                                        className={`rounded-2xl border-2 overflow-hidden flex flex-col shadow-sm transition-all hover:shadow-md cursor-pointer ${group.type === 'PENDING'
+                                            ? 'border-amber-400 bg-white dark:bg-slate-900 shadow-amber-500/5'
+                                            : group.type === 'HISTORY'
+                                                ? 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-slate-500/5 opacity-80 hover:opacity-100'
+                                                : 'border-emerald-400 bg-white dark:bg-slate-900 shadow-emerald-500/5'
+                                            }`}
+                                    >
+                                        {/* Header */}
+                                        <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center text-lg font-black shadow-sm ${group.type === 'PENDING' ? 'bg-amber-100 text-amber-600' : group.type === 'HISTORY' ? 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400' : 'bg-emerald-100 text-emerald-600'}`}>
+                                                    {group.receiverName.charAt(0).toUpperCase()}
                                                 </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center justify-between text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg border border-blue-100 dark:border-blue-900">
-                                                <span className="text-[10px] font-black uppercase">Total Percorrido</span>
-                                                <span className="text-sm font-black font-mono">{(vehicleReturnData.kmEnd - vehicleReturnData.kmStart).toLocaleString('pt-BR')} Km</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                                    <label className="flex items-center gap-2 cursor-pointer mb-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={vehicleReturnData.refuel}
-                                            onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, refuel: e.target.checked })}
-                                            className="rounded text-blue-600 focus:ring-blue-500"
-                                        />
-                                        <span className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300 flex items-center gap-1"><Fuel size={14} /> Houve Abastecimento?</span>
-                                    </label>
-
-                                    {vehicleReturnData.refuel && (
-                                        <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg animate-in slide-in-from-top-1 space-y-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowQRScanner(true)}
-                                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-700 transition-all shadow-md active:scale-[0.98]"
-                                            >
-                                                <QrCode size={16} /> Ler QR Code (Digital)
-                                            </button>
-
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <div>
-                                                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Litros</label>
-                                                    <div className="relative">
-                                                        <input
-                                                            type="text"
-                                                            value={vehicleReturnData.fuelLiters}
-                                                            onChange={(e) => {
-                                                                let val = e.target.value.replace('.', ',');
-                                                                if (/^\d*,?\d*$/.test(val)) {
-                                                                    setVehicleReturnData({ ...vehicleReturnData, fuelLiters: val })
-                                                                }
-                                                            }}
-                                                            className="w-full pl-7 p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
-                                                            placeholder="0,0"
-                                                            inputMode="decimal"
-                                                        />
-                                                        <Droplet size={12} className="absolute left-2 top-2.5 text-slate-400" />
+                                                <div className="flex flex-col min-w-0 flex-1">
+                                                    <h3 className="text-xs md:text-sm font-black text-slate-800 dark:text-slate-100 uppercase leading-tight mb-1 tracking-tight truncate" title={group.receiverName}>
+                                                        {group.receiverName}
+                                                    </h3>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md border ${group.type === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                                            : group.type === 'HISTORY' ? 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                                                                : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                            }`}>
+                                                            {group.type === 'PENDING' ? 'AGUARDANDO' : group.type === 'HISTORY' ? (group.loans.some(l => l.status === 'REJECTED') ? 'RECUSADO' : 'DEVOLVIDO') : 'EM POSSE'}
+                                                        </span>
+                                                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                                            <Clock size={10} className="opacity-60" />
+                                                            {new Date(group.loans[0].checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
                                                     </div>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Combustível</label>
-                                                    <select
-                                                        value={vehicleReturnData.fuelType}
-                                                        onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, fuelType: e.target.value })}
-                                                        className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold uppercase bg-white dark:bg-slate-900"
-                                                    >
-                                                        <option>Gasolina</option>
-                                                        <option>Etanol</option>
-                                                        <option>Diesel</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">KM do Abastecimento</label>
-                                                <div className="relative">
-                                                    <input
-                                                        type="text"
-                                                        value={vehicleReturnData.fuelKm ? parseInt(vehicleReturnData.fuelKm).toLocaleString('pt-BR') : ''}
-                                                        onChange={(e) => {
-                                                            const raw = e.target.value.replace(/\D/g, '');
-                                                            const val = raw ? parseInt(raw) : '';
-                                                            setVehicleReturnData({ ...vehicleReturnData, fuelKm: val.toString() })
-                                                        }}
-                                                        className="w-full pl-7 p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
-                                                        placeholder="0"
-                                                        inputMode="numeric"
-                                                    />
-                                                    <Gauge size={12} className="absolute left-2 top-2.5 text-slate-400" />
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Fornecedor</label>
-                                                <input
-                                                    type="text"
-                                                    value={vehicleReturnData.supplier}
-                                                    onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, supplier: e.target.value.toUpperCase() })}
-                                                    className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
-                                                    placeholder="NOME DO POSTO"
-                                                />
-                                            </div>
-
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Número do Cupom</label>
-                                                    <input
-                                                        type="text"
-                                                        value={vehicleReturnData.couponNumber}
-                                                        onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, couponNumber: e.target.value })}
-                                                        className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
-                                                        placeholder="Nº NFC-e"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Motorista</label>
-                                                    <input
-                                                        type="text"
-                                                        value={vehicleReturnData.driver}
-                                                        onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, driver: e.target.value.toUpperCase() })}
-                                                        className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
-                                                        placeholder="NOME DO MOTORISTA"
-                                                    />
                                                 </div>
                                             </div>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
 
-                            <div className="flex justify-end gap-3">
-                                <button onClick={() => setShowVehicleReturnModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
-                                <button
-                                    onClick={processVehicleReturn}
-                                    disabled={isSubmitting || vehicleReturnData.kmEnd < vehicleReturnData.kmStart}
-                                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-black uppercase hover:bg-emerald-700 shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                >
-                                    {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />} Confirmar
-                                </button>
+                                        {/* Items Grid */}
+                                        <div className="p-2 flex-1 overflow-y-auto max-h-[350px]">
+                                            <div className="grid grid-cols-2 gap-2 h-full content-start">
+                                                {group.loans.map(loan => (
+                                                    <div
+                                                        key={loan.id}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActiveMobileLoanId(prev => prev === loan.id ? null : loan.id);
+                                                        }}
+                                                        className="bg-slate-50/40 dark:bg-slate-800/20 rounded-xl p-2 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-800 min-h-[75px] relative group transition-all hover:bg-white dark:hover:bg-slate-800 shadow-sm cursor-pointer"
+                                                    >
+                                                        <div className={`mb-1 ${group.type === 'PENDING' ? 'text-amber-500' : group.type === 'HISTORY' ? 'text-slate-400' : 'text-emerald-500'}`}>
+                                                            {getAssetIcon(loan.assetType, 20)}
+                                                        </div>
+                                                        <p className="text-[8px] font-black text-slate-800 dark:text-slate-200 uppercase leading-tight mb-0.5 line-clamp-2 px-1">
+                                                            {loan.assetDescription}
+                                                        </p>
+                                                        {loan.assetType === 'VEHICLE' && (
+                                                            <span className="text-[7px] font-bold text-slate-400 uppercase">{loan.meta?.kmStart} KM</span>
+                                                        )}
+                                                        {(loan.assetType === 'VEST' || loan.assetDescription.includes('(M)') || loan.assetDescription.includes('(G)')) && (
+                                                            <span className="text-[7px] font-bold text-slate-400 uppercase opacity-60">
+                                                                TAM: ({loan.assetDescription.match(/\((.*?)\)/)?.[1] || '---'})
+                                                            </span>
+                                                        )}
+
+                                                        {/* Individual Action (Overlay) */}
+                                                        {((group.type === 'PENDING' && ((canApprove && currentUser.id === group.receiverId) || (canCreate && currentUser.id === loan.operatorId))) || (group.type === 'ACTIVE' && (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')))) && (
+                                                            <div className={`absolute inset-0 bg-slate-900/90 rounded-xl flex items-center justify-center transition-all duration-200 backdrop-blur-[2px] z-10 p-1.5 gap-1 font-black uppercase ${activeMobileLoanId === loan.id ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'} md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto`}>
+                                                                {group.type === 'PENDING' ? (
+                                                                    <div className="flex flex-col gap-1 w-full h-full p-1 justify-center items-center overflow-hidden">
+                                                                        {currentUser.id === group.receiverId && canApprove && (
+                                                                            <>
+                                                                                <button
+                                                                                    disabled={isSubmitting}
+                                                                                    onClick={(e) => { e.stopPropagation(); handleConfirm(loan); }}
+                                                                                    className="w-full flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
+                                                                                >
+                                                                                    <CheckCircle size={12} className="flex-shrink-0" /> <span className="truncate">{loan.status === 'ACTIVE' ? 'ACEITAR TROCA' : 'ACEITAR'}</span>
+                                                                                </button>
+                                                                                <button
+                                                                                    disabled={isSubmitting}
+                                                                                    onClick={(e) => { e.stopPropagation(); handleReject(loan); }}
+                                                                                    className="w-full flex-1 bg-red-600 hover:bg-red-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
+                                                                                >
+                                                                                    <XCircle size={12} className="flex-shrink-0" /> <span className="truncate">{loan.status === 'ACTIVE' ? 'RECUSAR TROCA' : 'RECUSAR'}</span>
+                                                                                </button>
+                                                                            </>
+                                                                        )}
+                                                                        {currentUser.id === loan.operatorId && currentUser.id !== group.receiverId && (
+                                                                            <span className="text-white text-[7px] text-center px-1">Aguardando ConfirmaÃ§Ã£o</span>
+                                                                        )}
+                                                                    </div>
+                                                                ) : (
+                                                                    (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')) && (
+                                                                        <div className="flex flex-col gap-1 w-full h-full p-1 justify-center items-center overflow-hidden">
+                                                                            {loan.assetType === 'VEHICLE' && (
+                                                                                <>
+                                                                                    {currentUser.id === group.receiverId && (
+                                                                                        <button
+                                                                                            disabled={isSubmitting}
+                                                                                            onClick={(e) => { e.stopPropagation(); handleHandover(loan); }}
+                                                                                            className="w-full flex-1 bg-slate-700 hover:bg-slate-600 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
+                                                                                        >
+                                                                                            <ArrowRightLeft size={12} className="flex-shrink-0" /> <span className="truncate">TROCAR</span>
+                                                                                        </button>
+                                                                                    )}
+                                                                                    <button
+                                                                                        disabled={isSubmitting}
+                                                                                        onClick={(e) => { e.stopPropagation(); handleRefuel(loan); }}
+                                                                                        className="w-full flex-1 bg-blue-600 hover:bg-blue-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
+                                                                                    >
+                                                                                        <Fuel size={12} className="flex-shrink-0" /> <span className="truncate">ABASTECER</span>
+                                                                                    </button>
+                                                                                </>
+                                                                            )}
+                                                                            {canReturn && (
+                                                                                <button
+                                                                                    disabled={isSubmitting}
+                                                                                    onClick={(e) => { e.stopPropagation(); handleReturn(loan); }}
+                                                                                    className="w-full flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
+                                                                                >
+                                                                                    <CheckCircle size={12} className="flex-shrink-0" /> <span className="truncate">DEVOLVER</span>
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    )
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Footer Action */}
+                                        {group.type !== 'HISTORY' && (
+                                            <div className={`p-2 border-t ${group.type === 'PENDING' ? 'bg-amber-50/20' : 'bg-emerald-50/20'} dark:bg-slate-800/50 border-slate-100 dark:border-slate-800`}>
+                                                {group.type === 'PENDING' ? (
+                                                    <div className="flex gap-1.5">
+                                                        {currentUser.id === group.receiverId && canApprove && (
+                                                            <button
+                                                                disabled={isSubmitting}
+                                                                onClick={(e) => { e.stopPropagation(); handleConfirmBatch(group.loans); }}
+                                                                className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-amber-500/25 disabled:opacity-50"
+                                                            >
+                                                                <CheckCircle size={12} /> ACEITAR TUDO
+                                                            </button>
+                                                        )}
+                                                        {group.loans.some(l => l.operator_id === currentUser.id || l.operatorId === currentUser.id) && canCreate && (
+                                                            <button
+                                                                disabled={isSubmitting}
+                                                                onClick={(e) => { e.stopPropagation(); handleCancelBatch(group.loans); }}
+                                                                className="px-2.5 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                                                                title="Cancelar Cautela"
+                                                            >
+                                                                <XCircle size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    canReturn && currentUser.id === group.receiverId && (
+                                                        <button
+                                                            disabled={isSubmitting}
+                                                            onClick={(e) => { e.stopPropagation(); handleReturnBatch(group.loans); }}
+                                                            className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                                                        >
+                                                            <CornerDownLeft size={16} /> DEVOLVER TODOS
+                                                        </button>
+                                                    )
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
+                        )}
+
+                        {/* Empty State */}
+                        {(!activeTab || activeTab !== 'HISTORY' || historyMode === 'USER') && groupedLoans.length === 0 && (
+                            <div className="text-center py-20 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
+                                <div className="w-16 h-16 mx-auto bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-300">
+                                    <ArrowRightLeft size={32} />
+                                </div>
+                                <h3 className="text-sm font-black text-slate-400 uppercase">Nenhuma cautela encontrada</h3>
+                                <p className="text-xs text-slate-400 mt-1">Não há itens ativos ou pendentes no momento.</p>
+                            </div>
+                        )}
+                    {/* Custom Overlay for Vehicle Return */ }
+{
+    showVehicleReturnModal && vehicleReturnData && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 bg-green-100 text-green-600 rounded-full"><CornerDownLeft size={24} /></div>
+                    <div>
+                        <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Devolução de Viatura</h3>
+                        <p className="text-xs text-slate-500 uppercase">{vehicleReturnData.model}</p>
+                        {vehicleReturnData.batchIdsToComplete && vehicleReturnData.batchIdsToComplete.length > 0 && (
+                            <p className="text-[10px] text-blue-500 font-bold uppercase mt-1">+ {vehicleReturnData.batchIdsToComplete.length} itens do lote serão devolvidos.</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                    <div>
+                        <label className="block text-xs font-black text-slate-500 uppercase mb-1">Quilometragem Final (KM)</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={vehicleReturnData.kmEnd ? vehicleReturnData.kmEnd.toLocaleString('pt-BR') : ''}
+                                onChange={(e) => {
+                                    const rawValue = e.target.value.replace(/\D/g, '');
+                                    const numeric = rawValue ? parseInt(rawValue) : 0;
+                                    setVehicleReturnData({ ...vehicleReturnData, kmEnd: numeric });
+                                }}
+                                className={`w-full pl-10 p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 font-bold text-lg outline-none focus:ring-2 transition-all ${vehicleReturnData.kmEnd < vehicleReturnData.kmStart
+                                    ? 'border-red-300 focus:ring-red-500 text-red-600'
+                                    : 'border-slate-300 dark:border-slate-600 focus:ring-blue-500 text-slate-800 dark:text-white'
+                                    }`}
+                            />
+                            <Gauge className="absolute left-3 top-3.5 text-slate-400" size={20} />
+                        </div>
+
+                        <div className="mt-2">
+                            {vehicleReturnData.kmEnd < vehicleReturnData.kmStart ? (
+                                <div className="flex items-start gap-2 text-red-600 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-100 dark:border-red-900">
+                                    <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase">Inconsistência</p>
+                                        <p className="text-[10px]">Menor que saída ({vehicleReturnData.kmStart.toLocaleString('pt-BR')} KM).</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-between text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg border border-blue-100 dark:border-blue-900">
+                                    <span className="text-[10px] font-black uppercase">Total Percorrido</span>
+                                    <span className="text-sm font-black font-mono">{(vehicleReturnData.kmEnd - vehicleReturnData.kmStart).toLocaleString('pt-BR')} Km</span>
+                                </div>
+                            )}
                         </div>
                     </div>
-                )
-            }
 
-            {/* Custom Overlay for Refueling */}
-            {
-                showRefuelModal && refuelData && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-                        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-3 bg-blue-100 text-blue-600 rounded-full"><Fuel size={24} /></div>
-                                <div>
-                                    <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Registrar Abastecimento</h3>
-                                    <p className="text-xs text-slate-500 uppercase">{refuelData.model}</p>
-                                </div>
-                            </div>
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <label className="flex items-center gap-2 cursor-pointer mb-2">
+                            <input
+                                type="checkbox"
+                                checked={vehicleReturnData.refuel}
+                                onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, refuel: e.target.checked })}
+                                className="rounded text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300 flex items-center gap-1"><Fuel size={14} /> Houve Abastecimento?</span>
+                        </label>
 
-                            <div className="bg-blue-50 dark:bg-slate-800 p-3 rounded-lg animate-in slide-in-from-top-1 space-y-3 mb-6">
+                        {vehicleReturnData.refuel && (
+                            <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg animate-in slide-in-from-top-1 space-y-3">
                                 <button
                                     type="button"
                                     onClick={() => setShowQRScanner(true)}
@@ -2589,11 +2657,11 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                         <div className="relative">
                                             <input
                                                 type="text"
-                                                value={refuelData.fuelLiters}
+                                                value={vehicleReturnData.fuelLiters}
                                                 onChange={(e) => {
                                                     let val = e.target.value.replace('.', ',');
                                                     if (/^\d*,?\d*$/.test(val)) {
-                                                        setRefuelData({ ...refuelData, fuelLiters: val })
+                                                        setVehicleReturnData({ ...vehicleReturnData, fuelLiters: val })
                                                     }
                                                 }}
                                                 className="w-full pl-7 p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
@@ -2606,8 +2674,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                     <div>
                                         <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Combustível</label>
                                         <select
-                                            value={refuelData.fuelType}
-                                            onChange={(e) => setRefuelData({ ...refuelData, fuelType: e.target.value })}
+                                            value={vehicleReturnData.fuelType}
+                                            onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, fuelType: e.target.value })}
                                             className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold uppercase bg-white dark:bg-slate-900"
                                         >
                                             <option>Gasolina</option>
@@ -2621,29 +2689,26 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                     <div className="relative">
                                         <input
                                             type="text"
-                                            value={refuelData.fuelKm ? parseInt(refuelData.fuelKm).toLocaleString('pt-BR') : ''}
+                                            value={vehicleReturnData.fuelKm ? parseInt(vehicleReturnData.fuelKm).toLocaleString('pt-BR') : ''}
                                             onChange={(e) => {
                                                 const raw = e.target.value.replace(/\D/g, '');
                                                 const val = raw ? parseInt(raw) : '';
-                                                setRefuelData({ ...refuelData, fuelKm: val.toString() })
+                                                setVehicleReturnData({ ...vehicleReturnData, fuelKm: val.toString() })
                                             }}
-                                            className={`w-full pl-7 p-2 rounded border text-xs font-bold bg-white dark:bg-slate-900 ${parseInt(refuelData.fuelKm || '0') < refuelData.currentKm ? 'border-red-300 text-red-600' : 'border-slate-300 dark:border-slate-600'}`}
+                                            className="w-full pl-7 p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
                                             placeholder="0"
                                             inputMode="numeric"
                                         />
                                         <Gauge size={12} className="absolute left-2 top-2.5 text-slate-400" />
                                     </div>
-                                    {parseInt(refuelData.fuelKm || '0') < refuelData.currentKm && (
-                                        <p className="text-[9px] text-red-500 font-bold mt-1">KM menor que atual ({refuelData.currentKm})</p>
-                                    )}
                                 </div>
 
                                 <div>
                                     <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Fornecedor</label>
                                     <input
                                         type="text"
-                                        value={refuelData.supplier}
-                                        onChange={(e) => setRefuelData({ ...refuelData, supplier: e.target.value.toUpperCase() })}
+                                        value={vehicleReturnData.supplier}
+                                        onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, supplier: e.target.value.toUpperCase() })}
                                         className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
                                         placeholder="NOME DO POSTO"
                                     />
@@ -2654,8 +2719,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                         <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Número do Cupom</label>
                                         <input
                                             type="text"
-                                            value={refuelData.couponNumber}
-                                            onChange={(e) => setRefuelData({ ...refuelData, couponNumber: e.target.value })}
+                                            value={vehicleReturnData.couponNumber}
+                                            onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, couponNumber: e.target.value })}
                                             className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
                                             placeholder="Nº NFC-e"
                                         />
@@ -2664,249 +2729,383 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                         <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Motorista</label>
                                         <input
                                             type="text"
-                                            value={refuelData.driver}
-                                            onChange={(e) => setRefuelData({ ...refuelData, driver: e.target.value.toUpperCase() })}
+                                            value={vehicleReturnData.driver}
+                                            onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, driver: e.target.value.toUpperCase() })}
                                             className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
                                             placeholder="NOME DO MOTORISTA"
                                         />
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="flex justify-end gap-3">
-                                <button onClick={() => setShowRefuelModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
-                                <button
-                                    onClick={processRefuel}
-                                    disabled={isSubmitting || !refuelData.fuelLiters || parseInt(refuelData.fuelKm || '0') < refuelData.currentKm}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                >
-                                    {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />} Salvar
-                                </button>
-                            </div>
-                        </div>
+                        )}
                     </div>
-                )
-            }
+                </div>
 
+                <div className="flex justify-end gap-3">
+                    <button onClick={() => setShowVehicleReturnModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                    <button
+                        onClick={processVehicleReturn}
+                        disabled={isSubmitting || vehicleReturnData.kmEnd < vehicleReturnData.kmStart}
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-black uppercase hover:bg-emerald-700 shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                        {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />} Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
 
-            {/* Handover Modal (Vehicle Driver Switch) */}
-            {
-                showHandoverModal && handoverData && (
-                    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in" onClick={() => setShowHandoverModal(false)}>
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400">
-                                    <ArrowRightLeft size={24} />
-                                </div>
-                                <div>
-                                    <h3 className="text-[15px] font-black text-slate-900 dark:text-white uppercase leading-tight">Trocar Motorista</h3>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">{handoverData.loan.assetDescription}</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4 mb-6">
-                                <div className="relative">
-                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-2 ml-1 text-center font-black">Selecionar Novo Motorista</label>
-                                    <div className="relative">
-                                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            value={handoverData.userSearch}
-                                            onChange={(e) => setHandoverData({ ...handoverData, userSearch: e.target.value })}
-                                            placeholder="BUSCAR NOME OU MATRÍCULA..."
-                                            className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-brand-500 transition-all font-black"
-                                        />
-                                    </div>
-
-                                    {handoverData.userSearch.length >= 2 && !handoverData.targetUserId && (
-                                        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden z-[400] max-h-48 overflow-y-auto ring-4 ring-black/5">
-                                            {users
-                                                .filter(u => u.id !== currentUser.id && (normalizeString(u.name).includes(normalizeString(handoverData.userSearch)) || u.matricula.includes(handoverData.userSearch)))
-                                                .map(u => (
-                                                    <button
-                                                        key={u.id}
-                                                        onClick={() => setHandoverData({ ...handoverData, targetUserId: u.id, targetUserName: u.name, userSearch: u.name })}
-                                                        className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 flex flex-col gap-0.5 border-b border-slate-100 dark:border-slate-800 last:border-0"
-                                                    >
-                                                        <span className="text-[11px] font-black uppercase text-slate-800 dark:text-slate-200">{u.name}</span>
-                                                        <span className="text-[9px] font-bold text-slate-400">MATRÍCULA: {u.matricula}</span>
-                                                    </button>
-                                                ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {handoverData.targetUserId && (
-                                    <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-xl flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-800 rounded-full flex items-center justify-center text-emerald-600">
-                                                <CheckCircle size={16} />
-                                            </div>
-                                            <div>
-                                                <p className="text-[9px] font-black text-emerald-700 dark:text-emerald-400 uppercase">Destinatário</p>
-                                                <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-300 uppercase mt-0.5">{handoverData.targetUserName}</p>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => setHandoverData({ ...handoverData, targetUserId: '', targetUserName: '', userSearch: '' })}
-                                            className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase p-1"
-                                        >
-                                            Trocar
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    onClick={() => setShowHandoverModal(false)}
-                                    className="py-3 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-xl text-[10px] font-black uppercase transition-all"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    disabled={!handoverData.targetUserId || isSubmitting}
-                                    onClick={processHandover}
-                                    className="py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                                >
-                                    {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <ArrowRightLeft size={14} />} Solicitar
-                                </button>
-                            </div>
-                        </div>
+{/* Custom Overlay for Refueling */ }
+{
+    showRefuelModal && refuelData && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 bg-blue-100 text-blue-600 rounded-full"><Fuel size={24} /></div>
+                    <div>
+                        <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Registrar Abastecimento</h3>
+                        <p className="text-xs text-slate-500 uppercase">{refuelData.model}</p>
                     </div>
-                )
-            }
+                </div>
 
+                <div className="bg-blue-50 dark:bg-slate-800 p-3 rounded-lg animate-in slide-in-from-top-1 space-y-3 mb-6">
+                    <button
+                        type="button"
+                        onClick={() => setShowQRScanner(true)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-700 transition-all shadow-md active:scale-[0.98]"
+                    >
+                        <QrCode size={16} /> Ler QR Code (Digital)
+                    </button>
 
-            {/* Group Details Modal */}
-            {selectedGroup && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setSelectedGroup(null)}>
-                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700" onClick={e => e.stopPropagation()}>
-                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 rounded-t-xl">
-                            <div>
-                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase leading-none">{selectedGroup.receiverName}</h3>
-                                <p className="text-xs font-bold text-slate-500 uppercase mt-1">
-                                    {selectedGroup.type === 'PENDING' ? 'Aguardando Confirmação' : selectedGroup.type === 'HISTORY' ? 'Devolvido / Histórico' : 'Em Posse'} • {selectedGroup.loans.length} Itens
-                                </p>
-                            </div>
-                            <button onClick={() => setSelectedGroup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-500">
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <div className="p-0 overflow-y-auto custom-scrollbar">
-                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {selectedGroup.loans.map((loan) => (
-                                    <div key={loan.id} className="p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                        <div className={`p-3 rounded-xl ${selectedGroup.type === 'PENDING' ? 'bg-amber-100 text-amber-600' :
-                                            selectedGroup.type === 'HISTORY' ? 'bg-slate-100 text-slate-500' :
-                                                'bg-emerald-100 text-emerald-600'
-                                            }`}>
-                                            {getAssetIcon(loan.assetType, 24)}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase truncate">
-                                                {loan.assetDescription}
-                                            </p>
-                                            <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-slate-400 uppercase">
-                                                <span>Retirada: {new Date(loan.checkoutTime).toLocaleTimeString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                                                {loan.returnTime && (
-                                                    <span>• Devolução: {new Date(loan.returnTime).toLocaleTimeString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                                                )}
-                                            </div>
-                                            {/* Mostra dados de veículo se houver */}
-                                            {loan.assetType === 'VEHICLE' && loan.meta && (
-                                                <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-700/50 rounded-lg text-[10px] font-mono grid grid-cols-2 gap-2 text-slate-600 dark:text-slate-300">
-                                                    <div>
-                                                        <span className="font-bold block text-slate-400">SAÍDA</span>
-                                                        {loan.meta.kmStart ? `${loan.meta.kmStart} Km` : '-'}
-                                                    </div>
-                                                    <div>
-                                                        <span className="font-bold block text-slate-400">CHEGADA</span>
-                                                        {loan.meta.kmEnd ? `${loan.meta.kmEnd} Km` : '-'}
-                                                    </div>
-                                                    {loan.meta.fuelRefill && (
-                                                        <div className="col-span-2 border-t border-slate-200 dark:border-slate-600 pt-1 mt-1 space-y-1">
-                                                            <span className="font-bold block text-blue-500 flex items-center gap-1"><Fuel size={10} /> ABASTECIMENTO</span>
-                                                            <div className="grid grid-cols-2 gap-x-2">
-                                                                <span>{loan.meta.fuelLiters} L ({loan.meta.fuelType}) @ {loan.meta.fuelKm} Km</span>
-                                                                {loan.meta.couponNumber && <span className="text-right">Cupom: {loan.meta.couponNumber}</span>}
-                                                                {loan.meta.supplier && <span className="col-span-2 text-slate-400 italic">Fornecedor: {loan.meta.supplier}</span>}
-                                                                {loan.meta.driver && <span className="col-span-2 text-slate-400 italic">Motorista: {loan.meta.driver}</span>}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="text-right">
-                                            <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase ${loan.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
-                                                loan.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' :
-                                                    loan.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                                                        'bg-slate-100 text-slate-600'
-                                                }`}>
-                                                {loan.status === 'PENDING' ? 'Pendente' : loan.status === 'ACTIVE' ? 'Ativo' : loan.status === 'REJECTED' ? 'Recusado' : 'Devolvido'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Litros</label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={refuelData.fuelLiters}
+                                    onChange={(e) => {
+                                        let val = e.target.value.replace('.', ',');
+                                        if (/^\d*,?\d*$/.test(val)) {
+                                            setRefuelData({ ...refuelData, fuelLiters: val })
+                                        }
+                                    }}
+                                    className="w-full pl-7 p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
+                                    placeholder="0,0"
+                                    inputMode="decimal"
+                                />
+                                <Droplet size={12} className="absolute left-2 top-2.5 text-slate-400" />
                             </div>
                         </div>
-                        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl flex justify-end">
-                            <button
-                                onClick={() => setSelectedGroup(null)}
-                                className="px-6 py-2.5 bg-slate-900 dark:bg-slate-700 text-white text-xs font-black uppercase rounded-xl hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+                        <div>
+                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Combustível</label>
+                            <select
+                                value={refuelData.fuelType}
+                                onChange={(e) => setRefuelData({ ...refuelData, fuelType: e.target.value })}
+                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold uppercase bg-white dark:bg-slate-900"
                             >
-                                Fechar
-                            </button>
+                                <option>Gasolina</option>
+                                <option>Etanol</option>
+                                <option>Diesel</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">KM do Abastecimento</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={refuelData.fuelKm ? parseInt(refuelData.fuelKm).toLocaleString('pt-BR') : ''}
+                                onChange={(e) => {
+                                    const raw = e.target.value.replace(/\D/g, '');
+                                    const val = raw ? parseInt(raw) : '';
+                                    setRefuelData({ ...refuelData, fuelKm: val.toString() })
+                                }}
+                                className={`w-full pl-7 p-2 rounded border text-xs font-bold bg-white dark:bg-slate-900 ${parseInt(refuelData.fuelKm || '0') < refuelData.currentKm ? 'border-red-300 text-red-600' : 'border-slate-300 dark:border-slate-600'}`}
+                                placeholder="0"
+                                inputMode="numeric"
+                            />
+                            <Gauge size={12} className="absolute left-2 top-2.5 text-slate-400" />
+                        </div>
+                        {parseInt(refuelData.fuelKm || '0') < refuelData.currentKm && (
+                            <p className="text-[9px] text-red-500 font-bold mt-1">KM menor que atual ({refuelData.currentKm})</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Fornecedor</label>
+                        <input
+                            type="text"
+                            value={refuelData.supplier}
+                            onChange={(e) => setRefuelData({ ...refuelData, supplier: e.target.value.toUpperCase() })}
+                            className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
+                            placeholder="NOME DO POSTO"
+                        />
+                    </div>
+
+                    <div className="space-y-3">
+                        <div>
+                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Número do Cupom</label>
+                            <input
+                                type="text"
+                                value={refuelData.couponNumber}
+                                onChange={(e) => setRefuelData({ ...refuelData, couponNumber: e.target.value })}
+                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
+                                placeholder="Nº NFC-e"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Motorista</label>
+                            <input
+                                type="text"
+                                value={refuelData.driver}
+                                onChange={(e) => setRefuelData({ ...refuelData, driver: e.target.value.toUpperCase() })}
+                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
+                                placeholder="NOME DO MOTORISTA"
+                            />
                         </div>
                     </div>
                 </div>
-            )}
 
-            {showQRScanner && (
-                <QRScanner
-                    onScan={(decodedText) => {
-                        setShowQRScanner(false);
+                <div className="flex justify-end gap-3">
+                    <button onClick={() => setShowRefuelModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                    <button
+                        onClick={processRefuel}
+                        disabled={isSubmitting || !refuelData.fuelLiters || parseInt(refuelData.fuelKm || '0') < refuelData.currentKm}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                        {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />} Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
 
-                        // HANDLE RETURN SCAN
-                        if (vehicleReturnData && showVehicleReturnModal) {
-                            // Parser para SEFAZ PR (Exemplo da imagem)
-                            if (decodedText.includes("fazenda.pr.gov.br") || decodedText.includes("RESUMO PAGAMENTO")) {
-                                const kmMatch = decodedText.match(/km:(\d+)/i);
-                                const driverMatch = decodedText.match(/MOTORISTA\s+([^|]+)/i);
-                                setVehicleReturnData({
-                                    ...vehicleReturnData,
-                                    couponNumber: "723226", // Mock extract
-                                    fuelLiters: "29,876",
-                                    fuelType: "Etanol",
-                                    fuelKm: kmMatch ? kmMatch[1] : vehicleReturnData.kmEnd.toString(),
-                                    driver: driverMatch ? driverMatch[1].trim().toUpperCase() : vehicleReturnData.driver
-                                });
-                            } else {
-                                alert("QR Code lido: " + decodedText);
-                            }
-                        }
-                        // HANDLE REFUEL SCAN
-                        else if (refuelData && showRefuelModal) {
-                            if (decodedText.includes("fazenda.pr.gov.br") || decodedText.includes("RESUMO PAGAMENTO")) {
-                                const kmMatch = decodedText.match(/km:(\d+)/i);
-                                const driverMatch = decodedText.match(/MOTORISTA\s+([^|]+)/i);
-                                setRefuelData({
-                                    ...refuelData,
-                                    couponNumber: "723226", // Mock extract
-                                    fuelLiters: "29,876",
-                                    fuelType: "Etanol",
-                                    fuelKm: kmMatch ? kmMatch[1] : refuelData.fuelKm.toString(),
-                                    driver: driverMatch ? driverMatch[1].trim().toUpperCase() : refuelData.driver
-                                });
-                            } else {
-                                alert("QR Code lido: " + decodedText);
-                            }
-                        }
-                    }}
-                    onClose={() => setShowQRScanner(false)}
-                />
-            )}
+
+{/* Handover Modal (Vehicle Driver Switch) */ }
+{
+    showHandoverModal && handoverData && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in" onClick={() => setShowHandoverModal(false)}>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400">
+                        <ArrowRightLeft size={24} />
+                    </div>
+                    <div>
+                        <h3 className="text-[15px] font-black text-slate-900 dark:text-white uppercase leading-tight">Trocar Motorista</h3>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">{handoverData.loan.assetDescription}</p>
+                    </div>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                    <div className="relative">
+                        <label className="block text-[10px] font-black text-slate-500 uppercase mb-2 ml-1 text-center font-black">Selecionar Novo Motorista</label>
+                        <div className="relative">
+                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                value={handoverData.userSearch}
+                                onChange={(e) => setHandoverData({ ...handoverData, userSearch: e.target.value })}
+                                placeholder="BUSCAR NOME OU MATRÍCULA..."
+                                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-brand-500 transition-all font-black"
+                            />
+                        </div>
+
+                        {handoverData.userSearch.length >= 2 && !handoverData.targetUserId && (
+                            <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden z-[400] max-h-48 overflow-y-auto ring-4 ring-black/5">
+                                {users
+                                    .filter(u => u.id !== currentUser.id && (normalizeString(u.name).includes(normalizeString(handoverData.userSearch)) || u.matricula.includes(handoverData.userSearch)))
+                                    .map(u => (
+                                        <button
+                                            key={u.id}
+                                            onClick={() => setHandoverData({ ...handoverData, targetUserId: u.id, targetUserName: u.name, userSearch: u.name })}
+                                            className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 flex flex-col gap-0.5 border-b border-slate-100 dark:border-slate-800 last:border-0"
+                                        >
+                                            <span className="text-[11px] font-black uppercase text-slate-800 dark:text-slate-200">{u.name}</span>
+                                            <span className="text-[9px] font-bold text-slate-400">MATRÍCULA: {u.matricula}</span>
+                                        </button>
+                                    ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {handoverData.targetUserId && (
+                        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-xl flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-800 rounded-full flex items-center justify-center text-emerald-600">
+                                    <CheckCircle size={16} />
+                                </div>
+                                <div>
+                                    <p className="text-[9px] font-black text-emerald-700 dark:text-emerald-400 uppercase">Destinatário</p>
+                                    <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-300 uppercase mt-0.5">{handoverData.targetUserName}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setHandoverData({ ...handoverData, targetUserId: '', targetUserName: '', userSearch: '' })}
+                                className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase p-1"
+                            >
+                                Trocar
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                    <button
+                        onClick={() => setShowHandoverModal(false)}
+                        className="py-3 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-xl text-[10px] font-black uppercase transition-all"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        disabled={!handoverData.targetUserId || isSubmitting}
+                        onClick={processHandover}
+                        className="py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                        {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <ArrowRightLeft size={14} />} Solicitar
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+
+{/* Group Details Modal */ }
+{
+    selectedGroup && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setSelectedGroup(null)}>
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700" onClick={e => e.stopPropagation()}>
+                <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 rounded-t-xl">
+                    <div>
+                        <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase leading-none">{selectedGroup.receiverName}</h3>
+                        <p className="text-xs font-bold text-slate-500 uppercase mt-1">
+                            {selectedGroup.type === 'PENDING' ? 'Aguardando Confirmação' : selectedGroup.type === 'HISTORY' ? 'Devolvido / Histórico' : 'Em Posse'} • {selectedGroup.loans.length} Itens
+                        </p>
+                    </div>
+                    <button onClick={() => setSelectedGroup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-500">
+                        <X size={20} />
+                    </button>
+                </div>
+                <div className="p-0 overflow-y-auto custom-scrollbar">
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {selectedGroup.loans.map((loan) => (
+                            <div key={loan.id} className="p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                <div className={`p-3 rounded-xl ${selectedGroup.type === 'PENDING' ? 'bg-amber-100 text-amber-600' :
+                                    selectedGroup.type === 'HISTORY' ? 'bg-slate-100 text-slate-500' :
+                                        'bg-emerald-100 text-emerald-600'
+                                    }`}>
+                                    {getAssetIcon(loan.assetType, 24)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase truncate">
+                                        {loan.assetDescription}
+                                    </p>
+                                    <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-slate-400 uppercase">
+                                        <span>Retirada: {new Date(loan.checkoutTime).toLocaleTimeString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                        {loan.returnTime && (
+                                            <span>• Devolução: {new Date(loan.returnTime).toLocaleTimeString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                        )}
+                                    </div>
+                                    {/* Mostra dados de veículo se houver */}
+                                    {loan.assetType === 'VEHICLE' && loan.meta && (
+                                        <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-700/50 rounded-lg text-[10px] font-mono grid grid-cols-2 gap-2 text-slate-600 dark:text-slate-300">
+                                            <div>
+                                                <span className="font-bold block text-slate-400">SAÍDA</span>
+                                                {loan.meta.kmStart ? `${loan.meta.kmStart} Km` : '-'}
+                                            </div>
+                                            <div>
+                                                <span className="font-bold block text-slate-400">CHEGADA</span>
+                                                {loan.meta.kmEnd ? `${loan.meta.kmEnd} Km` : '-'}
+                                            </div>
+                                            {loan.meta.fuelRefill && (
+                                                <div className="col-span-2 border-t border-slate-200 dark:border-slate-600 pt-1 mt-1 space-y-1">
+                                                    <span className="font-bold block text-blue-500 flex items-center gap-1"><Fuel size={10} /> ABASTECIMENTO</span>
+                                                    <div className="grid grid-cols-2 gap-x-2">
+                                                        <span>{loan.meta.fuelLiters} L ({loan.meta.fuelType}) @ {loan.meta.fuelKm} Km</span>
+                                                        {loan.meta.couponNumber && <span className="text-right">Cupom: {loan.meta.couponNumber}</span>}
+                                                        {loan.meta.supplier && <span className="col-span-2 text-slate-400 italic">Fornecedor: {loan.meta.supplier}</span>}
+                                                        {loan.meta.driver && <span className="col-span-2 text-slate-400 italic">Motorista: {loan.meta.driver}</span>}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="text-right">
+                                    <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase ${loan.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                                        loan.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' :
+                                            loan.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                'bg-slate-100 text-slate-600'
+                                        }`}>
+                                        {loan.status === 'PENDING' ? 'Pendente' : loan.status === 'ACTIVE' ? 'Ativo' : loan.status === 'REJECTED' ? 'Recusado' : 'Devolvido'}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl flex justify-end">
+                    <button
+                        onClick={() => setSelectedGroup(null)}
+                        className="px-6 py-2.5 bg-slate-900 dark:bg-slate-700 text-white text-xs font-black uppercase rounded-xl hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+                    >
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+{
+    showQRScanner && (
+        <QRScanner
+            onScan={(decodedText) => {
+                setShowQRScanner(false);
+
+                // HANDLE RETURN SCAN
+                if (vehicleReturnData && showVehicleReturnModal) {
+                    // Parser para SEFAZ PR (Exemplo da imagem)
+                    if (decodedText.includes("fazenda.pr.gov.br") || decodedText.includes("RESUMO PAGAMENTO")) {
+                        const kmMatch = decodedText.match(/km:(\d+)/i);
+                        const driverMatch = decodedText.match(/MOTORISTA\s+([^|]+)/i);
+                        setVehicleReturnData({
+                            ...vehicleReturnData,
+                            couponNumber: "723226", // Mock extract
+                            fuelLiters: "29,876",
+                            fuelType: "Etanol",
+                            fuelKm: kmMatch ? kmMatch[1] : vehicleReturnData.kmEnd.toString(),
+                            driver: driverMatch ? driverMatch[1].trim().toUpperCase() : vehicleReturnData.driver
+                        });
+                    } else {
+                        alert("QR Code lido: " + decodedText);
+                    }
+                }
+                // HANDLE REFUEL SCAN
+                else if (refuelData && showRefuelModal) {
+                    if (decodedText.includes("fazenda.pr.gov.br") || decodedText.includes("RESUMO PAGAMENTO")) {
+                        const kmMatch = decodedText.match(/km:(\d+)/i);
+                        const driverMatch = decodedText.match(/MOTORISTA\s+([^|]+)/i);
+                        setRefuelData({
+                            ...refuelData,
+                            couponNumber: "723226", // Mock extract
+                            fuelLiters: "29,876",
+                            fuelType: "Etanol",
+                            fuelKm: kmMatch ? kmMatch[1] : refuelData.fuelKm.toString(),
+                            driver: driverMatch ? driverMatch[1].trim().toUpperCase() : refuelData.driver
+                        });
+                    } else {
+                        alert("QR Code lido: " + decodedText);
+                    }
+                }
+            }}
+            onClose={() => setShowQRScanner(false)}
+        />
+    )
+}
         </div>
     );
 };

@@ -24,7 +24,7 @@ import AnnouncementManager from './AnnouncementManager';
 import { announcementService } from '../services/announcementService';
 import { User, Building, Incident, ViewState, UserRole, Sector, JobTitle, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides, Escala, EscalaReminder } from '../types';
 import { MENU_STRUCTURE, MenuItemDef } from '../constants/menuStructure';
-import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Check, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, ArrowLeft, CloudOff, WifiOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone, ShieldCheck, Printer } from 'lucide-react';
+import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Check, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, ArrowLeft, CloudOff, WifiOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone, ShieldCheck, Printer, Maximize2, RotateCw, Type, Move, Layers, MousePointer2, Minus, Info, Sliders, Square, Maximize } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
 import CryptoJS from 'crypto-js';
@@ -265,8 +265,21 @@ const IncidentHistory: React.FC<{
     localStorage.setItem('app_pdf_margins', JSON.stringify(pdfMargins));
   }, [pdfMargins]);
 
+  const applyPreset = (type: 'normal' | 'narrow' | 'wide') => {
+    switch (type) {
+      case 'normal': setPdfMargins({ top: 15, right: 15, bottom: 15, left: 15 }); break;
+      case 'narrow': setPdfMargins({ top: 5, right: 5, bottom: 5, left: 5 }); break;
+      case 'wide': setPdfMargins({ top: 25, right: 25, bottom: 25, left: 25 }); break;
+    }
+  };
+
   const [showMarginSettings, setShowMarginSettings] = useState(false);
   const [showExportPreview, setShowExportPreview] = useState(false);
+  const [pdfOrientation, setPdfOrientation] = useState<'portrait' | 'landscape'>('landscape');
+  const [pdfPaperSize, setPdfPaperSize] = useState<'A4' | 'LETTER' | 'LEGAL'>('A4');
+  const [pdfScale, setPdfScale] = useState(100);
+  const [pdfUnit, setPdfUnit] = useState<'mm' | 'cm' | 'in'>('mm');
+  const [showMarginGuides, setShowMarginGuides] = useState(true);
 
   const [statusFilter, setStatusFilter] = useState<'APPROVED' | 'CANCELLED' | 'PENDING'>(
     filterStatus === 'PENDING' ? 'PENDING' : 'APPROVED'
@@ -366,7 +379,7 @@ const IncidentHistory: React.FC<{
         filename: `Relatorio_Atendimentos_${new Date().toISOString().split('T')[0]}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
-          scale: 2,
+          scale: (pdfScale / 100) * 2,
           useCORS: true,
           letterRendering: true,
           scrollY: 0,
@@ -374,6 +387,7 @@ const IncidentHistory: React.FC<{
           onclone: (doc: Document) => {
             const el = doc.getElementById('history-export-container');
             if (el) {
+              el.style.scale = '1'; // Reset scale during capture to avoid artifacts
               el.style.gap = '0px';
               el.style.padding = '0';
               // Remove visual styles from pages for clean print
@@ -381,16 +395,21 @@ const IncidentHistory: React.FC<{
               pages.forEach((p: any) => {
                 p.style.boxShadow = 'none';
                 p.style.border = 'none';
+                // Hide margin guides on export
+                const guides = p.querySelectorAll('.margin-guide');
+                guides.forEach((g: any) => g.style.display = 'none');
               });
             }
           }
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        jsPDF: {
+          unit: pdfUnit,
+          format: pdfPaperSize.toLowerCase(),
+          orientation: pdfOrientation
+        }
       };
       html2pdf().set(opt).from(element).save().then(() => {
         setIsExporting(false);
-        // Optional: close preview after export
-        // setShowExportPreview(false);
       });
     }, 100);
   };
@@ -631,208 +650,342 @@ const IncidentHistory: React.FC<{
 
       {/* Export Preview Modal */}
       {showExportPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-[95vw] h-[90vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md animate-in fade-in zoom-in-95 duration-300">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-[98vw] h-[95vh] rounded-3xl flex flex-col shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-200 dark:border-slate-800">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
-                  <Printer size={20} className="text-slate-600 dark:text-slate-300" />
+            <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 z-10">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-brand-50 dark:bg-brand-900/20 rounded-2xl text-brand-600 dark:text-brand-400 shadow-sm border border-brand-100 dark:border-brand-900/30">
+                  <Printer size={24} strokeWidth={2.5} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800 dark:text-white uppercase">Visualizar Relatório</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Verifique o layout antes de exportar</p>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Visualizar Relatório</h3>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Ajuste o layout e as margens para impressão perfeita</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
+                <div className="h-10 w-px bg-slate-200 dark:bg-slate-800 hidden md:block mx-2"></div>
                 <button
                   onClick={handleExportPDF}
                   disabled={isExporting}
-                  className="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-black uppercase flex items-center gap-2 transition-all shadow-lg hover:shadow-brand-500/25 active:scale-95 disabled:opacity-50 disabled:cursor-wait"
+                  className="px-8 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 transition-all shadow-xl shadow-brand-500/30 active:scale-95 disabled:opacity-50 disabled:cursor-wait"
                 >
-                  {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                  {isExporting ? 'GERANDO PDF...' : 'EXPORTAR PDF'}
+                  {isExporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} strokeWidth={2.5} />}
+                  {isExporting ? 'Processando...' : 'Exportar PDF'}
                 </button>
                 <button
                   onClick={() => setShowExportPreview(false)}
-                  className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition-colors"
+                  className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl text-slate-400 dark:text-slate-500 transition-all active:scale-90"
                 >
-                  <X size={20} />
+                  <X size={24} strokeWidth={2.5} />
                 </button>
               </div>
             </div>
 
             {/* Modal Body - Split View */}
             <div className="flex-1 flex overflow-hidden">
-              {/* Sidebar Controls */}
-              <div className="w-80 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 overflow-y-auto">
-                <div className="mb-6">
-                  <h4 className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase mb-4 tracking-wider">
-                    <Settings size={14} /> Configurações de Margem
-                  </h4>
-                  <div className="space-y-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Topo (mm)</label>
-                        <input
-                          type="number"
-                          value={pdfMargins.top}
-                          onChange={e => setPdfMargins({ ...pdfMargins, top: parseInt(e.target.value) || 0 })}
-                          className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+              {/* Sidebar Controls - Modern UX */}
+              <div className="w-85 border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-8 overflow-y-auto space-y-8 no-scrollbar">
+
+                {/* Margins Section */}
+                <section className="space-y-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="flex items-center gap-2 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
+                      <Square size={14} className="text-brand-500" /> Margens ({pdfUnit})
+                    </h4>
+                    <button
+                      onClick={() => setShowMarginGuides(!showMarginGuides)}
+                      className={`p-1.5 rounded-lg border transition-all ${showMarginGuides ? 'bg-brand-50 border-brand-200 text-brand-600' : 'bg-white border-slate-200 text-slate-400'}`}
+                      title="Mostrar Guias"
+                    >
+                      <MousePointer2 size={14} />
+                    </button>
+                  </div>
+
+                  {/* Preset Selector */}
+                  <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-200/50 dark:bg-slate-800/50 rounded-2xl">
+                    {(['normal', 'narrow', 'wide'] as const).map(p => (
+                      <button
+                        key={p}
+                        onClick={() => applyPreset(p)}
+                        className="px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm"
+                      >
+                        {p === 'normal' ? 'Normal' : p === 'narrow' ? 'Estreita' : 'Larga'}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Modern Margin Grid */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-6 bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm relative">
+                    {/* Top */}
+                    <div className="col-span-2 flex flex-col items-center">
+                      <label className="text-[9px] font-black text-slate-400 uppercase mb-2">Topo</label>
+                      <div className="flex items-center gap-2 w-32 bg-slate-50 dark:bg-slate-900 rounded-xl p-1 border border-slate-100 dark:border-slate-700">
+                        <button onClick={() => setPdfMargins(m => ({ ...m, top: Math.max(0, m.top - 1) }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Minus size={12} /></button>
+                        <input type="number" value={pdfMargins.top} onChange={e => setPdfMargins(m => ({ ...m, top: parseInt(e.target.value) || 0 }))} className="w-full text-center text-xs font-black bg-transparent outline-none" />
+                        <button onClick={() => setPdfMargins(m => ({ ...m, top: m.top + 1 }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Plus size={12} /></button>
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Base (mm)</label>
-                        <input
-                          type="number"
-                          value={pdfMargins.bottom}
-                          onChange={e => setPdfMargins({ ...pdfMargins, bottom: parseInt(e.target.value) || 0 })}
-                          className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                    </div>
+                    {/* Left & Right */}
+                    <div className="flex flex-col items-center">
+                      <label className="text-[9px] font-black text-slate-400 uppercase mb-2">Esquerda</label>
+                      <div className="flex items-center gap-2 w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-1 border border-slate-100 dark:border-slate-700">
+                        <button onClick={() => setPdfMargins(m => ({ ...m, left: Math.max(0, m.left - 1) }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Minus size={10} /></button>
+                        <input type="number" value={pdfMargins.left} onChange={e => setPdfMargins(m => ({ ...m, left: parseInt(e.target.value) || 0 }))} className="w-full text-center text-xs font-black bg-transparent outline-none px-0" />
+                        <button onClick={() => setPdfMargins(m => ({ ...m, left: m.left + 1 }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Plus size={10} /></button>
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Esquerda (mm)</label>
-                        <input
-                          type="number"
-                          value={pdfMargins.left}
-                          onChange={e => setPdfMargins({ ...pdfMargins, left: parseInt(e.target.value) || 0 })}
-                          className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <label className="text-[9px] font-black text-slate-400 uppercase mb-2">Direita</label>
+                      <div className="flex items-center gap-2 w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-1 border border-slate-100 dark:border-slate-700">
+                        <button onClick={() => setPdfMargins(m => ({ ...m, right: Math.max(0, m.right - 1) }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Minus size={10} /></button>
+                        <input type="number" value={pdfMargins.right} onChange={e => setPdfMargins(m => ({ ...m, right: parseInt(e.target.value) || 0 }))} className="w-full text-center text-xs font-black bg-transparent outline-none px-0" />
+                        <button onClick={() => setPdfMargins(m => ({ ...m, right: m.right + 1 }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Plus size={10} /></button>
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Direita (mm)</label>
-                        <input
-                          type="number"
-                          value={pdfMargins.right}
-                          onChange={e => setPdfMargins({ ...pdfMargins, right: parseInt(e.target.value) || 0 })}
-                          className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                    </div>
+                    {/* Bottom */}
+                    <div className="col-span-2 flex flex-col items-center mt-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase mb-2">Base</label>
+                      <div className="flex items-center gap-2 w-32 bg-slate-50 dark:bg-slate-900 rounded-xl p-1 border border-slate-100 dark:border-slate-700">
+                        <button onClick={() => setPdfMargins(m => ({ ...m, bottom: Math.max(0, m.bottom - 1) }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Minus size={12} /></button>
+                        <input type="number" value={pdfMargins.bottom} onChange={e => setPdfMargins(m => ({ ...m, bottom: parseInt(e.target.value) || 0 }))} className="w-full text-center text-xs font-black bg-transparent outline-none" />
+                        <button onClick={() => setPdfMargins(m => ({ ...m, bottom: m.bottom + 1 }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Plus size={12} /></button>
                       </div>
                     </div>
                   </div>
-                </div>
+                </section>
 
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30">
-                  <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium leading-relaxed">
-                    Visualize como o documento ficará antes de imprimir. As alterações nas margens são aplicadas em tempo real.
-                  </p>
-                </div>
+                {/* Page Setup Section */}
+                <section className="space-y-6">
+                  <h4 className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                    <Layers size={14} className="text-brand-500" /> Configuração de Página
+                  </h4>
+
+                  {/* Orientation Toggle */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Orientação</label>
+                    <div className="flex p-1 bg-slate-200/50 dark:bg-slate-800/50 rounded-2xl relative">
+                      <button
+                        onClick={() => setPdfOrientation('portrait')}
+                        className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all z-10 ${pdfOrientation === 'portrait' ? 'bg-white dark:bg-slate-700 shadow-md text-brand-600 dark:text-brand-400' : 'text-slate-500'}`}
+                      >
+                        <FileText size={16} /> Retrato
+                      </button>
+                      <button
+                        onClick={() => setPdfOrientation('landscape')}
+                        className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all z-10 ${pdfOrientation === 'landscape' ? 'bg-white dark:bg-slate-700 shadow-md text-brand-600 dark:text-brand-400' : 'text-slate-500'}`}
+                      >
+                        <FileText size={16} className="rotate-90" /> Paisagem
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Paper Size & Scale */}
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Tamanho do Papel</label>
+                      <select
+                        value={pdfPaperSize}
+                        onChange={e => setPdfPaperSize(e.target.value as any)}
+                        className="w-full p-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl text-[11px] font-black uppercase outline-none focus:ring-2 focus:ring-brand-500/20"
+                      >
+                        <option value="A4">A4 (210x297mm)</option>
+                        <option value="LETTER">Carta (216x279mm)</option>
+                        <option value="LEGAL">Ofício (216x356mm)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between pl-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escala de Conteúdo</label>
+                        <span className="text-[11px] font-black text-brand-600">{pdfScale}%</span>
+                      </div>
+                      <input
+                        type="range" min="50" max="150" step="5"
+                        value={pdfScale}
+                        onChange={e => setPdfScale(parseInt(e.target.value))}
+                        className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-brand-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Unit Switcher */}
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Info size={14} className="text-slate-400" />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Unidade de Medida</span>
+                      </div>
+                      <div className="flex gap-2">
+                        {(['mm', 'cm', 'in'] as const).map(u => (
+                          <button
+                            key={u}
+                            onClick={() => setPdfUnit(u)}
+                            className={`w-8 h-8 rounded-lg text-[9px] font-black uppercase flex items-center justify-center border transition-all ${pdfUnit === u ? 'bg-brand-600 border-brand-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400'}`}
+                          >
+                            {u}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </div>
 
-              {/* Preview Area - Centered & Scrolled */}
-              <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-8 overflow-auto flex justify-center">
-                <div className="origin-top scale-[0.6] md:scale-[0.85] lg:scale-100 transition-transform duration-300">
-                  <div ref={printRef} id="history-export-container" className="flex flex-col items-center gap-8 bg-transparent transform-gpu" style={{
-                    width: 'fit-content',
-                    padding: 0
-                  }}>
-                    {(() => {
-                      const pageSize = 12;
-                      const chunks = [];
-                      for (let i = 0; i < displayIncidents.length; i += pageSize) {
-                        chunks.push(displayIncidents.slice(i, i + pageSize));
-                      }
-                      if (chunks.length === 0) chunks.push([]);
+              {/* Preview Area (The Canvas) - WYSIWYG */}
+              <div className="flex-1 bg-[#F3F4F6] dark:bg-slate-950 p-12 overflow-y-auto no-scrollbar scroll-smooth flex flex-col items-center">
+                {/* Visual Scale Controller Info */}
+                <div className="mb-8 flex items-center gap-3 px-4 py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur rounded-full border border-slate-200 dark:border-slate-800 shadow-sm transition-opacity hover:opacity-100 opacity-60">
+                  <Maximize size={14} className="text-slate-400" />
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Previsualização fiel à impressão</span>
+                </div>
 
-                      return chunks.map((chunk, pageIndex) => (
-                        <div key={pageIndex} className="report-page bg-white shadow-2xl flex flex-col justify-between" style={{
-                          width: '297mm',
-                          height: '210mm',
-                          overflow: 'hidden',
-                          paddingTop: `${pdfMargins.top}mm`,
-                          paddingBottom: `${pdfMargins.bottom}mm`,
-                          paddingLeft: `${pdfMargins.left}mm`,
-                          paddingRight: `${pdfMargins.right}mm`,
-                          position: 'relative',
+                <div
+                  ref={printRef}
+                  id="history-export-container"
+                  className="flex flex-col items-center gap-12 bg-transparent transform-gpu"
+                  style={{ scale: pdfScale / 100 }}
+                >
+                  {(() => {
+                    const pageSize = 12; // Ideal for A4 portrait/landscape
+                    const chunks = [];
+                    for (let i = 0; i < displayIncidents.length; i += pageSize) {
+                      chunks.push(displayIncidents.slice(i, i + pageSize));
+                    }
+                    if (chunks.length === 0) chunks.push([]);
+
+                    const pageWidth = pdfOrientation === 'landscape' ? (pdfPaperSize === 'A4' ? '297mm' : pdfPaperSize === 'LETTER' ? '279mm' : '356mm') : (pdfPaperSize === 'A4' ? '210mm' : '216mm');
+                    const pageHeight = pdfOrientation === 'landscape' ? (pdfPaperSize === 'A4' ? '210mm' : '216mm') : (pdfPaperSize === 'A4' ? '297mm' : pdfPaperSize === 'LETTER' ? '279mm' : '356mm');
+
+                    return chunks.map((chunk, pageIndex) => (
+                      <div
+                        key={pageIndex}
+                        className="report-page bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col justify-between overflow-hidden relative group"
+                        style={{
+                          width: pageWidth,
+                          height: pageHeight,
+                          paddingTop: `${pdfMargins.top}${pdfUnit}`,
+                          paddingBottom: `${pdfMargins.bottom}${pdfUnit}`,
+                          paddingLeft: `${pdfMargins.left}${pdfUnit}`,
+                          paddingRight: `${pdfMargins.right}${pdfUnit}`,
                           pageBreakAfter: 'always',
                           fontFamily: "'Inter', sans-serif"
-                        }}>
-                          <div>
-                            <div className="flex justify-center items-start mb-4 gap-12 pt-4">
-                              <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center mt-1">
-                                {customLogoLeft ? (
-                                  <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Esquerda" />
-                                ) : (
-                                  <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50">
-                                    <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
-                                  </div>
-                                )}
-                              </div>
+                        }}
+                      >
+                        {/* Interactive Margin Guides (Dashed) */}
+                        {showMarginGuides && (
+                          <div
+                            className="margin-guide absolute inset-0 pointer-events-none transition-opacity opacity-0 group-hover:opacity-100"
+                            style={{
+                              top: `${pdfMargins.top}${pdfUnit}`,
+                              bottom: `${pdfMargins.bottom}${pdfUnit}`,
+                              left: `${pdfMargins.left}${pdfUnit}`,
+                              right: `${pdfMargins.right}${pdfUnit}`,
+                              border: '1px dashed rgba(59, 130, 246, 0.3)'
+                            }}
+                          >
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full text-[8px] font-black text-blue-400 uppercase py-1">Top: {pdfMargins.top}{pdfUnit}</div>
+                            <div className="absolute left-0 top-1/2 -rotate-90 -translate-x-full text-[8px] font-black text-blue-400 uppercase py-1">Left: {pdfMargins.left}{pdfUnit}</div>
+                          </div>
+                        )}
 
-                              <div className="text-center">
-                                <h1 className="text-[18px] font-black uppercase text-slate-900 leading-tight">
-                                  PREFEITURA MUNICIPAL DE ARAPONGAS
-                                </h1>
-                                <h2 className="text-[14px] font-black uppercase text-slate-900 mt-1">
-                                  SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
-                                </h2>
-                                <h3 className="text-[12px] font-bold uppercase text-blue-600 mt-1 tracking-wider">
-                                  CENTRO DE MONITORAMENTO MUNICIPAL
-                                </h3>
-                                <div className="mt-3 inline-block px-8 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-[13px] font-black uppercase tracking-[0.15em] text-slate-700 shadow-sm">
-                                  Relatório Geral de Atendimentos
+                        <div>
+                          <div className="flex justify-center items-start mb-6 gap-12 pt-4">
+                            <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center">
+                              {customLogoLeft ? (
+                                <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão" />
+                              ) : (
+                                <div className="w-16 h-16 rounded-full border border-slate-300 flex items-center justify-center bg-slate-50 shadow-inner">
+                                  <Shield size={24} className="text-slate-300" />
                                 </div>
-                                {(dateStart || dateEnd) && (
-                                  <div className="text-[10px] uppercase font-bold text-slate-500 mt-2">
-                                    Período: {dateStart ? formatDateBR(dateStart) : 'Início'} até {dateEnd ? formatDateBR(dateEnd) : 'Hoje'}
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center mt-1">
-                                {customLogo ? (
-                                  <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão Direita" />
-                                ) : (
-                                  <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50">
-                                    <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
-                                  </div>
-                                )}
-                              </div>
+                              )}
                             </div>
 
-                            <table className="w-full border-collapse border border-slate-900">
-                              <thead style={{ display: 'table-header-group' }}>
-                                <tr className="bg-slate-100">
-                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[80px]">Número R.A</th>
-                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[150px]">Local</th>
-                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[80px]">Data</th>
-                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[60px]">H. Inicial</th>
-                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[60px]">H. Final</th>
-                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[120px]">Natureza</th>
-                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase">Relato</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {chunk.map(i => {
-                                  const building = buildings.find(b => b.id === i.buildingId);
-                                  return (
-                                    <tr key={i.id} style={{ pageBreakInside: 'avoid' }}>
-                                      <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.raCode}</td>
-                                      <td className="border border-slate-900 p-2 text-[10px] font-bold uppercase align-middle">{building?.name || '---'}</td>
-                                      <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{formatDateBR(i.date)}</td>
-                                      <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.startTime}</td>
-                                      <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.endTime || '--:--'}</td>
-                                      <td className="border border-slate-900 p-2 text-[9px] font-bold uppercase text-center align-middle">{i.alterationType}</td>
-                                      <td className="border border-slate-900 p-2 text-[9px] font-medium leading-tight align-top whitespace-pre-wrap break-all">{i.description}</td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
+                            <div className="text-center">
+                              <h1 className="text-[18px] font-black uppercase text-slate-900 leading-tight tracking-tight">
+                                PREFEITURA MUNICIPAL DE ARAPONGAS
+                              </h1>
+                              <h2 className="text-[14px] font-black uppercase text-slate-900 mt-1">
+                                SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
+                              </h2>
+                              <h3 className="text-[12px] font-bold uppercase text-brand-600 mt-1 tracking-[0.1em]">
+                                CENTRO DE MONITORAMENTO MUNICIPAL
+                              </h3>
+                              <div className="mt-4 inline-block px-10 py-3 bg-slate-100 border-2 border-white rounded-2xl text-[14px] font-black uppercase tracking-[0.2em] text-slate-800 shadow-sm">
+                                Relatório Geral de Atendimentos
+                              </div>
+                              {(dateStart || dateEnd) && (
+                                <div className="text-[10px] uppercase font-bold text-slate-400 mt-3 flex items-center justify-center gap-2">
+                                  <Clock size={12} /> {dateStart ? formatDateBR(dateStart) : 'Início'} até {dateEnd ? formatDateBR(dateEnd) : 'Hoje'}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center">
+                              {customLogo ? (
+                                <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Logo" />
+                              ) : (
+                                <div className="w-16 h-16 rounded-full border border-slate-300 flex items-center justify-center bg-slate-50 shadow-inner">
+                                  <Shield size={24} className="text-slate-300" />
+                                </div>
+                              )}
+                            </div>
                           </div>
 
-
+                          <table className="w-full border-collapse border-b-2 border-slate-900">
+                            <thead style={{ display: 'table-header-group' }}>
+                              <tr className="bg-slate-900 text-white">
+                                <th className="p-3 text-[10px] font-black uppercase w-[80px] text-left border-r border-slate-700">Protocolo</th>
+                                <th className="p-3 text-[10px] font-black uppercase w-[150px] text-left border-r border-slate-700">Próprio/Logradouro</th>
+                                <th className="p-3 text-[10px] font-black uppercase w-[90px] text-center border-r border-slate-700">Data</th>
+                                <th className="p-3 text-[10px] font-black uppercase w-[70px] text-center border-r border-slate-700">Início</th>
+                                <th className="p-3 text-[10px] font-black uppercase w-[70px] text-center border-r border-slate-700">Fim</th>
+                                <th className="p-3 text-[10px] font-black uppercase w-[130px] text-center border-r border-slate-700">Natureza</th>
+                                <th className="p-3 text-[10px] font-black uppercase text-left">Relato da Ocorrência</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200">
+                              {chunk.map(i => {
+                                const building = buildings.find(b => b.id === i.buildingId);
+                                return (
+                                  <tr key={i.id} style={{ pageBreakInside: 'avoid' }} className="hover:bg-slate-50 transition-colors">
+                                    <td className="p-3 text-[10px] font-black text-slate-900 border-x border-slate-200">{i.raCode}</td>
+                                    <td className="p-3 text-[10px] font-bold uppercase text-slate-700 border-r border-slate-200">{building?.name || '---'}</td>
+                                    <td className="p-3 text-[10px] font-bold text-center border-r border-slate-200">{formatDateBR(i.date)}</td>
+                                    <td className="p-3 text-[10px] font-bold text-center border-r border-slate-200">{i.startTime}</td>
+                                    <td className="p-3 text-[10px] font-bold text-center border-r border-slate-200">{i.endTime || '--:--'}</td>
+                                    <td className="p-3 text-[9px] font-black uppercase text-center text-brand-600 border-r border-slate-200">{i.alterationType}</td>
+                                    <td className="p-3 text-[9px] font-medium leading-tight align-top whitespace-pre-wrap break-words border-r border-slate-200">{i.description}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
-                      ));
-                    })()}
-                  </div>
+
+                        {/* Footer info for traceability */}
+                        <div className="flex justify-between items-end border-t border-slate-200 pt-4">
+                          <div className="space-y-1">
+                            <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Documento Gerado por Sistema de Monitoramento Municipal</p>
+                            <div className="flex gap-4">
+                              <span className="text-[6px] font-bold text-slate-300">IP: {exportIP}</span>
+                              <span className="text-[6px] font-bold text-slate-300">HASH: {exportHash.substring(0, 16).toUpperCase()}...</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[8px] font-black text-slate-700 uppercase">Página {pageIndex + 1} de {chunks.length}</p>
+                            <p className="text-[7px] font-bold text-slate-400 uppercase mt-1">Impresso em {exportDate}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ));
+                  })()}
                 </div>
               </div>
             </div>
           </div>
         </div>
-      )
-      }
+      )}
     </div >
   );
 };
