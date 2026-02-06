@@ -215,7 +215,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     // isExporting already declared above
 
 
-        const handleExportHistoryPDF = async () => {
+    const handleExportHistoryPDF = async () => {
         if (!reportRef.current || typeof html2pdf === 'undefined') {
             alert('Biblioteca de PDF não carregada. Tente recarregar a página.');
             return;
@@ -1984,16 +1984,16 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                                     {(() => {
                                                                         const historyChunks: LoanRecord[][] = [];
                                                                         const items = [...itemHistoryResults];
-                                                                        
+
                                                                         const pageHeight = pdfOrientation === 'portrait' ? 297 : 210;
-                                                                        const safeZone = 15; 
+                                                                        const safeZone = 2;
                                                                         const topMargin = pdfMargins.top;
                                                                         const bottomMargin = pdfMargins.bottom;
-                                                                        
+
                                                                         const firstPageOverhead = (historyItemType === 'VEHICLE' ? 115 : 85);
                                                                         const tableHeaderHeight = 12;
-                                                                        const rowHeight = 10; 
-                                                                        
+                                                                        const rowHeight = 8.5;
+
                                                                         let curPage = 0;
                                                                         while (items.length > 0 || (curPage === 0 && items.length === 0)) {
                                                                             const availableHeight = pageHeight - topMargin - bottomMargin - safeZone - (curPage === 0 ? firstPageOverhead : tableHeaderHeight);
@@ -2002,7 +2002,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                                             curPage++;
                                                                         }
                                                                         return historyChunks.map((chunk, pageIndex) => (
-                                                                            <div key={pageIndex} className="report-page bg-white shadow-2xl overflow-hidden" style={{ width: pdfOrientation === 'portrait' ? '210mm' : '297mm',
+                                                                            <div key={pageIndex} className="report-page bg-white shadow-2xl overflow-hidden" style={{
+                                                                                width: pdfOrientation === 'portrait' ? '210mm' : '297mm',
                                                                                 height: pdfOrientation === 'portrait' ? '297mm' : '210mm',
                                                                                 paddingTop: `${pdfMargins.top}mm`,
                                                                                 paddingBottom: `${pdfMargins.bottom}mm`,
@@ -2014,106 +2015,106 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                                                                 <div className="h-full flex flex-col">
                                                                                     <div>
                                                                                         {pageIndex === 0 && (
-<>
-{/* HEADER (Same as IncidentDetail) */}
-                                                                                        <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12 mt-4">
-                                                                                            {/* Logo Esquerda (Muni) */}
-                                                                                            <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                                                                                {customLogoLeft ? (
-                                                                                                    <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Muni" />
-                                                                                                ) : (
-                                                                                                    <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
-                                                                                                        <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
+                                                                                            <>
+                                                                                                {/* HEADER (Same as IncidentDetail) */}
+                                                                                                <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12 mt-4">
+                                                                                                    {/* Logo Esquerda (Muni) */}
+                                                                                                    <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                                                                        {customLogoLeft ? (
+                                                                                                            <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Muni" />
+                                                                                                        ) : (
+                                                                                                            <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                                                                <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
+                                                                                                            </div>
+                                                                                                        )}
                                                                                                     </div>
-                                                                                                )}
-                                                                                            </div>
 
-                                                                                            <div className="text-center min-w-0 flex-1">
-                                                                                                <h1 className="text-[14px] font-black uppercase text-slate-900 leading-tight tracking-tight whitespace-nowrap">
-                                                                                                    PREFEITURA MUNICIPAL DE ARAPONGAS
-                                                                                                </h1>
-                                                                                                <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-wide mt-1">
-                                                                                                    SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
-                                                                                                </h2>
-                                                                                                <h3 className="text-[10px] font-bold uppercase text-blue-600 mt-0.5 tracking-wider">
-                                                                                                    CENTRO DE MONITORAMENTO MUNICIPAL
-                                                                                                </h3>
-                                                                                            </div>
-
-                                                                                            {/* Logo Direita (GCM) */}
-                                                                                            <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                                                                                {customLogo ? (
-                                                                                                    <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão GCM" />
-                                                                                                ) : (
-                                                                                                    <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
-                                                                                                        <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
+                                                                                                    <div className="text-center min-w-0 flex-1">
+                                                                                                        <h1 className="text-[14px] font-black uppercase text-slate-900 leading-tight tracking-tight whitespace-nowrap">
+                                                                                                            PREFEITURA MUNICIPAL DE ARAPONGAS
+                                                                                                        </h1>
+                                                                                                        <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-wide mt-1">
+                                                                                                            SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
+                                                                                                        </h2>
+                                                                                                        <h3 className="text-[10px] font-bold uppercase text-blue-600 mt-0.5 tracking-wider">
+                                                                                                            CENTRO DE MONITORAMENTO MUNICIPAL
+                                                                                                        </h3>
                                                                                                     </div>
-                                                                                                )}
-                                                                                            </div>
-                                                                                        </div>
 
-                                                                                        {/* LINHA DE DIVISÃO SUPERIOR (AZUL) */}
-                                                                                        <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '6px' }}></div>
-
-                                                                                        {/* TÍTULO COM LINHAS LATERAIS */}
-                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-                                                                                            <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
-                                                                                            <h2 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-                                                                                                {historyItemType === 'VEHICLE' ? 'DIÁRIO DE BORDO' : 'RELATÓRIO DE CAUTELAS'}
-                                                                                            </h2>
-                                                                                            <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
-                                                                                        </div>
-
-                                                                                        {/* LINHA DE DIVISÃO INFERIOR (AZUL) */}
-                                                                                        <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
-
-                                                                                        {/* VEHICLE SPECIFIC HEADER */}
-                                                                                        {historyItemType === 'VEHICLE' ? (
-                                                                                            <div className="mb-4 font-black uppercase text-[10px] text-slate-900 border border-slate-900">
-                                                                                                <div className="grid grid-cols-12 bg-slate-100 border-b border-slate-900 divide-x divide-slate-900">
-                                                                                                    <div className="col-span-5 p-2 flex items-center gap-2">
-                                                                                                        <span className="text-slate-500 font-bold">VEÍCULO:</span>
-                                                                                                        <span className="text-[14px]">{vehicles.find(v => v.id === historyItemId)?.model}</span>
-                                                                                                    </div>
-                                                                                                    <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
-                                                                                                        <span className="text-slate-500 font-bold">PLACA:</span>
-                                                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.plate}</span>
-                                                                                                    </div>
-                                                                                                    <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
-                                                                                                        <span className="text-slate-500 font-bold">Nº FROTA:</span>
-                                                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fleetNumber || vehicles.find(v => v.id === historyItemId)?.prefix}</span>
-                                                                                                    </div>
-                                                                                                    <div className="col-span-3 p-2 flex items-center gap-2 justify-center">
-                                                                                                        <span className="text-slate-500 font-bold">COMBUSTÍVEL:</span>
-                                                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fuelType || 'FLEX'}</span>
+                                                                                                    {/* Logo Direita (GCM) */}
+                                                                                                    <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                                                                        {customLogo ? (
+                                                                                                            <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão GCM" />
+                                                                                                        ) : (
+                                                                                                            <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                                                                <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
+                                                                                                            </div>
+                                                                                                        )}
                                                                                                     </div>
                                                                                                 </div>
-                                                                                                <div className="grid grid-cols-2 bg-slate-100 divide-x divide-slate-900">
-                                                                                                    <div className="p-2 flex items-center gap-2">
-                                                                                                        <span className="text-slate-500 font-bold">MÊS/ANO REF.:</span>
-                                                                                                        <span className="text-[12px]">
-                                                                                                            {historyStartDate ? new Date(historyStartDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase() : new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
+
+                                                                                                {/* LINHA DE DIVISÃO SUPERIOR (AZUL) */}
+                                                                                                <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '6px' }}></div>
+
+                                                                                                {/* TÍTULO COM LINHAS LATERAIS */}
+                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                                                                                                    <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                                                                    <h2 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+                                                                                                        {historyItemType === 'VEHICLE' ? 'DIÁRIO DE BORDO' : 'RELATÓRIO DE CAUTELAS'}
+                                                                                                    </h2>
+                                                                                                    <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                                                                </div>
+
+                                                                                                {/* LINHA DE DIVISÃO INFERIOR (AZUL) */}
+                                                                                                <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
+
+                                                                                                {/* VEHICLE SPECIFIC HEADER */}
+                                                                                                {historyItemType === 'VEHICLE' ? (
+                                                                                                    <div className="mb-4 font-black uppercase text-[10px] text-slate-900 border border-slate-900">
+                                                                                                        <div className="grid grid-cols-12 bg-slate-100 border-b border-slate-900 divide-x divide-slate-900">
+                                                                                                            <div className="col-span-5 p-2 flex items-center gap-2">
+                                                                                                                <span className="text-slate-500 font-bold">VEÍCULO:</span>
+                                                                                                                <span className="text-[14px]">{vehicles.find(v => v.id === historyItemId)?.model}</span>
+                                                                                                            </div>
+                                                                                                            <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                                                                <span className="text-slate-500 font-bold">PLACA:</span>
+                                                                                                                <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.plate}</span>
+                                                                                                            </div>
+                                                                                                            <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                                                                <span className="text-slate-500 font-bold">Nº FROTA:</span>
+                                                                                                                <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fleetNumber || vehicles.find(v => v.id === historyItemId)?.prefix}</span>
+                                                                                                            </div>
+                                                                                                            <div className="col-span-3 p-2 flex items-center gap-2 justify-center">
+                                                                                                                <span className="text-slate-500 font-bold">COMBUSTÍVEL:</span>
+                                                                                                                <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fuelType || 'FLEX'}</span>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <div className="grid grid-cols-2 bg-slate-100 divide-x divide-slate-900">
+                                                                                                            <div className="p-2 flex items-center gap-2">
+                                                                                                                <span className="text-slate-500 font-bold">MÊS/ANO REF.:</span>
+                                                                                                                <span className="text-[12px]">
+                                                                                                                    {historyStartDate ? new Date(historyStartDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase() : new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                                                                                                                </span>
+                                                                                                            </div>
+                                                                                                            <div className="p-2 flex items-center gap-2">
+                                                                                                                <span className="text-slate-500 font-bold">SECRETARIA:</span>
+                                                                                                                <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.department || 'SESTRAN'}</span>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                ) : (
+                                                                                                    /* GENERIC HEADER ITEM DISPLAY */
+                                                                                                    <div className="mb-6 bg-slate-50 border border-slate-200 rounded p-4 text-center shadow-sm">
+                                                                                                        <span className="text-[15px] font-black uppercase text-slate-900 tracking-wide">
+                                                                                                            {historyItemType === 'VEST' ? 'COLETE ' + vests.find(v => v.id === historyItemId)?.number :
+                                                                                                                historyItemType === 'RADIO' ? 'RÁDIO ' + radios.find(v => v.id === historyItemId)?.number :
+                                                                                                                    equipments.find(e => e.id === historyItemId)?.name || '---'}
                                                                                                         </span>
                                                                                                     </div>
-                                                                                                    <div className="p-2 flex items-center gap-2">
-                                                                                                        <span className="text-slate-500 font-bold">SECRETARIA:</span>
-                                                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.department || 'SESTRAN'}</span>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        ) : (
-                                                                                            /* GENERIC HEADER ITEM DISPLAY */
-                                                                                            <div className="mb-6 bg-slate-50 border border-slate-200 rounded p-4 text-center shadow-sm">
-                                                                                                <span className="text-[15px] font-black uppercase text-slate-900 tracking-wide">
-                                                                                                    {historyItemType === 'VEST' ? 'COLETE ' + vests.find(v => v.id === historyItemId)?.number :
-                                                                                                        historyItemType === 'RADIO' ? 'RÁDIO ' + radios.find(v => v.id === historyItemId)?.number :
-                                                                                                            equipments.find(e => e.id === historyItemId)?.name || '---'}
-                                                                                                </span>
-                                                                                            </div>
-                                                                                        )}
+                                                                                                )}
 
-                                                                                        </>
-)}{/* TABLE */}
+                                                                                            </>
+                                                                                        )}{/* TABLE */}
                                                                                         {historyItemType === 'VEHICLE' ? (
                                                                                             /* VEHICLE DIARY TABLE */
                                                                                             <div>
@@ -2392,262 +2393,389 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                         </div>
                     </>
                 )}
-{/* UNIFIED GRID VIEW (Conditionally Rendered) */}
-                        {(!activeTab || activeTab !== 'HISTORY' || historyMode === 'USER') && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-                                {groupedLoans.map((group) => (
-                                    <div
-                                        key={group.id}
-                                        onClick={() => setSelectedGroup(group)}
-                                        className={`rounded-2xl border-2 overflow-hidden flex flex-col shadow-sm transition-all hover:shadow-md cursor-pointer ${group.type === 'PENDING'
-                                            ? 'border-amber-400 bg-white dark:bg-slate-900 shadow-amber-500/5'
-                                            : group.type === 'HISTORY'
-                                                ? 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-slate-500/5 opacity-80 hover:opacity-100'
-                                                : 'border-emerald-400 bg-white dark:bg-slate-900 shadow-emerald-500/5'
-                                            }`}
-                                    >
-                                        {/* Header */}
-                                        <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center text-lg font-black shadow-sm ${group.type === 'PENDING' ? 'bg-amber-100 text-amber-600' : group.type === 'HISTORY' ? 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400' : 'bg-emerald-100 text-emerald-600'}`}>
-                                                    {group.receiverName.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div className="flex flex-col min-w-0 flex-1">
-                                                    <h3 className="text-xs md:text-sm font-black text-slate-800 dark:text-slate-100 uppercase leading-tight mb-1 tracking-tight truncate" title={group.receiverName}>
-                                                        {group.receiverName}
-                                                    </h3>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md border ${group.type === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200'
-                                                            : group.type === 'HISTORY' ? 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
-                                                                : 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                                            }`}>
-                                                            {group.type === 'PENDING' ? 'AGUARDANDO' : group.type === 'HISTORY' ? (group.loans.some(l => l.status === 'REJECTED') ? 'RECUSADO' : 'DEVOLVIDO') : 'EM POSSE'}
-                                                        </span>
-                                                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                                            <Clock size={10} className="opacity-60" />
-                                                            {new Date(group.loans[0].checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
+            {/* UNIFIED GRID VIEW (Conditionally Rendered) */}
+            {(!activeTab || activeTab !== 'HISTORY' || historyMode === 'USER') && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+                    {groupedLoans.map((group) => (
+                        <div
+                            key={group.id}
+                            onClick={() => setSelectedGroup(group)}
+                            className={`rounded-2xl border-2 overflow-hidden flex flex-col shadow-sm transition-all hover:shadow-md cursor-pointer ${group.type === 'PENDING'
+                                ? 'border-amber-400 bg-white dark:bg-slate-900 shadow-amber-500/5'
+                                : group.type === 'HISTORY'
+                                    ? 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-slate-500/5 opacity-80 hover:opacity-100'
+                                    : 'border-emerald-400 bg-white dark:bg-slate-900 shadow-emerald-500/5'
+                                }`}
+                        >
+                            {/* Header */}
+                            <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center text-lg font-black shadow-sm ${group.type === 'PENDING' ? 'bg-amber-100 text-amber-600' : group.type === 'HISTORY' ? 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400' : 'bg-emerald-100 text-emerald-600'}`}>
+                                        {group.receiverName.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                        <h3 className="text-xs md:text-sm font-black text-slate-800 dark:text-slate-100 uppercase leading-tight mb-1 tracking-tight truncate" title={group.receiverName}>
+                                            {group.receiverName}
+                                        </h3>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md border ${group.type === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                                : group.type === 'HISTORY' ? 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                                                    : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                }`}>
+                                                {group.type === 'PENDING' ? 'AGUARDANDO' : group.type === 'HISTORY' ? (group.loans.some(l => l.status === 'REJECTED') ? 'RECUSADO' : 'DEVOLVIDO') : 'EM POSSE'}
+                                            </span>
+                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                                <Clock size={10} className="opacity-60" />
+                                                {new Date(group.loans[0].checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                                        {/* Items Grid */}
-                                        <div className="p-2 flex-1 overflow-y-auto max-h-[350px]">
-                                            <div className="grid grid-cols-2 gap-2 h-full content-start">
-                                                {group.loans.map(loan => (
-                                                    <div
-                                                        key={loan.id}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setActiveMobileLoanId(prev => prev === loan.id ? null : loan.id);
-                                                        }}
-                                                        className="bg-slate-50/40 dark:bg-slate-800/20 rounded-xl p-2 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-800 min-h-[75px] relative group transition-all hover:bg-white dark:hover:bg-slate-800 shadow-sm cursor-pointer"
-                                                    >
-                                                        <div className={`mb-1 ${group.type === 'PENDING' ? 'text-amber-500' : group.type === 'HISTORY' ? 'text-slate-400' : 'text-emerald-500'}`}>
-                                                            {getAssetIcon(loan.assetType, 20)}
+                            {/* Items Grid */}
+                            <div className="p-2 flex-1 overflow-y-auto max-h-[350px]">
+                                <div className="grid grid-cols-2 gap-2 h-full content-start">
+                                    {group.loans.map(loan => (
+                                        <div
+                                            key={loan.id}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setActiveMobileLoanId(prev => prev === loan.id ? null : loan.id);
+                                            }}
+                                            className="bg-slate-50/40 dark:bg-slate-800/20 rounded-xl p-2 flex flex-col items-center justify-center text-center border border-slate-100 dark:border-slate-800 min-h-[75px] relative group transition-all hover:bg-white dark:hover:bg-slate-800 shadow-sm cursor-pointer"
+                                        >
+                                            <div className={`mb-1 ${group.type === 'PENDING' ? 'text-amber-500' : group.type === 'HISTORY' ? 'text-slate-400' : 'text-emerald-500'}`}>
+                                                {getAssetIcon(loan.assetType, 20)}
+                                            </div>
+                                            <p className="text-[8px] font-black text-slate-800 dark:text-slate-200 uppercase leading-tight mb-0.5 line-clamp-2 px-1">
+                                                {loan.assetDescription}
+                                            </p>
+                                            {loan.assetType === 'VEHICLE' && (
+                                                <span className="text-[7px] font-bold text-slate-400 uppercase">{loan.meta?.kmStart} KM</span>
+                                            )}
+                                            {(loan.assetType === 'VEST' || loan.assetDescription.includes('(M)') || loan.assetDescription.includes('(G)')) && (
+                                                <span className="text-[7px] font-bold text-slate-400 uppercase opacity-60">
+                                                    TAM: ({loan.assetDescription.match(/\((.*?)\)/)?.[1] || '---'})
+                                                </span>
+                                            )}
+
+                                            {/* Individual Action (Overlay) */}
+                                            {((group.type === 'PENDING' && ((canApprove && currentUser.id === group.receiverId) || (canCreate && currentUser.id === loan.operatorId))) || (group.type === 'ACTIVE' && (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')))) && (
+                                                <div className={`absolute inset-0 bg-slate-900/90 rounded-xl flex items-center justify-center transition-all duration-200 backdrop-blur-[2px] z-10 p-1.5 gap-1 font-black uppercase ${activeMobileLoanId === loan.id ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'} md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto`}>
+                                                    {group.type === 'PENDING' ? (
+                                                        <div className="flex flex-col gap-1 w-full h-full p-1 justify-center items-center overflow-hidden">
+                                                            {currentUser.id === group.receiverId && canApprove && (
+                                                                <>
+                                                                    <button
+                                                                        disabled={isSubmitting}
+                                                                        onClick={(e) => { e.stopPropagation(); handleConfirm(loan); }}
+                                                                        className="w-full flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
+                                                                    >
+                                                                        <CheckCircle size={12} className="flex-shrink-0" /> <span className="truncate">{loan.status === 'ACTIVE' ? 'ACEITAR TROCA' : 'ACEITAR'}</span>
+                                                                    </button>
+                                                                    <button
+                                                                        disabled={isSubmitting}
+                                                                        onClick={(e) => { e.stopPropagation(); handleReject(loan); }}
+                                                                        className="w-full flex-1 bg-red-600 hover:bg-red-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
+                                                                    >
+                                                                        <XCircle size={12} className="flex-shrink-0" /> <span className="truncate">{loan.status === 'ACTIVE' ? 'RECUSAR TROCA' : 'RECUSAR'}</span>
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                            {currentUser.id === loan.operatorId && currentUser.id !== group.receiverId && (
+                                                                <span className="text-white text-[7px] text-center px-1">Aguardando ConfirmaÃ§Ã£o</span>
+                                                            )}
                                                         </div>
-                                                        <p className="text-[8px] font-black text-slate-800 dark:text-slate-200 uppercase leading-tight mb-0.5 line-clamp-2 px-1">
-                                                            {loan.assetDescription}
-                                                        </p>
-                                                        {loan.assetType === 'VEHICLE' && (
-                                                            <span className="text-[7px] font-bold text-slate-400 uppercase">{loan.meta?.kmStart} KM</span>
-                                                        )}
-                                                        {(loan.assetType === 'VEST' || loan.assetDescription.includes('(M)') || loan.assetDescription.includes('(G)')) && (
-                                                            <span className="text-[7px] font-bold text-slate-400 uppercase opacity-60">
-                                                                TAM: ({loan.assetDescription.match(/\((.*?)\)/)?.[1] || '---'})
-                                                            </span>
-                                                        )}
-
-                                                        {/* Individual Action (Overlay) */}
-                                                        {((group.type === 'PENDING' && ((canApprove && currentUser.id === group.receiverId) || (canCreate && currentUser.id === loan.operatorId))) || (group.type === 'ACTIVE' && (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')))) && (
-                                                            <div className={`absolute inset-0 bg-slate-900/90 rounded-xl flex items-center justify-center transition-all duration-200 backdrop-blur-[2px] z-10 p-1.5 gap-1 font-black uppercase ${activeMobileLoanId === loan.id ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'} md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto`}>
-                                                                {group.type === 'PENDING' ? (
-                                                                    <div className="flex flex-col gap-1 w-full h-full p-1 justify-center items-center overflow-hidden">
-                                                                        {currentUser.id === group.receiverId && canApprove && (
-                                                                            <>
-                                                                                <button
-                                                                                    disabled={isSubmitting}
-                                                                                    onClick={(e) => { e.stopPropagation(); handleConfirm(loan); }}
-                                                                                    className="w-full flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
-                                                                                >
-                                                                                    <CheckCircle size={12} className="flex-shrink-0" /> <span className="truncate">{loan.status === 'ACTIVE' ? 'ACEITAR TROCA' : 'ACEITAR'}</span>
-                                                                                </button>
-                                                                                <button
-                                                                                    disabled={isSubmitting}
-                                                                                    onClick={(e) => { e.stopPropagation(); handleReject(loan); }}
-                                                                                    className="w-full flex-1 bg-red-600 hover:bg-red-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
-                                                                                >
-                                                                                    <XCircle size={12} className="flex-shrink-0" /> <span className="truncate">{loan.status === 'ACTIVE' ? 'RECUSAR TROCA' : 'RECUSAR'}</span>
-                                                                                </button>
-                                                                            </>
+                                                    ) : (
+                                                        (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')) && (
+                                                            <div className="flex flex-col gap-1 w-full h-full p-1 justify-center items-center overflow-hidden">
+                                                                {loan.assetType === 'VEHICLE' && (
+                                                                    <>
+                                                                        {currentUser.id === group.receiverId && (
+                                                                            <button
+                                                                                disabled={isSubmitting}
+                                                                                onClick={(e) => { e.stopPropagation(); handleHandover(loan); }}
+                                                                                className="w-full flex-1 bg-slate-700 hover:bg-slate-600 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
+                                                                            >
+                                                                                <ArrowRightLeft size={12} className="flex-shrink-0" /> <span className="truncate">TROCAR</span>
+                                                                            </button>
                                                                         )}
-                                                                        {currentUser.id === loan.operatorId && currentUser.id !== group.receiverId && (
-                                                                            <span className="text-white text-[7px] text-center px-1">Aguardando ConfirmaÃ§Ã£o</span>
-                                                                        )}
-                                                                    </div>
-                                                                ) : (
-                                                                    (canReturn || (currentUser.id === group.receiverId && loan.assetType === 'VEHICLE')) && (
-                                                                        <div className="flex flex-col gap-1 w-full h-full p-1 justify-center items-center overflow-hidden">
-                                                                            {loan.assetType === 'VEHICLE' && (
-                                                                                <>
-                                                                                    {currentUser.id === group.receiverId && (
-                                                                                        <button
-                                                                                            disabled={isSubmitting}
-                                                                                            onClick={(e) => { e.stopPropagation(); handleHandover(loan); }}
-                                                                                            className="w-full flex-1 bg-slate-700 hover:bg-slate-600 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
-                                                                                        >
-                                                                                            <ArrowRightLeft size={12} className="flex-shrink-0" /> <span className="truncate">TROCAR</span>
-                                                                                        </button>
-                                                                                    )}
-                                                                                    <button
-                                                                                        disabled={isSubmitting}
-                                                                                        onClick={(e) => { e.stopPropagation(); handleRefuel(loan); }}
-                                                                                        className="w-full flex-1 bg-blue-600 hover:bg-blue-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
-                                                                                    >
-                                                                                        <Fuel size={12} className="flex-shrink-0" /> <span className="truncate">ABASTECER</span>
-                                                                                    </button>
-                                                                                </>
-                                                                            )}
-                                                                            {canReturn && (
-                                                                                <button
-                                                                                    disabled={isSubmitting}
-                                                                                    onClick={(e) => { e.stopPropagation(); handleReturn(loan); }}
-                                                                                    className="w-full flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
-                                                                                >
-                                                                                    <CheckCircle size={12} className="flex-shrink-0" /> <span className="truncate">DEVOLVER</span>
-                                                                                </button>
-                                                                            )}
-                                                                        </div>
-                                                                    )
+                                                                        <button
+                                                                            disabled={isSubmitting}
+                                                                            onClick={(e) => { e.stopPropagation(); handleRefuel(loan); }}
+                                                                            className="w-full flex-1 bg-blue-600 hover:bg-blue-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
+                                                                        >
+                                                                            <Fuel size={12} className="flex-shrink-0" /> <span className="truncate">ABASTECER</span>
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                                {canReturn && (
+                                                                    <button
+                                                                        disabled={isSubmitting}
+                                                                        onClick={(e) => { e.stopPropagation(); handleReturn(loan); }}
+                                                                        className="w-full flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[8px] md:text-[10px] font-black rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1 px-1"
+                                                                    >
+                                                                        <CheckCircle size={12} className="flex-shrink-0" /> <span className="truncate">DEVOLVER</span>
+                                                                    </button>
                                                                 )}
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
+                                                        )
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
-
-                                        {/* Footer Action */}
-                                        {group.type !== 'HISTORY' && (
-                                            <div className={`p-2 border-t ${group.type === 'PENDING' ? 'bg-amber-50/20' : 'bg-emerald-50/20'} dark:bg-slate-800/50 border-slate-100 dark:border-slate-800`}>
-                                                {group.type === 'PENDING' ? (
-                                                    <div className="flex gap-1.5">
-                                                        {currentUser.id === group.receiverId && canApprove && (
-                                                            <button
-                                                                disabled={isSubmitting}
-                                                                onClick={(e) => { e.stopPropagation(); handleConfirmBatch(group.loans); }}
-                                                                className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-amber-500/25 disabled:opacity-50"
-                                                            >
-                                                                <CheckCircle size={12} /> ACEITAR TUDO
-                                                            </button>
-                                                        )}
-                                                        {group.loans.some(l => l.operator_id === currentUser.id || l.operatorId === currentUser.id) && canCreate && (
-                                                            <button
-                                                                disabled={isSubmitting}
-                                                                onClick={(e) => { e.stopPropagation(); handleCancelBatch(group.loans); }}
-                                                                className="px-2.5 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95 disabled:opacity-50"
-                                                                title="Cancelar Cautela"
-                                                            >
-                                                                <XCircle size={16} />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    canReturn && currentUser.id === group.receiverId && (
-                                                        <button
-                                                            disabled={isSubmitting}
-                                                            onClick={(e) => { e.stopPropagation(); handleReturnBatch(group.loans); }}
-                                                            className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
-                                                        >
-                                                            <CornerDownLeft size={16} /> DEVOLVER TODOS
-                                                        </button>
-                                                    )
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Empty State */}
-                        {(!activeTab || activeTab !== 'HISTORY' || historyMode === 'USER') && groupedLoans.length === 0 && (
-                            <div className="text-center py-20 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
-                                <div className="w-16 h-16 mx-auto bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-300">
-                                    <ArrowRightLeft size={32} />
+                                    ))}
                                 </div>
-                                <h3 className="text-sm font-black text-slate-400 uppercase">Nenhuma cautela encontrada</h3>
-                                <p className="text-xs text-slate-400 mt-1">Não há itens ativos ou pendentes no momento.</p>
                             </div>
-                        )}
-                    {/* Custom Overlay for Vehicle Return */ }
-{
-    showVehicleReturnModal && vehicleReturnData && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 bg-green-100 text-green-600 rounded-full"><CornerDownLeft size={24} /></div>
-                    <div>
-                        <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Devolução de Viatura</h3>
-                        <p className="text-xs text-slate-500 uppercase">{vehicleReturnData.model}</p>
-                        {vehicleReturnData.batchIdsToComplete && vehicleReturnData.batchIdsToComplete.length > 0 && (
-                            <p className="text-[10px] text-blue-500 font-bold uppercase mt-1">+ {vehicleReturnData.batchIdsToComplete.length} itens do lote serão devolvidos.</p>
-                        )}
-                    </div>
-                </div>
 
-                <div className="space-y-4 mb-6">
-                    <div>
-                        <label className="block text-xs font-black text-slate-500 uppercase mb-1">Quilometragem Final (KM)</label>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                value={vehicleReturnData.kmEnd ? vehicleReturnData.kmEnd.toLocaleString('pt-BR') : ''}
-                                onChange={(e) => {
-                                    const rawValue = e.target.value.replace(/\D/g, '');
-                                    const numeric = rawValue ? parseInt(rawValue) : 0;
-                                    setVehicleReturnData({ ...vehicleReturnData, kmEnd: numeric });
-                                }}
-                                className={`w-full pl-10 p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 font-bold text-lg outline-none focus:ring-2 transition-all ${vehicleReturnData.kmEnd < vehicleReturnData.kmStart
-                                    ? 'border-red-300 focus:ring-red-500 text-red-600'
-                                    : 'border-slate-300 dark:border-slate-600 focus:ring-blue-500 text-slate-800 dark:text-white'
-                                    }`}
-                            />
-                            <Gauge className="absolute left-3 top-3.5 text-slate-400" size={20} />
-                        </div>
-
-                        <div className="mt-2">
-                            {vehicleReturnData.kmEnd < vehicleReturnData.kmStart ? (
-                                <div className="flex items-start gap-2 text-red-600 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-100 dark:border-red-900">
-                                    <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase">Inconsistência</p>
-                                        <p className="text-[10px]">Menor que saída ({vehicleReturnData.kmStart.toLocaleString('pt-BR')} KM).</p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-center justify-between text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg border border-blue-100 dark:border-blue-900">
-                                    <span className="text-[10px] font-black uppercase">Total Percorrido</span>
-                                    <span className="text-sm font-black font-mono">{(vehicleReturnData.kmEnd - vehicleReturnData.kmStart).toLocaleString('pt-BR')} Km</span>
+                            {/* Footer Action */}
+                            {group.type !== 'HISTORY' && (
+                                <div className={`p-2 border-t ${group.type === 'PENDING' ? 'bg-amber-50/20' : 'bg-emerald-50/20'} dark:bg-slate-800/50 border-slate-100 dark:border-slate-800`}>
+                                    {group.type === 'PENDING' ? (
+                                        <div className="flex gap-1.5">
+                                            {currentUser.id === group.receiverId && canApprove && (
+                                                <button
+                                                    disabled={isSubmitting}
+                                                    onClick={(e) => { e.stopPropagation(); handleConfirmBatch(group.loans); }}
+                                                    className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-amber-500/25 disabled:opacity-50"
+                                                >
+                                                    <CheckCircle size={12} /> ACEITAR TUDO
+                                                </button>
+                                            )}
+                                            {group.loans.some(l => l.operator_id === currentUser.id || l.operatorId === currentUser.id) && canCreate && (
+                                                <button
+                                                    disabled={isSubmitting}
+                                                    onClick={(e) => { e.stopPropagation(); handleCancelBatch(group.loans); }}
+                                                    className="px-2.5 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                                                    title="Cancelar Cautela"
+                                                >
+                                                    <XCircle size={16} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        canReturn && currentUser.id === group.receiverId && (
+                                            <button
+                                                disabled={isSubmitting}
+                                                onClick={(e) => { e.stopPropagation(); handleReturnBatch(group.loans); }}
+                                                className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                                            >
+                                                <CornerDownLeft size={16} /> DEVOLVER TODOS
+                                            </button>
+                                        )
+                                    )}
                                 </div>
                             )}
                         </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Empty State */}
+            {(!activeTab || activeTab !== 'HISTORY' || historyMode === 'USER') && groupedLoans.length === 0 && (
+                <div className="text-center py-20 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
+                    <div className="w-16 h-16 mx-auto bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-300">
+                        <ArrowRightLeft size={32} />
                     </div>
+                    <h3 className="text-sm font-black text-slate-400 uppercase">Nenhuma cautela encontrada</h3>
+                    <p className="text-xs text-slate-400 mt-1">Não há itens ativos ou pendentes no momento.</p>
+                </div>
+            )}
+            {/* Custom Overlay for Vehicle Return */}
+            {
+                showVehicleReturnModal && vehicleReturnData && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-3 bg-green-100 text-green-600 rounded-full"><CornerDownLeft size={24} /></div>
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Devolução de Viatura</h3>
+                                    <p className="text-xs text-slate-500 uppercase">{vehicleReturnData.model}</p>
+                                    {vehicleReturnData.batchIdsToComplete && vehicleReturnData.batchIdsToComplete.length > 0 && (
+                                        <p className="text-[10px] text-blue-500 font-bold uppercase mt-1">+ {vehicleReturnData.batchIdsToComplete.length} itens do lote serão devolvidos.</p>
+                                    )}
+                                </div>
+                            </div>
 
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                        <label className="flex items-center gap-2 cursor-pointer mb-2">
-                            <input
-                                type="checkbox"
-                                checked={vehicleReturnData.refuel}
-                                onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, refuel: e.target.checked })}
-                                className="rounded text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300 flex items-center gap-1"><Fuel size={14} /> Houve Abastecimento?</span>
-                        </label>
+                            <div className="space-y-4 mb-6">
+                                <div>
+                                    <label className="block text-xs font-black text-slate-500 uppercase mb-1">Quilometragem Final (KM)</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={vehicleReturnData.kmEnd ? vehicleReturnData.kmEnd.toLocaleString('pt-BR') : ''}
+                                            onChange={(e) => {
+                                                const rawValue = e.target.value.replace(/\D/g, '');
+                                                const numeric = rawValue ? parseInt(rawValue) : 0;
+                                                setVehicleReturnData({ ...vehicleReturnData, kmEnd: numeric });
+                                            }}
+                                            className={`w-full pl-10 p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 font-bold text-lg outline-none focus:ring-2 transition-all ${vehicleReturnData.kmEnd < vehicleReturnData.kmStart
+                                                ? 'border-red-300 focus:ring-red-500 text-red-600'
+                                                : 'border-slate-300 dark:border-slate-600 focus:ring-blue-500 text-slate-800 dark:text-white'
+                                                }`}
+                                        />
+                                        <Gauge className="absolute left-3 top-3.5 text-slate-400" size={20} />
+                                    </div>
 
-                        {vehicleReturnData.refuel && (
-                            <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg animate-in slide-in-from-top-1 space-y-3">
+                                    <div className="mt-2">
+                                        {vehicleReturnData.kmEnd < vehicleReturnData.kmStart ? (
+                                            <div className="flex items-start gap-2 text-red-600 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-100 dark:border-red-900">
+                                                <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase">Inconsistência</p>
+                                                    <p className="text-[10px]">Menor que saída ({vehicleReturnData.kmStart.toLocaleString('pt-BR')} KM).</p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-between text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg border border-blue-100 dark:border-blue-900">
+                                                <span className="text-[10px] font-black uppercase">Total Percorrido</span>
+                                                <span className="text-sm font-black font-mono">{(vehicleReturnData.kmEnd - vehicleReturnData.kmStart).toLocaleString('pt-BR')} Km</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                                    <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={vehicleReturnData.refuel}
+                                            onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, refuel: e.target.checked })}
+                                            className="rounded text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300 flex items-center gap-1"><Fuel size={14} /> Houve Abastecimento?</span>
+                                    </label>
+
+                                    {vehicleReturnData.refuel && (
+                                        <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg animate-in slide-in-from-top-1 space-y-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowQRScanner(true)}
+                                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-700 transition-all shadow-md active:scale-[0.98]"
+                                            >
+                                                <QrCode size={16} /> Ler QR Code (Digital)
+                                            </button>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Litros</label>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="text"
+                                                            value={vehicleReturnData.fuelLiters}
+                                                            onChange={(e) => {
+                                                                let val = e.target.value.replace('.', ',');
+                                                                if (/^\d*,?\d*$/.test(val)) {
+                                                                    setVehicleReturnData({ ...vehicleReturnData, fuelLiters: val })
+                                                                }
+                                                            }}
+                                                            className="w-full pl-7 p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
+                                                            placeholder="0,0"
+                                                            inputMode="decimal"
+                                                        />
+                                                        <Droplet size={12} className="absolute left-2 top-2.5 text-slate-400" />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Combustível</label>
+                                                    <select
+                                                        value={vehicleReturnData.fuelType}
+                                                        onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, fuelType: e.target.value })}
+                                                        className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold uppercase bg-white dark:bg-slate-900"
+                                                    >
+                                                        <option>Gasolina</option>
+                                                        <option>Etanol</option>
+                                                        <option>Diesel</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">KM do Abastecimento</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        value={vehicleReturnData.fuelKm ? parseInt(vehicleReturnData.fuelKm).toLocaleString('pt-BR') : ''}
+                                                        onChange={(e) => {
+                                                            const raw = e.target.value.replace(/\D/g, '');
+                                                            const val = raw ? parseInt(raw) : '';
+                                                            setVehicleReturnData({ ...vehicleReturnData, fuelKm: val.toString() })
+                                                        }}
+                                                        className="w-full pl-7 p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
+                                                        placeholder="0"
+                                                        inputMode="numeric"
+                                                    />
+                                                    <Gauge size={12} className="absolute left-2 top-2.5 text-slate-400" />
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Fornecedor</label>
+                                                <input
+                                                    type="text"
+                                                    value={vehicleReturnData.supplier}
+                                                    onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, supplier: e.target.value.toUpperCase() })}
+                                                    className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
+                                                    placeholder="NOME DO POSTO"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Número do Cupom</label>
+                                                    <input
+                                                        type="text"
+                                                        value={vehicleReturnData.couponNumber}
+                                                        onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, couponNumber: e.target.value })}
+                                                        className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
+                                                        placeholder="Nº NFC-e"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Motorista</label>
+                                                    <input
+                                                        type="text"
+                                                        value={vehicleReturnData.driver}
+                                                        onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, driver: e.target.value.toUpperCase() })}
+                                                        className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
+                                                        placeholder="NOME DO MOTORISTA"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-3">
+                                <button onClick={() => setShowVehicleReturnModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                                <button
+                                    onClick={processVehicleReturn}
+                                    disabled={isSubmitting || vehicleReturnData.kmEnd < vehicleReturnData.kmStart}
+                                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-black uppercase hover:bg-emerald-700 shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                >
+                                    {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />} Confirmar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Custom Overlay for Refueling */}
+            {
+                showRefuelModal && refuelData && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-3 bg-blue-100 text-blue-600 rounded-full"><Fuel size={24} /></div>
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Registrar Abastecimento</h3>
+                                    <p className="text-xs text-slate-500 uppercase">{refuelData.model}</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-blue-50 dark:bg-slate-800 p-3 rounded-lg animate-in slide-in-from-top-1 space-y-3 mb-6">
                                 <button
                                     type="button"
                                     onClick={() => setShowQRScanner(true)}
@@ -2662,11 +2790,11 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                         <div className="relative">
                                             <input
                                                 type="text"
-                                                value={vehicleReturnData.fuelLiters}
+                                                value={refuelData.fuelLiters}
                                                 onChange={(e) => {
                                                     let val = e.target.value.replace('.', ',');
                                                     if (/^\d*,?\d*$/.test(val)) {
-                                                        setVehicleReturnData({ ...vehicleReturnData, fuelLiters: val })
+                                                        setRefuelData({ ...refuelData, fuelLiters: val })
                                                     }
                                                 }}
                                                 className="w-full pl-7 p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
@@ -2679,8 +2807,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                     <div>
                                         <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Combustível</label>
                                         <select
-                                            value={vehicleReturnData.fuelType}
-                                            onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, fuelType: e.target.value })}
+                                            value={refuelData.fuelType}
+                                            onChange={(e) => setRefuelData({ ...refuelData, fuelType: e.target.value })}
                                             className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold uppercase bg-white dark:bg-slate-900"
                                         >
                                             <option>Gasolina</option>
@@ -2694,26 +2822,29 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                     <div className="relative">
                                         <input
                                             type="text"
-                                            value={vehicleReturnData.fuelKm ? parseInt(vehicleReturnData.fuelKm).toLocaleString('pt-BR') : ''}
+                                            value={refuelData.fuelKm ? parseInt(refuelData.fuelKm).toLocaleString('pt-BR') : ''}
                                             onChange={(e) => {
                                                 const raw = e.target.value.replace(/\D/g, '');
                                                 const val = raw ? parseInt(raw) : '';
-                                                setVehicleReturnData({ ...vehicleReturnData, fuelKm: val.toString() })
+                                                setRefuelData({ ...refuelData, fuelKm: val.toString() })
                                             }}
-                                            className="w-full pl-7 p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
+                                            className={`w-full pl-7 p-2 rounded border text-xs font-bold bg-white dark:bg-slate-900 ${parseInt(refuelData.fuelKm || '0') < refuelData.currentKm ? 'border-red-300 text-red-600' : 'border-slate-300 dark:border-slate-600'}`}
                                             placeholder="0"
                                             inputMode="numeric"
                                         />
                                         <Gauge size={12} className="absolute left-2 top-2.5 text-slate-400" />
                                     </div>
+                                    {parseInt(refuelData.fuelKm || '0') < refuelData.currentKm && (
+                                        <p className="text-[9px] text-red-500 font-bold mt-1">KM menor que atual ({refuelData.currentKm})</p>
+                                    )}
                                 </div>
 
                                 <div>
                                     <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Fornecedor</label>
                                     <input
                                         type="text"
-                                        value={vehicleReturnData.supplier}
-                                        onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, supplier: e.target.value.toUpperCase() })}
+                                        value={refuelData.supplier}
+                                        onChange={(e) => setRefuelData({ ...refuelData, supplier: e.target.value.toUpperCase() })}
                                         className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
                                         placeholder="NOME DO POSTO"
                                     />
@@ -2724,8 +2855,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                         <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Número do Cupom</label>
                                         <input
                                             type="text"
-                                            value={vehicleReturnData.couponNumber}
-                                            onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, couponNumber: e.target.value })}
+                                            value={refuelData.couponNumber}
+                                            onChange={(e) => setRefuelData({ ...refuelData, couponNumber: e.target.value })}
                                             className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
                                             placeholder="Nº NFC-e"
                                         />
@@ -2734,383 +2865,253 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                         <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Motorista</label>
                                         <input
                                             type="text"
-                                            value={vehicleReturnData.driver}
-                                            onChange={(e) => setVehicleReturnData({ ...vehicleReturnData, driver: e.target.value.toUpperCase() })}
+                                            value={refuelData.driver}
+                                            onChange={(e) => setRefuelData({ ...refuelData, driver: e.target.value.toUpperCase() })}
                                             className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
                                             placeholder="NOME DO MOTORISTA"
                                         />
                                     </div>
                                 </div>
                             </div>
-                        )}
-                    </div>
-                </div>
 
-                <div className="flex justify-end gap-3">
-                    <button onClick={() => setShowVehicleReturnModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
-                    <button
-                        onClick={processVehicleReturn}
-                        disabled={isSubmitting || vehicleReturnData.kmEnd < vehicleReturnData.kmStart}
-                        className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-black uppercase hover:bg-emerald-700 shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    >
-                        {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />} Confirmar
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-{/* Custom Overlay for Refueling */ }
-{
-    showRefuelModal && refuelData && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 bg-blue-100 text-blue-600 rounded-full"><Fuel size={24} /></div>
-                    <div>
-                        <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Registrar Abastecimento</h3>
-                        <p className="text-xs text-slate-500 uppercase">{refuelData.model}</p>
-                    </div>
-                </div>
-
-                <div className="bg-blue-50 dark:bg-slate-800 p-3 rounded-lg animate-in slide-in-from-top-1 space-y-3 mb-6">
-                    <button
-                        type="button"
-                        onClick={() => setShowQRScanner(true)}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-700 transition-all shadow-md active:scale-[0.98]"
-                    >
-                        <QrCode size={16} /> Ler QR Code (Digital)
-                    </button>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Litros</label>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    value={refuelData.fuelLiters}
-                                    onChange={(e) => {
-                                        let val = e.target.value.replace('.', ',');
-                                        if (/^\d*,?\d*$/.test(val)) {
-                                            setRefuelData({ ...refuelData, fuelLiters: val })
-                                        }
-                                    }}
-                                    className="w-full pl-7 p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
-                                    placeholder="0,0"
-                                    inputMode="decimal"
-                                />
-                                <Droplet size={12} className="absolute left-2 top-2.5 text-slate-400" />
+                            <div className="flex justify-end gap-3">
+                                <button onClick={() => setShowRefuelModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                                <button
+                                    onClick={processRefuel}
+                                    disabled={isSubmitting || !refuelData.fuelLiters || parseInt(refuelData.fuelKm || '0') < refuelData.currentKm}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                >
+                                    {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />} Salvar
+                                </button>
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Combustível</label>
-                            <select
-                                value={refuelData.fuelType}
-                                onChange={(e) => setRefuelData({ ...refuelData, fuelType: e.target.value })}
-                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold uppercase bg-white dark:bg-slate-900"
-                            >
-                                <option>Gasolina</option>
-                                <option>Etanol</option>
-                                <option>Diesel</option>
-                            </select>
-                        </div>
                     </div>
-                    <div>
-                        <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">KM do Abastecimento</label>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                value={refuelData.fuelKm ? parseInt(refuelData.fuelKm).toLocaleString('pt-BR') : ''}
-                                onChange={(e) => {
-                                    const raw = e.target.value.replace(/\D/g, '');
-                                    const val = raw ? parseInt(raw) : '';
-                                    setRefuelData({ ...refuelData, fuelKm: val.toString() })
-                                }}
-                                className={`w-full pl-7 p-2 rounded border text-xs font-bold bg-white dark:bg-slate-900 ${parseInt(refuelData.fuelKm || '0') < refuelData.currentKm ? 'border-red-300 text-red-600' : 'border-slate-300 dark:border-slate-600'}`}
-                                placeholder="0"
-                                inputMode="numeric"
-                            />
-                            <Gauge size={12} className="absolute left-2 top-2.5 text-slate-400" />
-                        </div>
-                        {parseInt(refuelData.fuelKm || '0') < refuelData.currentKm && (
-                            <p className="text-[9px] text-red-500 font-bold mt-1">KM menor que atual ({refuelData.currentKm})</p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Fornecedor</label>
-                        <input
-                            type="text"
-                            value={refuelData.supplier}
-                            onChange={(e) => setRefuelData({ ...refuelData, supplier: e.target.value.toUpperCase() })}
-                            className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
-                            placeholder="NOME DO POSTO"
-                        />
-                    </div>
-
-                    <div className="space-y-3">
-                        <div>
-                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Número do Cupom</label>
-                            <input
-                                type="text"
-                                value={refuelData.couponNumber}
-                                onChange={(e) => setRefuelData({ ...refuelData, couponNumber: e.target.value })}
-                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900"
-                                placeholder="Nº NFC-e"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-[9px] font-black text-slate-500 uppercase mb-1">Motorista</label>
-                            <input
-                                type="text"
-                                value={refuelData.driver}
-                                onChange={(e) => setRefuelData({ ...refuelData, driver: e.target.value.toUpperCase() })}
-                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 text-xs font-bold bg-white dark:bg-slate-900 uppercase"
-                                placeholder="NOME DO MOTORISTA"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                    <button onClick={() => setShowRefuelModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
-                    <button
-                        onClick={processRefuel}
-                        disabled={isSubmitting || !refuelData.fuelLiters || parseInt(refuelData.fuelKm || '0') < refuelData.currentKm}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    >
-                        {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />} Salvar
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
-}
+                )
+            }
 
 
-{/* Handover Modal (Vehicle Driver Switch) */ }
-{
-    showHandoverModal && handoverData && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in" onClick={() => setShowHandoverModal(false)}>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400">
-                        <ArrowRightLeft size={24} />
-                    </div>
-                    <div>
-                        <h3 className="text-[15px] font-black text-slate-900 dark:text-white uppercase leading-tight">Trocar Motorista</h3>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">{handoverData.loan.assetDescription}</p>
-                    </div>
-                </div>
-
-                <div className="space-y-4 mb-6">
-                    <div className="relative">
-                        <label className="block text-[10px] font-black text-slate-500 uppercase mb-2 ml-1 text-center font-black">Selecionar Novo Motorista</label>
-                        <div className="relative">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="text"
-                                value={handoverData.userSearch}
-                                onChange={(e) => setHandoverData({ ...handoverData, userSearch: e.target.value })}
-                                placeholder="BUSCAR NOME OU MATRÍCULA..."
-                                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-brand-500 transition-all font-black"
-                            />
-                        </div>
-
-                        {handoverData.userSearch.length >= 2 && !handoverData.targetUserId && (
-                            <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden z-[400] max-h-48 overflow-y-auto ring-4 ring-black/5">
-                                {users
-                                    .filter(u => u.id !== currentUser.id && (normalizeString(u.name).includes(normalizeString(handoverData.userSearch)) || u.matricula.includes(handoverData.userSearch)))
-                                    .map(u => (
-                                        <button
-                                            key={u.id}
-                                            onClick={() => setHandoverData({ ...handoverData, targetUserId: u.id, targetUserName: u.name, userSearch: u.name })}
-                                            className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 flex flex-col gap-0.5 border-b border-slate-100 dark:border-slate-800 last:border-0"
-                                        >
-                                            <span className="text-[11px] font-black uppercase text-slate-800 dark:text-slate-200">{u.name}</span>
-                                            <span className="text-[9px] font-bold text-slate-400">MATRÍCULA: {u.matricula}</span>
-                                        </button>
-                                    ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {handoverData.targetUserId && (
-                        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-xl flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-800 rounded-full flex items-center justify-center text-emerald-600">
-                                    <CheckCircle size={16} />
+            {/* Handover Modal (Vehicle Driver Switch) */}
+            {
+                showHandoverModal && handoverData && (
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in" onClick={() => setShowHandoverModal(false)}>
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400">
+                                    <ArrowRightLeft size={24} />
                                 </div>
                                 <div>
-                                    <p className="text-[9px] font-black text-emerald-700 dark:text-emerald-400 uppercase">Destinatário</p>
-                                    <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-300 uppercase mt-0.5">{handoverData.targetUserName}</p>
+                                    <h3 className="text-[15px] font-black text-slate-900 dark:text-white uppercase leading-tight">Trocar Motorista</h3>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">{handoverData.loan.assetDescription}</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setHandoverData({ ...handoverData, targetUserId: '', targetUserName: '', userSearch: '' })}
-                                className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase p-1"
-                            >
-                                Trocar
-                            </button>
-                        </div>
-                    )}
-                </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                    <button
-                        onClick={() => setShowHandoverModal(false)}
-                        className="py-3 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-xl text-[10px] font-black uppercase transition-all"
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        disabled={!handoverData.targetUserId || isSubmitting}
-                        onClick={processHandover}
-                        className="py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                        {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <ArrowRightLeft size={14} />} Solicitar
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-
-{/* Group Details Modal */ }
-{
-    selectedGroup && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setSelectedGroup(null)}>
-            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700" onClick={e => e.stopPropagation()}>
-                <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 rounded-t-xl">
-                    <div>
-                        <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase leading-none">{selectedGroup.receiverName}</h3>
-                        <p className="text-xs font-bold text-slate-500 uppercase mt-1">
-                            {selectedGroup.type === 'PENDING' ? 'Aguardando Confirmação' : selectedGroup.type === 'HISTORY' ? 'Devolvido / Histórico' : 'Em Posse'} • {selectedGroup.loans.length} Itens
-                        </p>
-                    </div>
-                    <button onClick={() => setSelectedGroup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-500">
-                        <X size={20} />
-                    </button>
-                </div>
-                <div className="p-0 overflow-y-auto custom-scrollbar">
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {selectedGroup.loans.map((loan) => (
-                            <div key={loan.id} className="p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                <div className={`p-3 rounded-xl ${selectedGroup.type === 'PENDING' ? 'bg-amber-100 text-amber-600' :
-                                    selectedGroup.type === 'HISTORY' ? 'bg-slate-100 text-slate-500' :
-                                        'bg-emerald-100 text-emerald-600'
-                                    }`}>
-                                    {getAssetIcon(loan.assetType, 24)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase truncate">
-                                        {loan.assetDescription}
-                                    </p>
-                                    <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-slate-400 uppercase">
-                                        <span>Retirada: {new Date(loan.checkoutTime).toLocaleTimeString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                                        {loan.returnTime && (
-                                            <span>• Devolução: {new Date(loan.returnTime).toLocaleTimeString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                                        )}
+                            <div className="space-y-4 mb-6">
+                                <div className="relative">
+                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-2 ml-1 text-center font-black">Selecionar Novo Motorista</label>
+                                    <div className="relative">
+                                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={handoverData.userSearch}
+                                            onChange={(e) => setHandoverData({ ...handoverData, userSearch: e.target.value })}
+                                            placeholder="BUSCAR NOME OU MATRÍCULA..."
+                                            className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-brand-500 transition-all font-black"
+                                        />
                                     </div>
-                                    {/* Mostra dados de veículo se houver */}
-                                    {loan.assetType === 'VEHICLE' && loan.meta && (
-                                        <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-700/50 rounded-lg text-[10px] font-mono grid grid-cols-2 gap-2 text-slate-600 dark:text-slate-300">
-                                            <div>
-                                                <span className="font-bold block text-slate-400">SAÍDA</span>
-                                                {loan.meta.kmStart ? `${loan.meta.kmStart} Km` : '-'}
-                                            </div>
-                                            <div>
-                                                <span className="font-bold block text-slate-400">CHEGADA</span>
-                                                {loan.meta.kmEnd ? `${loan.meta.kmEnd} Km` : '-'}
-                                            </div>
-                                            {loan.meta.fuelRefill && (
-                                                <div className="col-span-2 border-t border-slate-200 dark:border-slate-600 pt-1 mt-1 space-y-1">
-                                                    <span className="font-bold block text-blue-500 flex items-center gap-1"><Fuel size={10} /> ABASTECIMENTO</span>
-                                                    <div className="grid grid-cols-2 gap-x-2">
-                                                        <span>{loan.meta.fuelLiters} L ({loan.meta.fuelType}) @ {loan.meta.fuelKm} Km</span>
-                                                        {loan.meta.couponNumber && <span className="text-right">Cupom: {loan.meta.couponNumber}</span>}
-                                                        {loan.meta.supplier && <span className="col-span-2 text-slate-400 italic">Fornecedor: {loan.meta.supplier}</span>}
-                                                        {loan.meta.driver && <span className="col-span-2 text-slate-400 italic">Motorista: {loan.meta.driver}</span>}
-                                                    </div>
-                                                </div>
-                                            )}
+
+                                    {handoverData.userSearch.length >= 2 && !handoverData.targetUserId && (
+                                        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden z-[400] max-h-48 overflow-y-auto ring-4 ring-black/5">
+                                            {users
+                                                .filter(u => u.id !== currentUser.id && (normalizeString(u.name).includes(normalizeString(handoverData.userSearch)) || u.matricula.includes(handoverData.userSearch)))
+                                                .map(u => (
+                                                    <button
+                                                        key={u.id}
+                                                        onClick={() => setHandoverData({ ...handoverData, targetUserId: u.id, targetUserName: u.name, userSearch: u.name })}
+                                                        className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 flex flex-col gap-0.5 border-b border-slate-100 dark:border-slate-800 last:border-0"
+                                                    >
+                                                        <span className="text-[11px] font-black uppercase text-slate-800 dark:text-slate-200">{u.name}</span>
+                                                        <span className="text-[9px] font-bold text-slate-400">MATRÍCULA: {u.matricula}</span>
+                                                    </button>
+                                                ))}
                                         </div>
                                     )}
                                 </div>
-                                <div className="text-right">
-                                    <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase ${loan.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
-                                        loan.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' :
-                                            loan.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                                                'bg-slate-100 text-slate-600'
-                                        }`}>
-                                        {loan.status === 'PENDING' ? 'Pendente' : loan.status === 'ACTIVE' ? 'Ativo' : loan.status === 'REJECTED' ? 'Recusado' : 'Devolvido'}
-                                    </span>
+
+                                {handoverData.targetUserId && (
+                                    <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-xl flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-800 rounded-full flex items-center justify-center text-emerald-600">
+                                                <CheckCircle size={16} />
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black text-emerald-700 dark:text-emerald-400 uppercase">Destinatário</p>
+                                                <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-300 uppercase mt-0.5">{handoverData.targetUserName}</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setHandoverData({ ...handoverData, targetUserId: '', targetUserName: '', userSearch: '' })}
+                                            className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase p-1"
+                                        >
+                                            Trocar
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => setShowHandoverModal(false)}
+                                    className="py-3 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-xl text-[10px] font-black uppercase transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    disabled={!handoverData.targetUserId || isSubmitting}
+                                    onClick={processHandover}
+                                    className="py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <ArrowRightLeft size={14} />} Solicitar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+
+            {/* Group Details Modal */}
+            {
+                selectedGroup && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setSelectedGroup(null)}>
+                        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700" onClick={e => e.stopPropagation()}>
+                            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 rounded-t-xl">
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase leading-none">{selectedGroup.receiverName}</h3>
+                                    <p className="text-xs font-bold text-slate-500 uppercase mt-1">
+                                        {selectedGroup.type === 'PENDING' ? 'Aguardando Confirmação' : selectedGroup.type === 'HISTORY' ? 'Devolvido / Histórico' : 'Em Posse'} • {selectedGroup.loans.length} Itens
+                                    </p>
+                                </div>
+                                <button onClick={() => setSelectedGroup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-500">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="p-0 overflow-y-auto custom-scrollbar">
+                                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {selectedGroup.loans.map((loan) => (
+                                        <div key={loan.id} className="p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                            <div className={`p-3 rounded-xl ${selectedGroup.type === 'PENDING' ? 'bg-amber-100 text-amber-600' :
+                                                selectedGroup.type === 'HISTORY' ? 'bg-slate-100 text-slate-500' :
+                                                    'bg-emerald-100 text-emerald-600'
+                                                }`}>
+                                                {getAssetIcon(loan.assetType, 24)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase truncate">
+                                                    {loan.assetDescription}
+                                                </p>
+                                                <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-slate-400 uppercase">
+                                                    <span>Retirada: {new Date(loan.checkoutTime).toLocaleTimeString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                                    {loan.returnTime && (
+                                                        <span>• Devolução: {new Date(loan.returnTime).toLocaleTimeString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                                    )}
+                                                </div>
+                                                {/* Mostra dados de veículo se houver */}
+                                                {loan.assetType === 'VEHICLE' && loan.meta && (
+                                                    <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-700/50 rounded-lg text-[10px] font-mono grid grid-cols-2 gap-2 text-slate-600 dark:text-slate-300">
+                                                        <div>
+                                                            <span className="font-bold block text-slate-400">SAÍDA</span>
+                                                            {loan.meta.kmStart ? `${loan.meta.kmStart} Km` : '-'}
+                                                        </div>
+                                                        <div>
+                                                            <span className="font-bold block text-slate-400">CHEGADA</span>
+                                                            {loan.meta.kmEnd ? `${loan.meta.kmEnd} Km` : '-'}
+                                                        </div>
+                                                        {loan.meta.fuelRefill && (
+                                                            <div className="col-span-2 border-t border-slate-200 dark:border-slate-600 pt-1 mt-1 space-y-1">
+                                                                <span className="font-bold block text-blue-500 flex items-center gap-1"><Fuel size={10} /> ABASTECIMENTO</span>
+                                                                <div className="grid grid-cols-2 gap-x-2">
+                                                                    <span>{loan.meta.fuelLiters} L ({loan.meta.fuelType}) @ {loan.meta.fuelKm} Km</span>
+                                                                    {loan.meta.couponNumber && <span className="text-right">Cupom: {loan.meta.couponNumber}</span>}
+                                                                    {loan.meta.supplier && <span className="col-span-2 text-slate-400 italic">Fornecedor: {loan.meta.supplier}</span>}
+                                                                    {loan.meta.driver && <span className="col-span-2 text-slate-400 italic">Motorista: {loan.meta.driver}</span>}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="text-right">
+                                                <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase ${loan.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                                                    loan.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' :
+                                                        loan.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                            'bg-slate-100 text-slate-600'
+                                                    }`}>
+                                                    {loan.status === 'PENDING' ? 'Pendente' : loan.status === 'ACTIVE' ? 'Ativo' : loan.status === 'REJECTED' ? 'Recusado' : 'Devolvido'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                        ))}
+                            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl flex justify-end">
+                                <button
+                                    onClick={() => setSelectedGroup(null)}
+                                    className="px-6 py-2.5 bg-slate-900 dark:bg-slate-700 text-white text-xs font-black uppercase rounded-xl hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+                                >
+                                    Fechar
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl flex justify-end">
-                    <button
-                        onClick={() => setSelectedGroup(null)}
-                        className="px-6 py-2.5 bg-slate-900 dark:bg-slate-700 text-white text-xs font-black uppercase rounded-xl hover:bg-slate-800 transition-all shadow-lg active:scale-95"
-                    >
-                        Fechar
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
-}
+                )
+            }
 
-{
-    showQRScanner && (
-        <QRScanner
-            onScan={(decodedText) => {
-                setShowQRScanner(false);
+            {
+                showQRScanner && (
+                    <QRScanner
+                        onScan={(decodedText) => {
+                            setShowQRScanner(false);
 
-                // HANDLE RETURN SCAN
-                if (vehicleReturnData && showVehicleReturnModal) {
-                    // Parser para SEFAZ PR (Exemplo da imagem)
-                    if (decodedText.includes("fazenda.pr.gov.br") || decodedText.includes("RESUMO PAGAMENTO")) {
-                        const kmMatch = decodedText.match(/km:(\d+)/i);
-                        const driverMatch = decodedText.match(/MOTORISTA\s+([^|]+)/i);
-                        setVehicleReturnData({
-                            ...vehicleReturnData,
-                            couponNumber: "723226", // Mock extract
-                            fuelLiters: "29,876",
-                            fuelType: "Etanol",
-                            fuelKm: kmMatch ? kmMatch[1] : vehicleReturnData.kmEnd.toString(),
-                            driver: driverMatch ? driverMatch[1].trim().toUpperCase() : vehicleReturnData.driver
-                        });
-                    } else {
-                        alert("QR Code lido: " + decodedText);
-                    }
-                }
-                // HANDLE REFUEL SCAN
-                else if (refuelData && showRefuelModal) {
-                    if (decodedText.includes("fazenda.pr.gov.br") || decodedText.includes("RESUMO PAGAMENTO")) {
-                        const kmMatch = decodedText.match(/km:(\d+)/i);
-                        const driverMatch = decodedText.match(/MOTORISTA\s+([^|]+)/i);
-                        setRefuelData({
-                            ...refuelData,
-                            couponNumber: "723226", // Mock extract
-                            fuelLiters: "29,876",
-                            fuelType: "Etanol",
-                            fuelKm: kmMatch ? kmMatch[1] : refuelData.fuelKm.toString(),
-                            driver: driverMatch ? driverMatch[1].trim().toUpperCase() : refuelData.driver
-                        });
-                    } else {
-                        alert("QR Code lido: " + decodedText);
-                    }
-                }
-            }}
-            onClose={() => setShowQRScanner(false)}
-        />
-    )
-}
+                            // HANDLE RETURN SCAN
+                            if (vehicleReturnData && showVehicleReturnModal) {
+                                // Parser para SEFAZ PR (Exemplo da imagem)
+                                if (decodedText.includes("fazenda.pr.gov.br") || decodedText.includes("RESUMO PAGAMENTO")) {
+                                    const kmMatch = decodedText.match(/km:(\d+)/i);
+                                    const driverMatch = decodedText.match(/MOTORISTA\s+([^|]+)/i);
+                                    setVehicleReturnData({
+                                        ...vehicleReturnData,
+                                        couponNumber: "723226", // Mock extract
+                                        fuelLiters: "29,876",
+                                        fuelType: "Etanol",
+                                        fuelKm: kmMatch ? kmMatch[1] : vehicleReturnData.kmEnd.toString(),
+                                        driver: driverMatch ? driverMatch[1].trim().toUpperCase() : vehicleReturnData.driver
+                                    });
+                                } else {
+                                    alert("QR Code lido: " + decodedText);
+                                }
+                            }
+                            // HANDLE REFUEL SCAN
+                            else if (refuelData && showRefuelModal) {
+                                if (decodedText.includes("fazenda.pr.gov.br") || decodedText.includes("RESUMO PAGAMENTO")) {
+                                    const kmMatch = decodedText.match(/km:(\d+)/i);
+                                    const driverMatch = decodedText.match(/MOTORISTA\s+([^|]+)/i);
+                                    setRefuelData({
+                                        ...refuelData,
+                                        couponNumber: "723226", // Mock extract
+                                        fuelLiters: "29,876",
+                                        fuelType: "Etanol",
+                                        fuelKm: kmMatch ? kmMatch[1] : refuelData.fuelKm.toString(),
+                                        driver: driverMatch ? driverMatch[1].trim().toUpperCase() : refuelData.driver
+                                    });
+                                } else {
+                                    alert("QR Code lido: " + decodedText);
+                                }
+                            }
+                        }}
+                        onClose={() => setShowQRScanner(false)}
+                    />
+                )
+            }
         </div>
     );
 };
