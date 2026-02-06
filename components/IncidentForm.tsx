@@ -13,6 +13,7 @@ interface IncidentFormProps {
     nextRaCode: string;
     onSave: (incident: Incident) => void;
     onCancel: () => void;
+    onShowConfirm?: (title: string, message: string, onConfirm: () => void) => void;
     initialData?: Incident | null;
     isLoading?: boolean;
     preSelectedBuildingId?: string;
@@ -30,7 +31,8 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
     initialData,
     isLoading,
     preSelectedBuildingId,
-    incidents = []
+    incidents = [],
+    onShowConfirm
 }) => {
     // Suggested Vigilants logic
     const suggestedVigilantNames = React.useMemo(() => {
@@ -301,66 +303,98 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
             return;
         }
 
-        // --- LÓGICA DE ARQUITETURA: VALIDAÇÃO CRONOLÓGICA (VIRADA DE DIA) ---
-
-        // 1. Construção do Momento Inicial (Timestamp A)
-        // Usamos o formato ISO local (YYYY-MM-DDTHH:MM)
-        const timestampA = new Date(`${date}T${startTime}`);
-
-        // 2. Construção do Momento Final (Timestamp B)
-        let timestampB = new Date(`${date}T${endTime}`);
-
-        // Comparação de horários para detectar travessia de meia-noite
-        const [hStart, mStart] = startTime.split(':').map(Number);
-        const [hEnd, mEnd] = endTime.split(':').map(Number);
-        const totalMinutesStart = hStart * 60 + mStart;
-        const totalMinutesEnd = hEnd * 60 + mEnd;
-
-        // Se o horário final for numericamente menor, interpretamos como o dia seguinte
-        if (totalMinutesEnd < totalMinutesStart) {
-            timestampB.setDate(timestampB.getDate() + 1);
-        }
-
-        // 3. Validação de Consistência
-        const durationInMinutes = (timestampB.getTime() - timestampA.getTime()) / (1000 * 60);
-
-        if (durationInMinutes <= 0) {
-            setTimeError("Inconsistência Temporal: O momento final deve ser estritamente posterior ao inicial.");
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            return;
-        }
-
-        // 4. Alerta de Verificação (> 24h)
-        if (durationInMinutes > 1440) {
-            const hours = Math.floor(durationInMinutes / 60);
-            const minutes = durationInMinutes % 60;
-            const confirmExtraLong = window.confirm(
-                `Alerta de Verificação: A duração calculada é de ${hours}h ${minutes}min (superior a 24 horas).\n\nConfirma que este intervalo está correto?`
-            );
-            if (!confirmExtraLong) return;
-        }
-
-
-
-        const incident: Incident = {
-            id: initialData?.id || Date.now().toString(),
-            raCode: initialData?.raCode || nextRaCode,
-            buildingId,
-            userId: initialData?.userId || user.id,
-            operatorName: initialData?.operatorName || user.name,
-            vigilants: vigilantsList.join(', '),
-            date,
-            startTime,
-            endTime,
-            alterationType,
-            description,
-            status: initialData?.status || 'PENDING',
-            timestamp: initialData?.timestamp || new Date().toISOString(),
-            photos: photos,
-            aiAnalysis: initialData?.aiAnalysis,
-            severity: initialData?.severity
+        // Função interna para finalizar o salvamento
+        const finalizeSave = () => {
+            const incident: Incident = {
+                id: initialData?.id || Date.now().toString(),
+                raCode: initialData?.raCode || nextRaCode,
+                buildingId,
+                userId: initialData?.userId || user.id,
+                operatorName: initialData?.operatorName || user.name,
+                vigilants: vigilantsList.join(', '),
+                date,
+                startTime,
+                endTime,
+                alterationType,
+                description,
+                status: initialData?.status || 'PENDING',
+                timestamp: initialData?.timestamp || new Date().toISOString(),
+                photos: photos,
+                aiAnalysis: initialData?.aiAnalysis,
+                severity: initialData?.severity
+            };
+            onSave(incident);
         };
-        onSave(incident);
+
+        // Função interna para prosseguir com a validação cronológica e salvamento
+        const proceedToTimeValidation = () => {
+            // --- LÓGICA DE ARQUITETURA: VALIDAÇÃO CRONOLÓGICA (VIRADA DE DIA) ---
+
+            const timestampA = new Date(`${date}T${startTime}`);
+            let timestampB = new Date(`${date}T${endTime}`);
+
+            const [hStart, mStart] = startTime.split(':').map(Number);
+            const [hEnd, mEnd] = endTime.split(':').map(Number);
+            const totalMinutesStart = hStart * 60 + mStart;
+            const totalMinutesEnd = hEnd * 60 + mEnd;
+
+            if (totalMinutesEnd < totalMinutesStart) {
+                timestampB.setDate(timestampB.getDate() + 1);
+            }
+
+            const durationInMinutes = (timestampB.getTime() - timestampA.getTime()) / (1000 * 60);
+
+            if (durationInMinutes <= 0) {
+                setTimeError("Inconsistência Temporal: O momento final deve ser estritamente posterior ao inicial.");
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            // 4. Alerta de Verificação (> 24h)
+            if (durationInMinutes > 1440) {
+                const hours = Math.floor(durationInMinutes / 60);
+                const minutes = durationInMinutes % 60;
+                const message = `Alerta de Verificação: A duração calculada é de ${hours}h ${minutes}min (superior a 24 horas).\n\nConfirma que este intervalo está correto?`;
+
+                if (onShowConfirm) {
+                    onShowConfirm('Duração Extensa Detectada', message, finalizeSave);
+                    return;
+                } else {
+                    if (!window.confirm(message)) return;
+                    finalizeSave();
+                    return;
+                }
+            }
+
+            finalizeSave();
+        };
+
+        // --- LÓGICA DE PROTEÇÃO: DUPLICIDADE DE RA/PRÓPRIO (Última Hora) ---
+        if (!initialData) {
+            const oneHourAgo = new Date().getTime() - (60 * 60 * 1000);
+
+            const recentRecord = incidents.find(inc =>
+                inc.buildingId === buildingId &&
+                inc.timestamp &&
+                new Date(inc.timestamp).getTime() > oneHourAgo
+            );
+
+            if (recentRecord) {
+                const buildingName = buildings.find(b => b.id === buildingId)?.name || "este próprio";
+                const message = `Já existe um registro recente (feito na última hora) para:\n${buildingName}.\n\nPara evitar R.A duplicado, confirme se deseja realmente continuar com este novo registro.`;
+
+                if (onShowConfirm) {
+                    onShowConfirm('Possível Duplicidade', message, proceedToTimeValidation);
+                    return;
+                } else {
+                    if (!window.confirm(`⚠️ AVISO DE POSSÍVEL DUPLICIDADE\n\n${message}`)) return;
+                    proceedToTimeValidation();
+                    return;
+                }
+            }
+        }
+
+        proceedToTimeValidation();
     };
 
     const currentRa = initialData?.raCode || nextRaCode;
