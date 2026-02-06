@@ -215,7 +215,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     // isExporting already declared above
 
 
-    const handleExportHistoryPDF = () => {
+        const handleExportHistoryPDF = async () => {
         if (!reportRef.current || typeof html2pdf === 'undefined') {
             alert('Biblioteca de PDF não carregada. Tente recarregar a página.');
             return;
@@ -229,10 +229,15 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         setIsExporting(true);
         setShowMarginGuides(false); // Hide guides for export
 
-        // Give a small delay for guides to hide
-        setTimeout(() => {
-            const element = document.getElementById('history-export-container');
-            if (!element) return;
+        // Give a small delay for guides to hide and UI to stabilize
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        try {
+            const container = document.getElementById('history-export-container');
+            if (!container) throw new Error('Container de exportação não encontrado');
+
+            const pages = container.querySelectorAll('.report-page');
+            if (pages.length === 0) throw new Error('Nenhuma página encontrada para exportar');
 
             const filename = historyItemType === 'VEHICLE'
                 ? `Diario_Bordo_${historyItemId}_${new Date().toISOString().split('T')[0]}.pdf`
@@ -247,31 +252,31 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     useCORS: true,
                     letterRendering: true,
                     scrollY: 0,
-                    onclone: (doc: Document) => {
-                        const el = doc.getElementById('history-export-container');
-                        if (el) {
-                            el.style.transform = 'none';
-                            el.style.scale = '1';
-                            el.style.gap = '0px';
-                            const pages = el.querySelectorAll('.report-page');
-                            pages.forEach((p: any) => {
-                                p.style.boxShadow = 'none';
-                                p.style.border = 'none';
-                            });
-                        }
-                    }
+                    logging: false
                 },
                 jsPDF: { unit: pdfUnit, format: pdfPaperSize.toLowerCase(), orientation: pdfOrientation }
             };
 
-            html2pdf().set(opt).from(element).save().then(() => {
-                setIsExporting(false);
-            }).catch((err: any) => {
-                console.error(err);
-                setIsExporting(false);
-            });
-        }, 150);
-    };
+            // Implementação do Algoritmo Página-a-Página (Explicit Loop)
+            // Iniciamos o worker com a primeira página
+            let worker = html2pdf().set(opt).from(pages[0]).toPdf();
+
+            // Adicionamos as páginas subsequentes uma a uma no loop
+            for (let i = 1; i < pages.length; i++) {
+                worker = worker.get('pdf').then((pdf: any) => {
+                    pdf.addPage();
+                }).from(pages[i]).toContainer().toCanvas().toImg().toPdf();
+            }
+
+            // Finaliza e salva o PDF
+            await worker.save();
+        } catch (err: any) {
+            console.error('Erro na exportação de PDF:', err);
+            alert('Erro ao gerar PDF: ' + (err.message || 'Erro desconhecido'));
+        } finally {
+            setIsExporting(false);
+        }
+    };;
 
     // --- ITEM HISTORY STATE ---
     const [historyMode, setHistoryMode] = useState<'USER' | 'ITEM'>('USER');
