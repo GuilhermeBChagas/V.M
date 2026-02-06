@@ -6,7 +6,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, BarChart, Bar
 } from 'recharts';
 import {
-    FileText, Activity, MapPin, AlertTriangle, TrendingUp, CheckCircle, Clock
+    FileText, Activity, MapPin, AlertTriangle, TrendingUp, CheckCircle, Clock, ArrowLeft
 } from 'lucide-react';
 import { getTodayLocalDate } from '../utils/dateUtils';
 
@@ -14,11 +14,12 @@ interface ChartsViewProps {
     incidents: Incident[];
     buildings: Building[];
     sectors: Sector[];
+    onBack?: () => void;
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1'];
 
-export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, sectors }) => {
+export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, sectors, onBack }) => {
 
     // Filtra ocorrências válidas (exclui canceladas)
     const activeIncidents = useMemo(() => incidents.filter(i => i.status !== 'CANCELLED'), [incidents]);
@@ -200,6 +201,12 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
                             Análise de dados operacionais e indicadores
                         </p>
                     </div>
+                    {onBack && (
+                        <button onClick={onBack} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group">
+                            <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
+                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
+                        </button>
+                    )}
                 </div>
             </div>
 

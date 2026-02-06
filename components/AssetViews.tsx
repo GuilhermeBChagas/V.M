@@ -20,25 +20,34 @@ interface ListHeaderProps {
     searchPlaceholder: string;
     onAdd?: () => void;
     addLabel?: string;
+    onBack?: () => void;
 }
 
 const ListHeader: React.FC<ListHeaderProps> = ({
-    title, subtitle, icon, searchValue, onSearchChange, searchPlaceholder, onAdd, addLabel
+    title, subtitle, icon, searchValue, onSearchChange, searchPlaceholder, onAdd, addLabel, onBack
 }) => (
     <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
         {/* Title Row */}
-        <div className="flex items-center gap-3 mb-5">
-            <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
-                {icon}
+        <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
+                    {icon}
+                </div>
+                <div>
+                    <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                        {title}
+                    </h2>
+                    <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                        {subtitle}
+                    </p>
+                </div>
             </div>
-            <div className="flex-1">
-                <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
-                    {title}
-                </h2>
-                <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                    {subtitle}
-                </p>
-            </div>
+            {onBack && (
+                <button onClick={onBack} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700">
+                    <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
+                </button>
+            )}
         </div>
 
         {/* Search and Actions Row */}
@@ -141,7 +150,7 @@ const GenericForm: React.FC<GenericFormProps> = ({ title, icon, children, onSubm
 
 // --- VEHICLES ---
 
-export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit: (v: Vehicle) => void, onDelete: (id: string) => void, canEdit: boolean, canDelete: boolean }> = ({ items, onAdd, onEdit, onDelete, canEdit, canDelete }) => {
+export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit: (v: Vehicle) => void, onDelete: (id: string) => void, canEdit: boolean, canDelete: boolean, onBack?: () => void }> = ({ items, onAdd, onEdit, onDelete, canEdit, canDelete, onBack }) => {
     const [search, setSearch] = useState('');
     const filtered = items.filter(i => normalizeString(i.plate).includes(normalizeString(search)) || normalizeString(i.prefix).includes(normalizeString(search)) || normalizeString(i.model).includes(normalizeString(search)));
 
@@ -156,6 +165,7 @@ export const VehicleList: React.FC<{ items: Vehicle[], onAdd: () => void, onEdit
                 searchPlaceholder="Buscar por Prefixo, Placa ou Modelo..."
                 onAdd={canEdit ? onAdd : undefined}
                 addLabel="Novo Veículo"
+                onBack={onBack}
             />
 
             <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -296,7 +306,7 @@ export const VehicleForm: React.FC<any> = ({ initialData, onSave, onCancel, onDe
 
 // --- VESTS ---
 
-export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: Vest) => void, onDelete: (id: string) => void, canEdit: boolean, canDelete: boolean }> = ({ items, onAdd, onEdit, onDelete, canEdit, canDelete }) => {
+export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: Vest) => void, onDelete: (id: string) => void, canEdit: boolean, canDelete: boolean, onBack?: () => void }> = ({ items, onAdd, onEdit, onDelete, canEdit, canDelete, onBack }) => {
     const [search, setSearch] = useState('');
     const filtered = items.filter(i => normalizeString(i.number).includes(normalizeString(search)));
 
@@ -311,6 +321,7 @@ export const VestList: React.FC<{ items: Vest[], onAdd: () => void, onEdit: (v: 
                 searchPlaceholder="Buscar por Número de Série..."
                 onAdd={canEdit ? onAdd : undefined}
                 addLabel="Novo Colete"
+                onBack={onBack}
             />
 
             <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -379,7 +390,7 @@ export const VestForm: React.FC<any> = ({ initialData, onSave, onCancel, onDelet
 
 // --- RADIOS ---
 
-export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r: Radio) => void, onDelete: (id: string) => void, canEdit: boolean, canDelete: boolean }> = ({ items, onAdd, onEdit, onDelete, canEdit, canDelete }) => {
+export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r: Radio) => void, onDelete: (id: string) => void, canEdit: boolean, canDelete: boolean, onBack?: () => void }> = ({ items, onAdd, onEdit, onDelete, canEdit, canDelete, onBack }) => {
     const [search, setSearch] = useState('');
     const filtered = items.filter(i => normalizeString(i.number).includes(normalizeString(search)) || normalizeString(i.serialNumber).includes(normalizeString(search)));
 
@@ -394,6 +405,7 @@ export const RadioList: React.FC<{ items: Radio[], onAdd: () => void, onEdit: (r
                 searchPlaceholder="Buscar por Número ou Serial..."
                 onAdd={canEdit ? onAdd : undefined}
                 addLabel="Novo Rádio"
+                onBack={onBack}
             />
 
             <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -461,7 +473,7 @@ export const RadioForm: React.FC<any> = ({ initialData, onSave, onCancel, onDele
 
 // --- EQUIPMENT (OTHERS) ---
 
-export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, onEdit: (e: Equipment) => void, onDelete: (id: string) => void, canEdit: boolean, canDelete: boolean }> = ({ items, onAdd, onEdit, onDelete, canEdit, canDelete }) => {
+export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, onEdit: (e: Equipment) => void, onDelete: (id: string) => void, canEdit: boolean, canDelete: boolean, onBack?: () => void }> = ({ items, onAdd, onEdit, onDelete, canEdit, canDelete, onBack }) => {
     const [search, setSearch] = useState('');
     const filtered = items.filter(i => normalizeString(i.name).includes(normalizeString(search)));
 
@@ -476,6 +488,7 @@ export const EquipmentList: React.FC<{ items: Equipment[], onAdd: () => void, on
                 searchPlaceholder="Buscar por Nome..."
                 onAdd={canEdit ? onAdd : undefined}
                 addLabel="Novo Item"
+                onBack={onBack}
             />
 
             <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">

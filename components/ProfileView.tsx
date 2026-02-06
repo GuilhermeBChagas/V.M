@@ -16,7 +16,8 @@ import {
     AlertCircle,
     PenTool,
     ShieldCheck,
-    Hash
+    Hash,
+    ArrowLeft
 } from 'lucide-react';
 
 interface ProfileViewProps {
@@ -24,9 +25,10 @@ interface ProfileViewProps {
     jobTitles: JobTitle[];
     onUpdatePassword: (currentPass: string, newPass: string) => Promise<void>;
     onUpdateProfile: (updates: Partial<User>) => Promise<void>;
+    onBack?: () => void;
 }
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ user, jobTitles, onUpdatePassword, onUpdateProfile }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ user, jobTitles, onUpdatePassword, onUpdateProfile, onBack }) => {
     const [activeTab, setActiveTab] = useState<'SECURITY' | 'SIGNATURE'>('SECURITY');
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -147,6 +149,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, jobTitles, onUpd
                         </p>
                     </div>
                 </div>
+                {onBack && (
+                    <div className="absolute top-5 right-5 md:static md:ml-auto">
+                        <button onClick={onBack} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700">
+                            <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
+                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

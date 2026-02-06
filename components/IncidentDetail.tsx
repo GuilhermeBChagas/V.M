@@ -553,97 +553,14 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     {/* RODAPÉ E ASSINATURAS */}
                     <div className="mt-auto pt-14 break-inside-avoid w-full border-t-2 border-slate-100">
                         <div className="grid grid-cols-2 gap-6 md:gap-12 items-end">
-                            {/* Assinatura Vigilante */}
+                            {/* Assinatura Vigilante - REMOVIDO POR SOLICITAÇÃO */}
                             <div className="flex flex-col items-start justify-end h-full py-2">
-                                <div className="mb-1 w-full">
-                                    <div className="text-[10px] md:text-[13px] font-black text-slate-900 uppercase leading-tight mb-1 text-left flex flex-col">
-                                        {incident.vigilants.split(',').map((name, index) => (
-                                            <span key={index}>{name.trim()}</span>
-                                        ))}
-                                    </div>
-                                    <span className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest block text-left">
-                                        VIGILANTES
-                                    </span>
-                                </div>
-                                <div className="mt-1 pt-2 border-t border-slate-200 w-full max-w-[280px]">
-                                    <div className="flex flex-col gap-0.5">
-                                        <span className="text-[6px] md:text-[8px] font-bold uppercase text-slate-400 mr-2 tracking-wide">REGISTRADO PELO USUÁRIO:</span>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-[7px] md:text-[9px] uppercase font-bold text-slate-600">
-                                                {author?.name || '---'}
-                                            </span>
-                                            <div className="flex flex-col gap-0.5 mt-0.5">
-                                                <span className="text-[6px] md:text-[7px] uppercase font-medium text-slate-400">
-                                                    EM {new Date(incident.timestamp!).toLocaleDateString('pt-BR')} ÀS {new Date(incident.timestamp!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                                {incident.createdIp && (
-                                                    <span className="text-[6px] md:text-[7px] font-mono text-slate-400">
-                                                        IP: {incident.createdIp}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {incident.isEdited && (
-                                        <div className="flex flex-col gap-0.5 mt-1 pt-1 border-t border-slate-100">
-                                            <span className="text-[6px] md:text-[8px] font-bold uppercase text-slate-400 mr-2 tracking-wide">EDITADO PELO USUÁRIO:</span>
-                                            <div className="flex items-baseline gap-1 flex-wrap">
-                                                <span className="text-[7px] md:text-[9px] uppercase font-bold text-slate-600">
-                                                    {incident.editedBy || '---'}
-                                                </span>
-                                                <div className="flex flex-col gap-0.5 mt-0.5">
-                                                    <span className="text-[6px] md:text-[7px] uppercase font-medium text-slate-400">
-                                                        EM {new Date(incident.lastEditedAt!).toLocaleDateString('pt-BR')} ÀS {new Date(incident.lastEditedAt!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
-                                                    {incident.updatedIp && (
-                                                        <span className="text-[6px] md:text-[7px] font-mono text-slate-400">
-                                                            IP: {incident.updatedIp}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                                {/* Espaço reservado se necessário futuramente */}
                             </div>
 
-                            {/* Validação Supervisor */}
+                            {/* Validação Supervisor - REMOVIDO POR SOLICITAÇÃO */}
                             <div className="min-w-0">
-                                {incident.approvedBy ? (
-                                    <div className="flex flex-col items-center justify-end h-full py-2">
-                                        <div className="text-center mb-3">
-                                            <span className="text-[10px] md:text-[14px] font-black text-slate-900 uppercase leading-none block mb-1">
-                                                {incident.approvedBy}
-                                            </span>
-                                            <span className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                                {approverJobTitle ? approverJobTitle :
-                                                    approverRole === 'Nível 5' ? 'ADMINISTRADOR' :
-                                                        approverRole === 'Nível 4' ? 'SUPERVISOR' :
-                                                            approverRole === 'Nível 3' ? 'OPERADOR' :
-                                                                approverRole === 'Nível 2' ? 'RONDA' :
-                                                                    'AUTORIDADE VALIDANTE'}
-                                            </span>
-                                        </div>
-                                        <div className="flex flex-col items-center border-t border-slate-200 pt-2 w-full max-w-[180px]">
-                                            <span className="text-[6px] md:text-[7px] font-bold uppercase text-slate-500 tracking-widest flex items-center gap-1 mb-0.5">
-                                                <ShieldCheck size={10} className="text-blue-600" /> ASSINADO ELETRONICAMENTE
-                                            </span>
-                                            <span className="text-[6px] md:text-[8px] font-mono font-bold text-slate-400 block">
-                                                DATA: {new Date(incident.approvedAt!).toLocaleDateString('pt-BR')} ÀS {new Date(incident.approvedAt!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                            {incident.approvedIp && (
-                                                <span className="text-[6px] md:text-[7px] font-mono text-slate-400 block mt-0.5">
-                                                    IP: {incident.approvedIp}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="border-2 border-dashed border-slate-300 p-6 text-center bg-slate-50/30 rounded-sm mt-auto">
-                                        <span className="text-[8px] md:text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">AGUARDANDO VALIDAÇÃO</span>
-                                    </div>
-                                )}
+                                {/* Espaço reservado se necessário futuramente */}
                             </div>
                         </div>
 

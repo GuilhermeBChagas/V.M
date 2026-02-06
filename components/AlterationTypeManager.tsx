@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { AlterationType } from '../types';
-import { Tag, Plus, Trash2, X, Save, AlertCircle, Pencil, Search, ChevronRight } from 'lucide-react';
+import { Tag, Plus, Trash2, X, Save, AlertCircle, Pencil, Search, ChevronRight, ArrowLeft } from 'lucide-react';
 import { normalizeString } from '../utils/stringUtils';
 
 interface AlterationTypeManagerProps {
@@ -11,9 +11,10 @@ interface AlterationTypeManagerProps {
     onEdit?: (type: AlterationType) => void;
     onReorder?: (newOrder: AlterationType[]) => void;
     canManage?: boolean;
+    onBack?: () => void;
 }
 
-export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ types, onAdd, onDelete, onEdit, onReorder, canManage }) => {
+export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ types, onAdd, onDelete, onEdit, onReorder, canManage, onBack }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [newTypeName, setNewTypeName] = useState('');
 
@@ -33,18 +34,31 @@ export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ ty
             {/* Unified Header Section */}
             <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 {/* Title Row */}
-                <div className="flex items-center gap-3 mb-5">
-                    <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
-                        <Tag size={22} strokeWidth={2} />
+                <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400">
+                            <Tag size={22} strokeWidth={2} />
+                        </div>
+                        <div className="flex-1">
+                            <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                                Tipos de Alteração
+                            </h2>
+                            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                Total: {types.length} tipos cadastrados
+                            </p>
+                        </div>
                     </div>
-                    <div className="flex-1">
-                        <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
-                            Tipos de Alteração
-                        </h2>
-                        <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                            Total: {types.length} tipos cadastrados
-                        </p>
-                    </div>
+                    {/* Back Button */}
+                    {onBack && (
+                        <button
+                            onClick={onBack}
+                            className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700"
+                            title="Voltar"
+                        >
+                            <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
+                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Search and Actions Row */}
@@ -58,6 +72,7 @@ export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ ty
                             onChange={e => setSearch(e.target.value)}
                             className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
                         />
+
                     </div>
                     {canManage && !isAdding && (
                         <button

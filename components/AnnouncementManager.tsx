@@ -13,9 +13,10 @@ interface AnnouncementManagerProps {
     onDelete?: (id: string) => void;
     canManage?: boolean;
     onShowConfirm?: (title: string, message: string, onConfirm: () => void) => void;
+    onBack?: () => void;
 }
 
-const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, users, jobTitles = [], onAnnouncementCreated, canManage, onShowConfirm }) => {
+const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, users, jobTitles = [], onAnnouncementCreated, canManage, onShowConfirm, onBack }) => {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(true);
     const [view, setView] = useState<'LIST' | 'FORM' | 'REPORT'>('LIST');
@@ -192,12 +193,17 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
                         <Plus size={16} strokeWidth={3} /> NOVO AVISO
                     </button>
                 )}
-                {view !== 'LIST' && (
+                {(view !== 'LIST' || onBack) && (
                     <button
-                        onClick={() => setView('LIST')}
-                        className="btn-back"
+                        onClick={() => {
+                            if (view !== 'LIST') setView('LIST');
+                            else if (onBack) onBack();
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700"
+                        title="Voltar"
                     >
-                        <ArrowLeft size={16} /> Voltar
+                        <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
                     </button>
                 )}
             </div>

@@ -6,7 +6,7 @@ import {
     ArrowRightLeft, History, Plus, Search, User as UserIcon,
     Car, Shield, Radio as RadioIcon, Package, CheckCircle,
     XCircle, Clock, Calendar, ChevronRight, ChevronDown, CornerDownLeft,
-    AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download, X, QrCode, Settings, Printer
+    AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download, X, QrCode, Settings, Printer, ArrowLeft
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { normalizeString } from '../utils/stringUtils';
@@ -43,6 +43,7 @@ interface LoanViewsProps {
     customLogo?: string | null;
     customLogoLeft?: string | null;
     onFilterChange?: (filters: { dateStart: string, timeStart: string, dateEnd: string, timeEnd: string }) => void;
+    onBack?: () => void;
 }
 
 export const LoanViews: React.FC<LoanViewsProps> = ({
@@ -51,7 +52,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     hasMore = false, isLoadingMore = false, onLoadMore, filterStatus,
     onShowConfirm,
     canCreate = false, canApprove = false, canReturn = false, canViewHistory = false, canViewAll = false,
-    customLogo, customLogoLeft, onFilterChange
+    customLogo, customLogoLeft, onFilterChange, onBack
 }) => {
     const [activeTab, setActiveTab] = useState<'ACTIVE' | 'HISTORY' | 'NEW'>(initialTab === 'HISTORY' ? 'HISTORY' : 'ACTIVE');
     const [searchTerm, setSearchTerm] = useState('');
@@ -1073,18 +1074,34 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             {/* Header Section */}
             <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm no-print">
                 {/* Title Row */}
-                <div className="flex items-center gap-3 mb-5">
-                    <div className={`p-2.5 rounded-xl ${activeTab === 'HISTORY' ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'}`}>
-                        {activeTab === 'HISTORY' ? <History size={22} strokeWidth={2} /> : <ArrowRightLeft size={22} strokeWidth={2} />}
+                <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2.5 rounded-xl ${activeTab === 'HISTORY' ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'}`}>
+                            {activeTab === 'HISTORY' ? <History size={22} strokeWidth={2} /> : <ArrowRightLeft size={22} strokeWidth={2} />}
+                        </div>
+                        <div>
+                            <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
+                                {getPageTitle()}
+                            </h2>
+                            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                {getPageSubtitle()}
+                            </p>
+                        </div>
                     </div>
-                    <div className="flex-1">
-                        <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
-                            {getPageTitle()}
-                        </h2>
-                        <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                            {getPageSubtitle()}
-                        </p>
-                    </div>
+                    {/* Back Button */}
+                    {(activeTab === 'NEW' || onBack) && (
+                        <button
+                            onClick={() => {
+                                if (activeTab === 'NEW') setActiveTab('ACTIVE');
+                                else if (onBack) onBack();
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700"
+                            title="Voltar"
+                        >
+                            <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
+                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Search and Actions Row */}

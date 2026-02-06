@@ -6,7 +6,7 @@ import { DatabaseSetup } from './DatabaseSetup';
 import { AccessControlView } from './AccessControlView';
 import { ImportExportView } from './ImportExportView';
 import { SystemLog, SystemPermissionMap, UserPermissionOverrides, User } from '../types';
-import { Settings, Shield, Save, Image as ImageIcon, Loader2, Link as LinkIcon, Database, History, RefreshCw, Key, FileSpreadsheet, Info, Github, GitCommit, Calendar, Tag, FileText, CheckCircle, AlertTriangle, Cloud, ArrowRight, Layout } from 'lucide-react';
+import { Settings, Shield, Save, Image as ImageIcon, Loader2, Link as LinkIcon, Database, History, RefreshCw, Key, FileSpreadsheet, Info, Github, GitCommit, Calendar, Tag, FileText, CheckCircle, AlertTriangle, Cloud, ArrowRight, Layout, ArrowLeft } from 'lucide-react';
 
 // Declaração das variáveis globais injetadas pelo Vite (vite.config.ts)
 declare const __APP_VERSION__: string;
@@ -31,6 +31,7 @@ interface ToolsViewProps {
     onUpdateOverrides?: (overrides: UserPermissionOverrides) => Promise<void>;
     users?: User[];
     onLogAction: (action: any, details: string) => void;
+    onBack?: () => void;
 }
 
 type Tab = 'LOGS' | 'APPEARANCE' | 'DATABASE' | 'ACCESS_CONTROL' | 'IMPORT_EXPORT' | 'SYSTEM';
@@ -39,7 +40,7 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
     logs, onTestLog, currentLogo, onUpdateLogo, currentLogoLeft, onUpdateLogoLeft, initialTab,
     isLocalMode, onToggleLocalMode, unsyncedCount, onSync, permissions, onUpdatePermissions,
     userOverrides = {}, onUpdateOverrides,
-    users = [], onLogAction
+    users = [], onLogAction, onBack
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>(initialTab || 'APPEARANCE');
 
@@ -187,6 +188,14 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
                         </p>
                     </div>
                 </div>
+                {onBack && (
+                    <div className="absolute top-5 right-5 md:static md:ml-auto">
+                        <button onClick={onBack} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700">
+                            <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
+                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
+                        </button>
+                    </div>
+                )}
             </div>
 
             {activeTab === 'LOGS' && (
