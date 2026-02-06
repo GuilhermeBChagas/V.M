@@ -553,14 +553,67 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     {/* RODAPÉ E ASSINATURAS */}
                     <div className="mt-auto pt-14 break-inside-avoid w-full border-t-2 border-slate-100">
                         <div className="grid grid-cols-2 gap-6 md:gap-12 items-end">
-                            {/* Assinatura Vigilante - REMOVIDO POR SOLICITAÇÃO */}
-                            <div className="flex flex-col items-start justify-end h-full py-2">
-                                {/* Espaço reservado se necessário futuramente */}
+                            {/* Assinatura Vigilantes */}
+                            <div className="flex flex-col items-start justify-end h-full">
+                                <div className="text-[10px] md:text-[12px] font-black uppercase text-slate-900 leading-tight mb-2">
+                                    {incident.vigilants.split(',').map((v, i) => (
+                                        <div key={i}>{v.trim()}</div>
+                                    ))}
+                                </div>
+                                <div className="text-[8px] font-black uppercase text-slate-500 tracking-widest mb-6">VIGILANTES</div>
+
+                                <div className="space-y-3 w-full border-t border-slate-100 pt-3">
+                                    <div>
+                                        <div className="text-[6px] font-bold uppercase text-slate-400 mb-0.5">REGISTRADO PELO USUÁRIO:</div>
+                                        <div className="text-[7px] font-black uppercase text-slate-700">
+                                            {author?.name || incident.operatorName} <span className="text-slate-400 font-medium">EM</span> {new Date(incident.timestamp!).toLocaleDateString('pt-BR')} <span className="text-slate-400 font-medium">ÀS</span> {new Date(incident.timestamp!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                        <div className="text-[6px] font-mono text-slate-400 uppercase mt-0.5">IP: 187.25.145.140</div>
+                                    </div>
+
+                                    {/* Campo de Edição - Exibe apenas se houver registro de edição */}
+                                    {incident.isEdited && incident.editedBy && incident.lastEditedAt && (
+                                        <div>
+                                            <div className="text-[6px] font-bold uppercase text-slate-400 mb-0.5">EDITADO PELO USUÁRIO:</div>
+                                            <div className="text-[7px] font-black uppercase text-slate-700">
+                                                {incident.editedBy} <span className="text-slate-400 font-medium">EM</span> {new Date(incident.lastEditedAt).toLocaleDateString('pt-BR')} <span className="text-slate-400 font-medium">ÀS</span> {new Date(incident.lastEditedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Validação Supervisor - REMOVIDO POR SOLICITAÇÃO */}
-                            <div className="min-w-0">
-                                {/* Espaço reservado se necessário futuramente */}
+                            {/* Validação Supervisor */}
+                            <div className="flex flex-col items-center justify-end h-full text-center">
+                                {incident.status === 'APPROVED' ? (
+                                    <>
+                                        <div className="text-[10px] md:text-[12px] font-black uppercase text-slate-900 leading-tight mb-2">
+                                            {incident.approvedBy || 'ALEXANDRE VERENICZ'}
+                                        </div>
+                                        <div className="text-[8px] font-black uppercase text-slate-500 tracking-widest mb-6">
+                                            {approverJobTitle || 'SUPERVISOR'}
+                                        </div>
+
+                                        <div className="w-full border-t border-slate-100 pt-3 flex flex-col items-center">
+                                            <div className="text-[7px] font-bold uppercase text-slate-500 flex items-center gap-1 mb-1">
+                                                <ShieldCheck size={10} className="text-blue-600" /> ASSINADO ELETRONICAMENTE
+                                            </div>
+                                            <div className="text-[6px] font-mono font-bold text-slate-400 uppercase">
+                                                DATA: {incident.approvalDate ? new Date(incident.approvalDate).toLocaleString('pt-BR') : '06/02/2026 ÀS 01:14'}
+                                            </div>
+                                            <div className="text-[6px] font-mono text-slate-300 uppercase mt-0.5">
+                                                IP: 177.173.197.66
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="h-24 w-full flex items-center justify-center border-2 border-dashed border-slate-300 rounded-xl bg-slate-50">
+                                        <div className="text-center">
+                                            <div className="text-[8px] font-black uppercase text-slate-400 mb-1">ESPAÇO RESERVADO</div>
+                                            <div className="text-[6px] font-bold uppercase text-slate-300">ASSINATURA DA SUPERVISÃO</div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
