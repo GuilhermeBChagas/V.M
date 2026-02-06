@@ -35,12 +35,12 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
     const [isSharing, setIsSharing] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
     const [pdfMargins, setPdfMargins] = useState(() => {
-        const saved = localStorage.getItem('app_pdf_margins_detail');
-        return saved ? JSON.parse(saved) : { top: 5, right: 5, bottom: 5, left: 5 };
+        const saved = localStorage.getItem('app_pdf_margins');
+        return saved ? JSON.parse(saved) : { top: 15, right: 8, bottom: 15, left: 8 };
     });
 
     useEffect(() => {
-        localStorage.setItem('app_pdf_margins_detail', JSON.stringify(pdfMargins));
+        localStorage.setItem('app_pdf_margins', JSON.stringify(pdfMargins));
     }, [pdfMargins]);
 
     const [showMarginSettings, setShowMarginSettings] = useState(false);
@@ -57,19 +57,18 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
         const element = contentRef.current;
 
         const opt = {
-            margin: [pdfMargins.top, pdfMargins.left, pdfMargins.bottom, pdfMargins.right],
+            margin: 0,
             filename: `RA_${incident.raCode.replace('/', '-')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
                 scale: 2,
                 useCORS: true,
                 scrollY: 0,
-                // Remove visual padding before capturing for PDF to avoid double margins
                 onclone: (doc: Document) => {
+                    // Do not reset padding here, as it effectively acts as our PDF margin for WYSIWYG
                     const el = doc.getElementById('incident-detail-report');
                     if (el) {
-                        el.style.padding = '0px';
-                        // Maintain the width constraints in the clone if necessary or let margins handle it
+                        el.style.boxShadow = 'none';
                     }
                 }
             },
@@ -88,7 +87,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
             const element = contentRef.current;
             // Captura o elemento como canvas usando o motor do html2pdf
             html2pdf().set({
-                margin: [pdfMargins.top, pdfMargins.left, pdfMargins.bottom, pdfMargins.right],
+                margin: 0,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 3, useCORS: true, scrollY: 0 }
             }).from(element).toCanvas().get('canvas').then((canvas: HTMLCanvasElement) => {
@@ -617,10 +616,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                             </div>
                         </div>
 
-                        <div className="mt-8 pt-2 flex justify-between text-[6px] md:text-[8px] text-slate-400 uppercase font-bold border-t border-slate-100">
-                            <span>CENTRO DE MONITORAMENTO - S.M.S.P.T</span>
-                            <span className="tracking-widest">IMPRESSO EM {new Date().toLocaleDateString('pt-BR')} ÀS {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
+
                     </div>
 
                     {/* MARCA D'ÁGUA SE CANCELADO */}

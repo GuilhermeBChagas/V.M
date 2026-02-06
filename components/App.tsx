@@ -257,12 +257,12 @@ const IncidentHistory: React.FC<{
   const [exportDate, setExportDate] = useState<string>('');
   const [exportHash, setExportHash] = useState<string>('');
   const [pdfMargins, setPdfMargins] = useState(() => {
-    const saved = localStorage.getItem('app_pdf_margins_history');
+    const saved = localStorage.getItem('app_pdf_margins');
     return saved ? JSON.parse(saved) : { top: 15, right: 8, bottom: 15, left: 8 };
   });
 
   useEffect(() => {
-    localStorage.setItem('app_pdf_margins_history', JSON.stringify(pdfMargins));
+    localStorage.setItem('app_pdf_margins', JSON.stringify(pdfMargins));
   }, [pdfMargins]);
 
   const [showMarginSettings, setShowMarginSettings] = useState(false);
@@ -821,46 +821,7 @@ const IncidentHistory: React.FC<{
                             </table>
                           </div>
 
-                          {pageIndex === chunks.length - 1 && (
-                            <div className="mt-auto flex justify-between items-end border-t border-slate-100 pt-6">
-                              <div className="text-[8px] font-black uppercase text-slate-400">
-                                <span>Gerado em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</span><br />
-                                <span>Sistema Vigilante Municipal</span>
-                              </div>
 
-                              <div className="flex flex-col items-center min-w-[280px]">
-                                <span className="text-[12px] font-black text-slate-900 uppercase leading-none mb-1">
-                                  {currentUser?.name || '---'}
-                                </span>
-                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3">
-                                  {jobTitles.find(jt => jt.id === currentUser?.jobTitleId)?.name ||
-                                    (currentUser?.role === 'Nível 5' ? 'ADMINISTRADOR' : 'OPERADOR')}
-                                </span>
-
-                                <div className="flex flex-col items-center border-t border-slate-200 pt-2 w-full">
-                                  <span className="text-[7px] font-bold uppercase text-slate-500 tracking-widest flex items-center gap-1 mb-0.5">
-                                    <ShieldCheck size={10} className="text-blue-600" /> ASSINADO ELETRONICAMENTE
-                                  </span>
-                                  <span className="text-[8px] font-mono font-bold text-slate-400 block uppercase">
-                                    DATA: {exportDate || new Date().toLocaleString('pt-BR')}
-                                  </span>
-                                  {exportIP && (
-                                    <span className="text-[7px] font-mono text-slate-400 block mt-0.5">
-                                      IP: {exportIP}
-                                    </span>
-                                  )}
-                                  {exportHash && (
-                                    <div className="mt-1.5 flex flex-col items-center">
-                                      <span className="text-[5px] font-black text-slate-300 uppercase leading-none mb-0.5 tracking-tighter">Assinatura Digital de Integridade</span>
-                                      <span className="text-[5px] font-mono text-slate-400 break-all text-center max-w-[220px] leading-tight">
-                                        {exportHash}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       ));
                     })()}
@@ -870,8 +831,9 @@ const IncidentHistory: React.FC<{
             </div>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 
