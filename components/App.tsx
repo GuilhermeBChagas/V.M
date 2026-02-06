@@ -24,7 +24,7 @@ import AnnouncementManager from './AnnouncementManager';
 import { announcementService } from '../services/announcementService';
 import { User, Building, Incident, ViewState, UserRole, Sector, JobTitle, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides, Escala, EscalaReminder } from '../types';
 import { MENU_STRUCTURE, MenuItemDef } from '../constants/menuStructure';
-import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Check, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, ArrowLeft, CloudOff, WifiOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Check, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, ArrowLeft, CloudOff, WifiOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone, ShieldCheck, Printer } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
 import CryptoJS from 'crypto-js';
@@ -250,7 +250,8 @@ const IncidentHistory: React.FC<{
     if (onFilterChange) {
       onFilterChange({ dateStart, timeStart, dateEnd, timeEnd });
     }
-  }, [dateStart, timeStart, dateEnd, timeEnd, onFilterChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateStart, timeStart, dateEnd, timeEnd]);
   const [exportIP, setExportIP] = useState<string>('');
   const [exportDate, setExportDate] = useState<string>('');
   const [exportHash, setExportHash] = useState<string>('');
@@ -264,6 +265,7 @@ const IncidentHistory: React.FC<{
   }, [pdfMargins]);
 
   const [showMarginSettings, setShowMarginSettings] = useState(false);
+  const [showExportPreview, setShowExportPreview] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState<'APPROVED' | 'CANCELLED' | 'PENDING'>(
     filterStatus === 'PENDING' ? 'PENDING' : 'APPROVED'
@@ -337,15 +339,14 @@ const IncidentHistory: React.FC<{
     );
   });
 
-  const handleExportPDF = async () => {
-    if (!printRef.current || typeof html2pdf === 'undefined') return;
-    setIsExporting(true);
-
-    // Captura metadados para assinatura
-    const ip = await fetchClientIP();
+  const runExportWithIP = (ip: string) => {
+    // --- PREPARAÇÃO DOS DADOS ---
     const now = new Date();
-    const isoDate = now.toISOString();
-    const formattedDate = now.toLocaleString('pt-BR');
+    // Ajuste fuso horário Brasil (GMT-3)
+    const brazilOffset = -3 * 60;
+    const localTime = new Date(now.getTime() + (brazilOffset + now.getTimezoneOffset()) * 60000);
+    const isoDate = localTime.toISOString();
+    const formattedDate = formatDateBR(localTime.toISOString().split('T')[0]) + ' às ' + localTime.toISOString().split('T')[1].substring(0, 5);
 
     // --- ASSINATURA ELETRÔNICA DE SEGURANÇA (HASHING) ---
     // Snapshot dos dados do relatório para integridade
@@ -356,11 +357,11 @@ const IncidentHistory: React.FC<{
     setExportDate(formattedDate);
     setExportHash(hash);
 
-    // Pequeno delay para garantir que o React renderizou o IP/Data no DOM oculto
+    // Pequeno delay para garantir que o React renderizou o IP/Data no DOM
     setTimeout(() => {
       const element = printRef.current;
       const opt = {
-        margin: [pdfMargins.top, pdfMargins.left, pdfMargins.bottom, pdfMargins.right],
+        margin: 0,
         filename: `Relatorio_Atendimentos_${new Date().toISOString().split('T')[0]}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
@@ -368,13 +369,45 @@ const IncidentHistory: React.FC<{
           useCORS: true,
           letterRendering: true,
           scrollY: 0,
-          windowWidth: document.documentElement.offsetWidth
+          windowWidth: document.documentElement.offsetWidth,
+          onclone: (doc: Document) => {
+            const el = doc.getElementById('history-export-container');
+            if (el) {
+              el.style.gap = '0px';
+              el.style.padding = '0';
+              // Remove visual styles from pages for clean print
+              const pages = el.querySelectorAll('.report-page');
+              pages.forEach((p: any) => {
+                p.style.boxShadow = 'none';
+                p.style.border = 'none';
+              });
+            }
+          }
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-        pagebreak: { mode: ['css', 'legacy'] }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
       };
-      html2pdf().set(opt).from(element).save().then(() => setIsExporting(false));
+      html2pdf().set(opt).from(element).save().then(() => {
+        setIsExporting(false);
+        // Optional: close preview after export
+        // setShowExportPreview(false);
+      });
     }, 100);
+  };
+
+  // Export PDF function
+  const handleExportPDF = () => {
+    // If preview is not open, open it first
+    if (!showExportPreview) {
+      setShowExportPreview(true);
+      return;
+    }
+
+    // Actual export logic
+    if (!printRef.current || typeof html2pdf === 'undefined') return;
+    setIsExporting(true);
+
+    const ip = '---'; // We can fetch IP asynchronously but for simplicity or keeping existing flow
+    fetchClientIP().then(fetchedIp => { runExportWithIP(fetchedIp); });
   };
 
   return (
@@ -434,20 +467,13 @@ const IncidentHistory: React.FC<{
             {canExport && filterStatus === 'COMPLETED' && (
               <div className="flex gap-1">
                 <button
-                  onClick={handleExportPDF}
+                  onClick={() => setShowExportPreview(true)}
                   disabled={isExporting}
                   className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 dark:from-slate-700 dark:to-slate-800 dark:hover:from-slate-600 dark:hover:to-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 transition-all duration-200 disabled:opacity-50"
                 >
-                  {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                  <span className="hidden sm:inline">Exportar</span>
+                  <Download size={16} />
+                  <span className="hidden sm:inline">Exportar Relatório</span>
                   <span className="sm:hidden">PDF</span>
-                </button>
-                <button
-                  onClick={() => setShowMarginSettings(!showMarginSettings)}
-                  className={`px-3 py-3 rounded-xl border-2 transition-all ${showMarginSettings ? 'border-brand-500 bg-brand-50 text-brand-600' : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600'}`}
-                  title="Ajustar Margens"
-                >
-                  <Settings size={18} />
                 </button>
               </div>
             )}
@@ -591,122 +617,248 @@ const IncidentHistory: React.FC<{
         </button>
       )}
 
-      {/* Hidden Export Area */}
-      <div className="hidden">
-        <div ref={printRef} className="p-6 bg-white text-black" style={{ width: '280mm', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-          <div className="flex justify-center items-start mb-4 gap-12 pt-4">
-            <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center mt-1">
-              {customLogoLeft ? (
-                <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Esquerda" />
-              ) : (
-                <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50">
-                  <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
+      {/* Export Preview Modal */}
+      {showExportPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-[95vw] h-[90vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
+                  <Printer size={20} className="text-slate-600 dark:text-slate-300" />
                 </div>
-              )}
-            </div>
-
-            <div className="text-center">
-              <h1 className="text-[18px] font-black uppercase text-slate-900 leading-tight">
-                PREFEITURA MUNICIPAL DE ARAPONGAS
-              </h1>
-              <h2 className="text-[14px] font-black uppercase text-slate-900 mt-1">
-                SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
-              </h2>
-              <h3 className="text-[12px] font-bold uppercase text-blue-600 mt-1 tracking-wider">
-                CENTRO DE MONITORAMENTO MUNICIPAL
-              </h3>
-              <div className="mt-3 inline-block px-8 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-[13px] font-black uppercase tracking-[0.15em] text-slate-700 shadow-sm">
-                Relatório Geral de Atendimentos
+                <div>
+                  <h3 className="font-bold text-slate-800 dark:text-white uppercase">Visualizar Relatório</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Verifique o layout antes de exportar</p>
+                </div>
               </div>
-              {(dateStart || dateEnd) && (
-                <div className="text-[10px] uppercase font-bold text-slate-500 mt-2">
-                  Período: {dateStart ? formatDateBR(dateStart) : 'Início'} até {dateEnd ? formatDateBR(dateEnd) : 'Hoje'}
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportPDF}
+                  disabled={isExporting}
+                  className="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-black uppercase flex items-center gap-2 transition-all shadow-lg hover:shadow-brand-500/25 active:scale-95 disabled:opacity-50 disabled:cursor-wait"
+                >
+                  {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                  {isExporting ? 'GERANDO PDF...' : 'EXPORTAR PDF'}
+                </button>
+                <button
+                  onClick={() => setShowExportPreview(false)}
+                  className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
-            <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center mt-1">
-              {customLogo ? (
-                <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão Direita" />
-              ) : (
-                <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50">
-                  <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <table className="w-full border-collapse border border-slate-900">
-            <thead style={{ display: 'table-header-group' }}>
-              <tr className="bg-slate-100">
-                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[80px]">Número R.A</th>
-                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[150px]">Local</th>
-                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[80px]">Data</th>
-                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[60px]">H. Inicial</th>
-                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[60px]">H. Final</th>
-                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[120px]">Natureza</th>
-                <th className="border border-slate-900 p-2 text-[10px] font-black uppercase">Relato</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayIncidents.map(i => {
-                const building = buildings.find(b => b.id === i.buildingId);
-                return (
-                  <tr key={i.id} style={{ pageBreakInside: 'avoid' }}>
-                    <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.raCode}</td>
-                    <td className="border border-slate-900 p-2 text-[10px] font-bold uppercase align-middle">{building?.name || '---'}</td>
-                    <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{formatDateBR(i.date)}</td>
-                    <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.startTime}</td>
-                    <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.endTime || '--:--'}</td>
-                    <td className="border border-slate-900 p-2 text-[9px] font-bold uppercase text-center align-middle">{i.alterationType}</td>
-                    <td className="border border-slate-900 p-2 text-[9px] font-medium leading-tight align-top whitespace-pre-wrap break-all">{i.description}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          <div className="mt-8 flex justify-between items-end border-t border-slate-100 pt-6">
-            <div className="text-[8px] font-black uppercase text-slate-400">
-              <span>Gerado em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</span><br />
-              <span>Sistema Vigilante Municipal</span>
-            </div>
-
-            {/* Assinatura Digital do Exportador */}
-            <div className="flex flex-col items-center min-w-[280px]">
-              <span className="text-[12px] font-black text-slate-900 uppercase leading-none mb-1">
-                {currentUser?.name || '---'}
-              </span>
-              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3">
-                {jobTitles.find(jt => jt.id === currentUser?.jobTitleId)?.name ||
-                  (currentUser?.role === 'Nível 5' ? 'ADMINISTRADOR' : 'OPERADOR')}
-              </span>
-
-              <div className="flex flex-col items-center border-t border-slate-200 pt-2 w-full">
-                <span className="text-[7px] font-bold uppercase text-slate-500 tracking-widest flex items-center gap-1 mb-0.5">
-                  <ShieldCheck size={10} className="text-blue-600" /> ASSINADO ELETRONICAMENTE
-                </span>
-                <span className="text-[8px] font-mono font-bold text-slate-400 block uppercase">
-                  DATA: {exportDate || new Date().toLocaleString('pt-BR')}
-                </span>
-                {exportIP && (
-                  <span className="text-[7px] font-mono text-slate-400 block mt-0.5">
-                    IP: {exportIP}
-                  </span>
-                )}
-                {exportHash && (
-                  <div className="mt-1.5 flex flex-col items-center">
-                    <span className="text-[5px] font-black text-slate-300 uppercase leading-none mb-0.5 tracking-tighter">Assinatura Digital de Integridade</span>
-                    <span className="text-[5px] font-mono text-slate-400 break-all text-center max-w-[220px] leading-tight">
-                      {exportHash}
-                    </span>
+            {/* Modal Body - Split View */}
+            <div className="flex-1 flex overflow-hidden">
+              {/* Sidebar Controls */}
+              <div className="w-80 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 overflow-y-auto">
+                <div className="mb-6">
+                  <h4 className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase mb-4 tracking-wider">
+                    <Settings size={14} /> Configurações de Margem
+                  </h4>
+                  <div className="space-y-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Topo (mm)</label>
+                        <input
+                          type="number"
+                          value={pdfMargins.top}
+                          onChange={e => setPdfMargins({ ...pdfMargins, top: parseInt(e.target.value) || 0 })}
+                          className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Base (mm)</label>
+                        <input
+                          type="number"
+                          value={pdfMargins.bottom}
+                          onChange={e => setPdfMargins({ ...pdfMargins, bottom: parseInt(e.target.value) || 0 })}
+                          className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Esquerda (mm)</label>
+                        <input
+                          type="number"
+                          value={pdfMargins.left}
+                          onChange={e => setPdfMargins({ ...pdfMargins, left: parseInt(e.target.value) || 0 })}
+                          className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Direita (mm)</label>
+                        <input
+                          type="number"
+                          value={pdfMargins.right}
+                          onChange={e => setPdfMargins({ ...pdfMargins, right: parseInt(e.target.value) || 0 })}
+                          className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
                   </div>
-                )}
+                </div>
+
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                  <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium leading-relaxed">
+                    Visualize como o documento ficará antes de imprimir. As alterações nas margens são aplicadas em tempo real.
+                  </p>
+                </div>
+              </div>
+
+              {/* Preview Area - Centered & Scrolled */}
+              <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-8 overflow-auto flex justify-center">
+                <div className="origin-top scale-[0.6] md:scale-[0.85] lg:scale-100 transition-transform duration-300">
+                  <div ref={printRef} id="history-export-container" className="flex flex-col items-center gap-8 bg-transparent transform-gpu" style={{
+                    width: 'fit-content',
+                    padding: 0
+                  }}>
+                    {(() => {
+                      const pageSize = 12;
+                      const chunks = [];
+                      for (let i = 0; i < displayIncidents.length; i += pageSize) {
+                        chunks.push(displayIncidents.slice(i, i + pageSize));
+                      }
+                      if (chunks.length === 0) chunks.push([]);
+
+                      return chunks.map((chunk, pageIndex) => (
+                        <div key={pageIndex} className="report-page bg-white shadow-2xl flex flex-col justify-between" style={{
+                          width: '297mm',
+                          height: '210mm',
+                          overflow: 'hidden',
+                          paddingTop: `${pdfMargins.top}mm`,
+                          paddingBottom: `${pdfMargins.bottom}mm`,
+                          paddingLeft: `${pdfMargins.left}mm`,
+                          paddingRight: `${pdfMargins.right}mm`,
+                          position: 'relative',
+                          pageBreakAfter: 'always',
+                          fontFamily: "'Inter', sans-serif"
+                        }}>
+                          <div>
+                            <div className="flex justify-center items-start mb-4 gap-12 pt-4">
+                              <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center mt-1">
+                                {customLogoLeft ? (
+                                  <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Esquerda" />
+                                ) : (
+                                  <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50">
+                                    <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="text-center">
+                                <h1 className="text-[18px] font-black uppercase text-slate-900 leading-tight">
+                                  PREFEITURA MUNICIPAL DE ARAPONGAS
+                                </h1>
+                                <h2 className="text-[14px] font-black uppercase text-slate-900 mt-1">
+                                  SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
+                                </h2>
+                                <h3 className="text-[12px] font-bold uppercase text-blue-600 mt-1 tracking-wider">
+                                  CENTRO DE MONITORAMENTO MUNICIPAL
+                                </h3>
+                                <div className="mt-3 inline-block px-8 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-[13px] font-black uppercase tracking-[0.15em] text-slate-700 shadow-sm">
+                                  Relatório Geral de Atendimentos
+                                </div>
+                                {(dateStart || dateEnd) && (
+                                  <div className="text-[10px] uppercase font-bold text-slate-500 mt-2">
+                                    Período: {dateStart ? formatDateBR(dateStart) : 'Início'} até {dateEnd ? formatDateBR(dateEnd) : 'Hoje'}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center mt-1">
+                                {customLogo ? (
+                                  <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão Direita" />
+                                ) : (
+                                  <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50">
+                                    <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <table className="w-full border-collapse border border-slate-900">
+                              <thead style={{ display: 'table-header-group' }}>
+                                <tr className="bg-slate-100">
+                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[80px]">Número R.A</th>
+                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[150px]">Local</th>
+                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[80px]">Data</th>
+                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[60px]">H. Inicial</th>
+                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[60px]">H. Final</th>
+                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase w-[120px]">Natureza</th>
+                                  <th className="border border-slate-900 p-2 text-[10px] font-black uppercase">Relato</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {chunk.map(i => {
+                                  const building = buildings.find(b => b.id === i.buildingId);
+                                  return (
+                                    <tr key={i.id} style={{ pageBreakInside: 'avoid' }}>
+                                      <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.raCode}</td>
+                                      <td className="border border-slate-900 p-2 text-[10px] font-bold uppercase align-middle">{building?.name || '---'}</td>
+                                      <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{formatDateBR(i.date)}</td>
+                                      <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.startTime}</td>
+                                      <td className="border border-slate-900 p-2 text-[10px] font-bold text-center align-middle whitespace-nowrap">{i.endTime || '--:--'}</td>
+                                      <td className="border border-slate-900 p-2 text-[9px] font-bold uppercase text-center align-middle">{i.alterationType}</td>
+                                      <td className="border border-slate-900 p-2 text-[9px] font-medium leading-tight align-top whitespace-pre-wrap break-all">{i.description}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {pageIndex === chunks.length - 1 && (
+                            <div className="mt-auto flex justify-between items-end border-t border-slate-100 pt-6">
+                              <div className="text-[8px] font-black uppercase text-slate-400">
+                                <span>Gerado em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</span><br />
+                                <span>Sistema Vigilante Municipal</span>
+                              </div>
+
+                              <div className="flex flex-col items-center min-w-[280px]">
+                                <span className="text-[12px] font-black text-slate-900 uppercase leading-none mb-1">
+                                  {currentUser?.name || '---'}
+                                </span>
+                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3">
+                                  {jobTitles.find(jt => jt.id === currentUser?.jobTitleId)?.name ||
+                                    (currentUser?.role === 'Nível 5' ? 'ADMINISTRADOR' : 'OPERADOR')}
+                                </span>
+
+                                <div className="flex flex-col items-center border-t border-slate-200 pt-2 w-full">
+                                  <span className="text-[7px] font-bold uppercase text-slate-500 tracking-widest flex items-center gap-1 mb-0.5">
+                                    <ShieldCheck size={10} className="text-blue-600" /> ASSINADO ELETRONICAMENTE
+                                  </span>
+                                  <span className="text-[8px] font-mono font-bold text-slate-400 block uppercase">
+                                    DATA: {exportDate || new Date().toLocaleString('pt-BR')}
+                                  </span>
+                                  {exportIP && (
+                                    <span className="text-[7px] font-mono text-slate-400 block mt-0.5">
+                                      IP: {exportIP}
+                                    </span>
+                                  )}
+                                  {exportHash && (
+                                    <div className="mt-1.5 flex flex-col items-center">
+                                      <span className="text-[5px] font-black text-slate-300 uppercase leading-none mb-0.5 tracking-tighter">Assinatura Digital de Integridade</span>
+                                      <span className="text-[5px] font-mono text-slate-400 break-all text-center max-w-[220px] leading-tight">
+                                        {exportHash}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -1212,13 +1364,29 @@ export function App() {
   // --- FETCH FUNCTIONS INSIDE APP COMPONENT ---
 
   const fetchIncidents = useCallback(async (isLoadMore = false, dateFilters?: { dateStart?: string, timeStart?: string, dateEnd?: string, timeEnd?: string }) => {
-    if (fetchLockRef.current) return;
+    // Determine the target content range based on load type
+    // If loading more, we want the NEXT page (page + 1)
+    // If refreshing (isLoadMore = false), we reset to page 0
+    const targetPage = isLoadMore ? page + 1 : 0;
+
+    console.log(`[FetchIncidents] Start. isLoadMore=${isLoadMore}, targetPage=${targetPage}, currentStorePage=${page}`);
+
+    if (fetchLockRef.current) {
+      console.warn(`[FetchIncidents] Blocked by lock.`);
+      return;
+    }
     fetchLockRef.current = true;
+
     if (isLoadMore) setLoadingMore(true);
-    else { setPage(0); setHasMore(true); }
-    const currentPage = isLoadMore ? page + 1 : 0;
+    else {
+      // Important: If not loading more, we are resetting.
+      // We do NOT setPage(0) here yet because state updates are async and might confuse subsequent logic if we relied on 'page' state.
+      // Instead we use 'targetPage' (which is 0) for all logic.
+      setHasMore(true);
+    }
+
     const PAGE_SIZE = 10;
-    const from = currentPage * PAGE_SIZE;
+    const from = targetPage * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
     const hasFilters = !!(dateFilters && (dateFilters.dateStart || dateFilters.dateEnd));
@@ -1228,6 +1396,7 @@ export function App() {
       const listColumns = 'id, ra_code, building_id, user_id, operator_name, date, start_time, end_time, alteration_type, status, timestamp, is_edited, last_edited_at, edited_by, created_ip, updated_ip, approved_ip, signature_hash, approved_by, approved_at, created_at';
 
       if (!isLoadMore) {
+        // ... (Logic for initial load / refresh)
         let pendingQuery = supabase.from('incidents').select(listColumns).eq('status', 'PENDING');
         let historyQuery = supabase.from('incidents').select(listColumns).neq('status', 'PENDING').order('created_at', { ascending: false });
 
@@ -1254,16 +1423,21 @@ export function App() {
         const mappedHistory = (historyRes.data || []).map(mapIncident);
         finalData = [...mappedPending, ...mappedHistory];
         if (!hasFilters && (historyRes.data?.length || 0) < PAGE_SIZE) setHasMore(false);
+        setPage(0); // Restore reset state for fresh loads
       } else {
         const { data, error } = await supabase.from('incidents').select(listColumns).neq('status', 'PENDING').order('created_at', { ascending: false }).range(from, to);
         if (error) throw error;
         finalData = (data || []).map(mapIncident);
         if (finalData.length < PAGE_SIZE) setHasMore(false);
-        setPage(currentPage);
+        setPage(targetPage);
       }
+
+      console.log(`[FetchIncidents] Fetched ${finalData.length} records. From ${from} to ${to}. HasMore=${finalData.length >= PAGE_SIZE}`);
+
       setIncidents(prev => {
         if (isLoadMore) {
           const newRecords = finalData.filter(fd => !prev.some(p => p.id === fd.id));
+          console.log(`[FetchIncidents] Appending ${newRecords.length} new records (filtered duplicates).`);
           return [...prev, ...newRecords];
         } else {
           const combined = [...unsyncedIncidents, ...finalData.filter(fd => !unsyncedIncidents.some(ui => ui.id === fd.id))];
@@ -1713,6 +1887,11 @@ export function App() {
     yearIncidents.forEach(i => { const num = parseInt(i.raCode.split('/')[0]); if (!isNaN(num) && num > maxNum) maxNum = num; });
     return `${maxNum + 1}/${currentYear}`;
   };
+
+  // --- INCIDENT HANDLERS (View, Edit, Delete, Filter) ---
+  const handleIncidentFilterChange = useCallback((filters: { dateStart: string, timeStart: string, dateEnd: string, timeEnd: string }) => {
+    fetchIncidents(false, filters);
+  }, [fetchIncidents]);
 
   const handleSaveIncident = async (inc: Incident) => {
     setSaving(true);
@@ -2570,7 +2749,7 @@ export function App() {
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
         return <IncidentForm user={user!} users={users} incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleBack(); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} />;
-      case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} jobTitles={jobTitles} onFilterChange={(f) => fetchIncidents(false, f)} />;
+      case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} jobTitles={jobTitles} onFilterChange={handleIncidentFilterChange} />;
       case 'PENDING_APPROVALS':
         return (
           <div className="space-y-4 animate-fade-in">

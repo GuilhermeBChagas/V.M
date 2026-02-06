@@ -198,14 +198,28 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
     };
 
     const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string) => void) => {
-        let value = e.target.value.replace(/\D/g, '');
-        if (value.length > 4) value = value.slice(0, 4);
+        let raw = e.target.value.replace(/\D/g, '');
 
-        if (value.length >= 3) {
-            value = value.slice(0, 2) + ':' + value.slice(2);
+        if (raw.length > 4) raw = raw.slice(0, 4);
+
+        // Validação de Hora (primeiro dígito 0-2)
+        if (raw.length >= 1 && parseInt(raw[0]) > 2) return;
+
+        // Validação de Hora (total <= 23)
+        if (raw.length >= 2) {
+            const hours = parseInt(raw.slice(0, 2));
+            if (hours > 23) return;
         }
 
-        setter(value);
+        // Validação de Minutos (primeiro dígito 0-5)
+        if (raw.length >= 3 && parseInt(raw[2]) > 5) return;
+
+        // Formatação HH:MM
+        if (raw.length >= 3) {
+            raw = raw.slice(0, 2) + ':' + raw.slice(2);
+        }
+
+        setter(raw);
     };
 
     // --- Image Handling ---

@@ -6,7 +6,7 @@ import {
     ArrowRightLeft, History, Plus, Search, User as UserIcon,
     Car, Shield, Radio as RadioIcon, Package, CheckCircle,
     XCircle, Clock, Calendar, ChevronRight, ChevronDown, CornerDownLeft,
-    AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download, X, QrCode, Settings
+    AlertCircle, Loader2, Filter, Layers, Gauge, Fuel, DollarSign, Droplet, ArrowUpRight, AlertTriangle, Download, X, QrCode, Settings, Printer
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { normalizeString } from '../utils/stringUtils';
@@ -71,6 +71,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     }, [pdfMargins]);
 
     const [showMarginSettings, setShowMarginSettings] = useState(false);
+    const [showExportPreview, setShowExportPreview] = useState(false);
 
     useEffect(() => {
         if (onFilterChange) {
@@ -160,6 +161,12 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             alert('Biblioteca de PDF não carregada. Tente recarregar a página.');
             return;
         }
+
+        if (!showExportPreview) {
+            setShowExportPreview(true);
+            return;
+        }
+
         setIsExporting(true);
         const element = reportRef.current;
 
@@ -173,10 +180,27 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             : `Relatorio_Historico_${historyItemId}_${new Date().toISOString().split('T')[0]}.pdf`;
 
         const opt = {
-            margin: [pdfMargins.top, pdfMargins.left, pdfMargins.bottom, pdfMargins.right],
+            margin: 0, // Margins are now handled by the page padding for WYSIWYG accuracy
             filename: filename,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                letterRendering: true,
+                scrollY: 0,
+                onclone: (doc: Document) => {
+                    const el = doc.getElementById('loan-report-history');
+                    if (el) {
+                        el.style.gap = '0px';
+                        // Remove shadows from pages for clean print
+                        const pages = el.querySelectorAll('.report-page');
+                        pages.forEach((p: any) => {
+                            p.style.boxShadow = 'none';
+                            p.style.border = 'none';
+                        });
+                    }
+                }
+            },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
         };
 
@@ -1028,7 +1052,14 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             margin: [pdfMargins.top, pdfMargins.left, pdfMargins.bottom, pdfMargins.right],
             filename: `Relatorio_Cautelas_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                onclone: (doc: Document) => {
+                    const el = doc.getElementById('loan-report-active');
+                    if (el) el.style.padding = '0px';
+                }
+            },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
         };
         html2pdf().set(opt).from(element).save().then(() => setIsExporting(false));
@@ -1422,551 +1453,694 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     </div>
                 ) : (
                     <>
-                        <div ref={printRef} className="space-y-4">
+                        <div ref={printRef} id="loan-report-active" className="space-y-4" style={{
+                            paddingTop: `${pdfMargins.top}mm`,
+                            paddingBottom: `${pdfMargins.bottom}mm`,
+                            paddingLeft: `${pdfMargins.left}mm`,
+                            paddingRight: `${pdfMargins.right}mm`
+                        }}>
 
                             {/* HISTORY MODE TOGGLE */}
                             {activeTab === 'HISTORY' && (
-                                <div className="flex flex-col gap-4 mb-4">
-                                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-fit self-start">
-                                        <button
-                                            onClick={() => setHistoryMode('USER')}
-                                            className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${historyMode === 'USER'
-                                                ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white'
-                                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
-                                                }`}
-                                        >
-                                            Por Usuário
-                                        </button>
-                                        <button
-                                            onClick={() => setHistoryMode('ITEM')}
-                                            className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${historyMode === 'ITEM'
-                                                ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white'
-                                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
-                                                }`}
-                                        >
-                                            Por Item
-                                        </button>
-                                    </div>
+                                <>
+                                    <div className="flex flex-col gap-4 mb-4">
+                                        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-fit self-start">
+                                            <button
+                                                onClick={() => setHistoryMode('USER')}
+                                                className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${historyMode === 'USER'
+                                                    ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white'
+                                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                                                    }`}
+                                            >
+                                                Por Usuário
+                                            </button>
+                                            <button
+                                                onClick={() => setHistoryMode('ITEM')}
+                                                className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${historyMode === 'ITEM'
+                                                    ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white'
+                                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                                                    }`}
+                                            >
+                                                Por Item
+                                            </button>
+                                        </div>
 
-                                    {/* ITEM HISTORY FILTERS & VIEW */}
-                                    {historyMode === 'ITEM' && (
-                                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 animate-in fade-in slide-in-from-top-2">
-                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-6">
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Tipo de Item</label>
-                                                    <select
-                                                        value={historyItemType}
-                                                        onChange={(e) => {
-                                                            setHistoryItemType(e.target.value);
-                                                            setHistoryItemId('');
-                                                        }}
-                                                        className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500"
-                                                    >
-                                                        <option value="VEHICLE">Viaturas</option>
-                                                        <option value="VEST">Coletes</option>
-                                                        <option value="RADIO">Rádios</option>
-                                                        <option value="EQUIPMENT">Outros</option>
-                                                    </select>
-                                                </div>
-                                                <div className="md:col-span-4">
-                                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Selecione o Item</label>
-                                                    <select
-                                                        value={historyItemId}
-                                                        onChange={(e) => setHistoryItemId(e.target.value)}
-                                                        className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500"
-                                                    >
-                                                        <option value="">Selecione...</option>
-                                                        {historyItemType === 'VEHICLE' && (
-                                                            vehicles.length > 0
-                                                                ? vehicles.map(v => <option key={v.id} value={v.id}>{v.model} - {v.plate}</option>)
-                                                                : <option disabled>Nenhuma viatura disponível</option>
+                                        {/* ITEM HISTORY FILTERS & VIEW */}
+                                        {historyMode === 'ITEM' && (
+                                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 animate-in fade-in slide-in-from-top-2">
+                                                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-6">
+                                                    <div className="md:col-span-2">
+                                                        <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Tipo de Item</label>
+                                                        <select
+                                                            value={historyItemType}
+                                                            onChange={(e) => {
+                                                                setHistoryItemType(e.target.value);
+                                                                setHistoryItemId('');
+                                                            }}
+                                                            className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500"
+                                                        >
+                                                            <option value="VEHICLE">Viaturas</option>
+                                                            <option value="VEST">Coletes</option>
+                                                            <option value="RADIO">Rádios</option>
+                                                            <option value="EQUIPMENT">Outros</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="md:col-span-4">
+                                                        <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Selecione o Item</label>
+                                                        <select
+                                                            value={historyItemId}
+                                                            onChange={(e) => setHistoryItemId(e.target.value)}
+                                                            className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500"
+                                                        >
+                                                            <option value="">Selecione...</option>
+                                                            {historyItemType === 'VEHICLE' && (
+                                                                vehicles.length > 0
+                                                                    ? vehicles.map(v => <option key={v.id} value={v.id}>{v.model} - {v.plate}</option>)
+                                                                    : <option disabled>Nenhuma viatura disponível</option>
+                                                            )}
+                                                            {historyItemType === 'VEST' && (
+                                                                vests.length > 0
+                                                                    ? vests.map(v => <option key={v.id} value={v.id}>Colete Nº {v.number} ({v.size})</option>)
+                                                                    : <option disabled>Nenhum colete disponível</option>
+                                                            )}
+                                                            {historyItemType === 'RADIO' && (
+                                                                radios.length > 0
+                                                                    ? radios.map(r => <option key={r.id} value={r.id}>HT {r.number} ({r.serialNumber})</option>)
+                                                                    : <option disabled>Nenhum rádio disponível</option>
+                                                            )}
+                                                            {historyItemType === 'EQUIPMENT' && (
+                                                                equipments.length > 0
+                                                                    ? equipments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)
+                                                                    : <option disabled>Nenhum equipamento disponível</option>
+                                                            )}
+                                                        </select>
+                                                    </div>
+                                                    <div className="md:col-span-2">
+                                                        <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">De</label>
+                                                        <input type="date" value={historyStartDate} onChange={e => setHistoryStartDate(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500" />
+                                                    </div>
+                                                    <div className="md:col-span-2">
+                                                        <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Até</label>
+                                                        <input type="date" value={historyEndDate} onChange={e => setHistoryEndDate(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500" />
+                                                    </div>
+                                                    <div className="md:col-span-2">
+                                                        <button
+                                                            onClick={fetchItemHistory}
+                                                            disabled={!historyItemId || isLoadingItemHistory}
+                                                            className="w-full p-2.5 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 flex items-center justify-center gap-2 disabled:opacity-50"
+                                                        >
+                                                            {isLoadingItemHistory ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />}
+                                                            Buscar
+                                                        </button>
+                                                    </div>
+                                                    <div className="md:col-span-1 flex items-end">
+                                                        {itemHistoryResults.length > 0 && (
+                                                            <button
+                                                                onClick={handleExportHistoryPDF}
+                                                                disabled={isExporting}
+                                                                className="w-full p-2.5 bg-slate-800 text-white rounded-lg text-xs font-black uppercase hover:bg-slate-700 flex items-center justify-center gap-2 disabled:opacity-50"
+                                                            >
+                                                                {isExporting ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />}
+                                                                PDF
+                                                            </button>
                                                         )}
-                                                        {historyItemType === 'VEST' && (
-                                                            vests.length > 0
-                                                                ? vests.map(v => <option key={v.id} value={v.id}>Colete Nº {v.number} ({v.size})</option>)
-                                                                : <option disabled>Nenhum colete disponível</option>
-                                                        )}
-                                                        {historyItemType === 'RADIO' && (
-                                                            radios.length > 0
-                                                                ? radios.map(r => <option key={r.id} value={r.id}>HT {r.number} ({r.serialNumber})</option>)
-                                                                : <option disabled>Nenhum rádio disponível</option>
-                                                        )}
-                                                        {historyItemType === 'EQUIPMENT' && (
-                                                            equipments.length > 0
-                                                                ? equipments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)
-                                                                : <option disabled>Nenhum equipamento disponível</option>
-                                                        )}
-                                                    </select>
+                                                    </div>
                                                 </div>
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">De</label>
-                                                    <input type="date" value={historyStartDate} onChange={e => setHistoryStartDate(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500" />
-                                                </div>
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-[10px] font-black text-slate-500 uppercase mb-1">Até</label>
-                                                    <input type="date" value={historyEndDate} onChange={e => setHistoryEndDate(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase outline-none focus:border-blue-500" />
-                                                </div>
-                                                <div className="md:col-span-2">
-                                                    <button
-                                                        onClick={fetchItemHistory}
-                                                        disabled={!historyItemId || isLoadingItemHistory}
-                                                        className="w-full p-2.5 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 flex items-center justify-center gap-2 disabled:opacity-50"
-                                                    >
-                                                        {isLoadingItemHistory ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />}
-                                                        Buscar
-                                                    </button>
-                                                </div>
-                                            </div>
 
-                                            {/* VISIBLE RESULTS TABLE */}
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-left border-collapse">
-                                                    <thead>
-                                                        <tr className="border-b border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase text-slate-500 bg-slate-50 dark:bg-slate-800/50">
-                                                            <th className="p-3">Data Retirada</th>
-                                                            <th className="p-3">Recebedor</th>
-                                                            <th className="p-3">Devolução</th>
-                                                            <th className="p-3">Status</th>
-                                                            <th className="p-3">Detalhes</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                                        {itemHistoryResults.length > 0 ? (
-                                                            itemHistoryResults.map(loan => (
-                                                                <tr key={loan.id} className="text-xs hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                                                                    <td className="p-3 font-bold text-slate-700 dark:text-slate-300">
-                                                                        {new Date(loan.checkoutTime).toLocaleDateString()} <span className="text-slate-400 font-normal">{new Date(loan.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                                    </td>
-                                                                    <td className="p-3 uppercase font-bold">{loan.receiverName}</td>
-                                                                    <td className="p-3">
-                                                                        {loan.returnTime ? (
-                                                                            <>
-                                                                                {new Date(loan.returnTime).toLocaleDateString()} <span className="text-slate-400 text-[10px]">{new Date(loan.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                                            </>
-                                                                        ) : '-'}
-                                                                    </td>
-                                                                    <td className="p-3">
-                                                                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase ${loan.status === 'COMPLETED' ? 'bg-slate-100 text-slate-600' :
-                                                                            loan.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-600' :
-                                                                                loan.status === 'REJECTED' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
-                                                                            }`}>
-                                                                            {loan.status === 'COMPLETED' ? 'Devolvido' :
-                                                                                loan.status === 'ACTIVE' ? 'Em Uso' :
-                                                                                    loan.status === 'REJECTED' ? 'Recusado' : 'Pendente'}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td className="p-3 text-[10px] text-slate-500">
-                                                                        {loan.assetType === 'VEHICLE' && loan.meta && (
-                                                                            <div className="flex flex-col">
-                                                                                <span>KM: {loan.meta.kmStart} {'->'} {loan.meta.kmEnd || '?'}</span>
-                                                                                {loan.meta.fuelRefill && <span className="text-blue-500 font-bold flex items-center gap-1"><Droplet size={8} /> Abast.</span>}
-                                                                            </div>
-                                                                        )}
-                                                                        {!['VEHICLE'].includes(loan.assetType) && (
-                                                                            <span className="italic opacity-50">---</span>
-                                                                        )}
+                                                {/* VISIBLE RESULTS TABLE */}
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-left border-collapse">
+                                                        <thead>
+                                                            <tr className="border-b border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase text-slate-500 bg-slate-50 dark:bg-slate-800/50">
+                                                                <th className="p-3">Data Retirada</th>
+                                                                <th className="p-3">Recebedor</th>
+                                                                <th className="p-3">Devolução</th>
+                                                                <th className="p-3">Status</th>
+                                                                <th className="p-3">Detalhes</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                                            {itemHistoryResults.length > 0 ? (
+                                                                itemHistoryResults.map(loan => (
+                                                                    <tr key={loan.id} className="text-xs hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                                                        <td className="p-3 font-bold text-slate-700 dark:text-slate-300">
+                                                                            {new Date(loan.checkoutTime).toLocaleDateString()} <span className="text-slate-400 font-normal">{new Date(loan.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                        </td>
+                                                                        <td className="p-3 uppercase font-bold">{loan.receiverName}</td>
+                                                                        <td className="p-3">
+                                                                            {loan.returnTime ? (
+                                                                                <>
+                                                                                    {new Date(loan.returnTime).toLocaleDateString()} <span className="text-slate-400 text-[10px]">{new Date(loan.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                                </>
+                                                                            ) : '-'}
+                                                                        </td>
+                                                                        <td className="p-3">
+                                                                            <span className={`px-2 py-1 rounded text-[10px] font-black uppercase ${loan.status === 'COMPLETED' ? 'bg-slate-100 text-slate-600' :
+                                                                                loan.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-600' :
+                                                                                    loan.status === 'REJECTED' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
+                                                                                }`}>
+                                                                                {loan.status === 'COMPLETED' ? 'Devolvido' :
+                                                                                    loan.status === 'ACTIVE' ? 'Em Uso' :
+                                                                                        loan.status === 'REJECTED' ? 'Recusado' : 'Pendente'}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="p-3 text-[10px] text-slate-500">
+                                                                            {loan.assetType === 'VEHICLE' && loan.meta && (
+                                                                                <div className="flex flex-col">
+                                                                                    <span>KM: {loan.meta.kmStart} {'->'} {loan.meta.kmEnd || '?'}</span>
+                                                                                    {loan.meta.fuelRefill && <span className="text-blue-500 font-bold flex items-center gap-1"><Droplet size={8} /> Abast.</span>}
+                                                                                </div>
+                                                                            )}
+                                                                            {!['VEHICLE'].includes(loan.assetType) && (
+                                                                                <span className="italic opacity-50">---</span>
+                                                                            )}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))
+                                                            ) : (
+                                                                <tr>
+                                                                    <td colSpan={5} className="p-8 text-center text-slate-400 text-xs uppercase font-bold italic">
+                                                                        Nenhum registro encontrado.
                                                                     </td>
                                                                 </tr>
-                                                            ))
-                                                        ) : (
-                                                            <tr>
-                                                                <td colSpan={5} className="p-8 text-center text-slate-400 text-xs uppercase font-bold italic">
-                                                                    Nenhum registro encontrado.
-                                                                </td>
-                                                            </tr>
-                                                        )}
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                                            )}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
 
-                                            {/* HIDDEN PRINT TEMPLATE */}
-                                            <div className="hidden">
-                                                <div ref={reportRef} className="bg-white text-black px-4 pb-4 pt-0 transform-gpu" style={{ width: '285mm', height: 'auto', minHeight: '190mm', fontFamily: "'Inter', sans-serif" }}>
-                                                    {(() => {
-                                                        const pageSize = 15;
-                                                        const historyChunks = [];
-                                                        if (itemHistoryResults.length === 0) {
-                                                            historyChunks.push([]);
-                                                        } else {
-                                                            for (let i = 0; i < itemHistoryResults.length; i += pageSize) {
-                                                                historyChunks.push(itemHistoryResults.slice(i, i + pageSize));
-                                                            }
-                                                        }
-
-                                                        return historyChunks.map((chunk, pageIndex) => (
-                                                            <div key={pageIndex} style={{ pageBreakBefore: pageIndex > 0 ? 'always' : 'auto', height: '188mm', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                                                <div>
-                                                                    {/* HEADER (Same as IncidentDetail) */}
-                                                                    <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12 mt-4">
-                                                                        {/* Logo Esquerda (Muni) */}
-                                                                        <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                                                            {customLogoLeft ? (
-                                                                                <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Muni" />
-                                                                            ) : (
-                                                                                <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
-                                                                                    <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-
-                                                                        <div className="text-center min-w-0 flex-1">
-                                                                            <h1 className="text-[14px] font-black uppercase text-slate-900 leading-tight tracking-tight whitespace-nowrap">
-                                                                                PREFEITURA MUNICIPAL DE ARAPONGAS
-                                                                            </h1>
-                                                                            <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-wide mt-1">
-                                                                                SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
-                                                                            </h2>
-                                                                            <h3 className="text-[10px] font-bold uppercase text-blue-600 mt-0.5 tracking-wider">
-                                                                                CENTRO DE MONITORAMENTO MUNICIPAL
-                                                                            </h3>
-                                                                        </div>
-
-                                                                        {/* Logo Direita (GCM) */}
-                                                                        <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                                                            {customLogo ? (
-                                                                                <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão GCM" />
-                                                                            ) : (
-                                                                                <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
-                                                                                    <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
+                                                {/* Export Preview Modal */}
+                                                {showExportPreview && (
+                                                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                                                        <div className="bg-white dark:bg-slate-900 w-full max-w-[95vw] h-[90vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+                                                            {/* Modal Header */}
+                                                            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 bg-slate-200 dark:bg-slate-700 rounded-lg">
+                                                                        <Printer size={20} className="text-slate-600 dark:text-slate-300" />
                                                                     </div>
-
-                                                                    {/* LINHA DE DIVISÃO SUPERIOR (AZUL) */}
-                                                                    <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '6px' }}></div>
-
-                                                                    {/* TÍTULO COM LINHAS LATERAIS */}
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-                                                                        <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
-                                                                        <h2 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-                                                                            {historyItemType === 'VEHICLE' ? 'DIÁRIO DE BORDO' : 'RELATÓRIO DE CAUTELAS'}
-                                                                        </h2>
-                                                                        <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                                    <div>
+                                                                        <h3 className="font-bold text-slate-800 dark:text-white uppercase">Visualizar Relatório</h3>
+                                                                        <p className="text-xs text-slate-500 dark:text-slate-400">Verifique o layout antes de exportar</p>
                                                                     </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <button
+                                                                        onClick={handleExportHistoryPDF}
+                                                                        disabled={isExporting}
+                                                                        className="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-black uppercase flex items-center gap-2 transition-all shadow-lg hover:shadow-brand-500/25 active:scale-95 disabled:opacity-50 disabled:cursor-wait"
+                                                                    >
+                                                                        {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                                                                        {isExporting ? 'GERANDO PDF...' : 'EXPORTAR PDF'}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setShowExportPreview(false)}
+                                                                        className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition-colors"
+                                                                    >
+                                                                        <X size={20} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
 
-                                                                    {/* LINHA DE DIVISÃO INFERIOR (AZUL) */}
-                                                                    <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
-
-                                                                    {/* VEHICLE SPECIFIC HEADER */}
-                                                                    {historyItemType === 'VEHICLE' ? (
-                                                                        <div className="mb-4 font-black uppercase text-[10px] text-slate-900 border border-slate-900">
-                                                                            <div className="grid grid-cols-12 bg-slate-100 border-b border-slate-900 divide-x divide-slate-900">
-                                                                                <div className="col-span-5 p-2 flex items-center gap-2">
-                                                                                    <span className="text-slate-500 font-bold">VEÍCULO:</span>
-                                                                                    <span className="text-[14px]">{vehicles.find(v => v.id === historyItemId)?.model}</span>
+                                                            {/* Modal Body - Split View */}
+                                                            <div className="flex-1 flex overflow-hidden">
+                                                                {/* Sidebar Controls */}
+                                                                <div className="w-80 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 overflow-y-auto">
+                                                                    <div className="mb-6">
+                                                                        <h4 className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase mb-4 tracking-wider">
+                                                                            <Settings size={14} /> Configurações de Margem
+                                                                        </h4>
+                                                                        <div className="space-y-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                                                                            <div className="grid grid-cols-2 gap-4">
+                                                                                <div>
+                                                                                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Topo (mm)</label>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        value={pdfMargins.top}
+                                                                                        onChange={e => setPdfMargins({ ...pdfMargins, top: parseInt(e.target.value) || 0 })}
+                                                                                        className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                                                                    />
                                                                                 </div>
-                                                                                <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
-                                                                                    <span className="text-slate-500 font-bold">PLACA:</span>
-                                                                                    <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.plate}</span>
+                                                                                <div>
+                                                                                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Base (mm)</label>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        value={pdfMargins.bottom}
+                                                                                        onChange={e => setPdfMargins({ ...pdfMargins, bottom: parseInt(e.target.value) || 0 })}
+                                                                                        className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                                                                    />
                                                                                 </div>
-                                                                                <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
-                                                                                    <span className="text-slate-500 font-bold">Nº FROTA:</span>
-                                                                                    <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fleetNumber || vehicles.find(v => v.id === historyItemId)?.prefix}</span>
+                                                                                <div>
+                                                                                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Esquerda (mm)</label>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        value={pdfMargins.left}
+                                                                                        onChange={e => setPdfMargins({ ...pdfMargins, left: parseInt(e.target.value) || 0 })}
+                                                                                        className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                                                                    />
                                                                                 </div>
-                                                                                <div className="col-span-3 p-2 flex items-center gap-2 justify-center">
-                                                                                    <span className="text-slate-500 font-bold">COMBUSTÍVEL:</span>
-                                                                                    <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fuelType || 'FLEX'}</span>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="grid grid-cols-2 bg-slate-100 divide-x divide-slate-900">
-                                                                                <div className="p-2 flex items-center gap-2">
-                                                                                    <span className="text-slate-500 font-bold">MÊS/ANO REF.:</span>
-                                                                                    <span className="text-[12px]">
-                                                                                        {historyStartDate ? new Date(historyStartDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase() : new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <div className="p-2 flex items-center gap-2">
-                                                                                    <span className="text-slate-500 font-bold">SECRETARIA:</span>
-                                                                                    <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.department || 'SESTRAN'}</span>
+                                                                                <div>
+                                                                                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Direita (mm)</label>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        value={pdfMargins.right}
+                                                                                        onChange={e => setPdfMargins({ ...pdfMargins, right: parseInt(e.target.value) || 0 })}
+                                                                                        className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                                                                    />
                                                                                 </div>
                                                                             </div>
                                                                         </div>
-                                                                    ) : (
-                                                                        /* GENERIC HEADER ITEM DISPLAY */
-                                                                        <div className="mb-6 bg-slate-50 border border-slate-200 rounded p-4 text-center shadow-sm">
-                                                                            <span className="text-[15px] font-black uppercase text-slate-900 tracking-wide">
-                                                                                {historyItemType === 'VEST' ? 'COLETE ' + vests.find(v => v.id === historyItemId)?.number :
-                                                                                    historyItemType === 'RADIO' ? 'RÁDIO ' + radios.find(v => v.id === historyItemId)?.number :
-                                                                                        equipments.find(e => e.id === historyItemId)?.name || '---'}
-                                                                            </span>
+                                                                    </div>
+
+                                                                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                                                                        <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium leading-relaxed">
+                                                                            Visualize como o documento ficará antes de imprimir. As alterações nas margens são aplicadas em tempo real.
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Preview Area - Centered & Scrolled */}
+                                                                <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-8 overflow-auto flex justify-center">
+                                                                    <div className="origin-top scale-[0.6] md:scale-[0.85] lg:scale-100 transition-transform duration-300">
+                                                                        <div ref={reportRef} id="loan-report-history" className="flex flex-col items-center gap-8 bg-transparent transform-gpu" style={{
+                                                                            width: 'fit-content',
+                                                                            padding: 0
+                                                                        }}>
+                                                                            {(() => {
+                                                                                const pageSize = 12;
+                                                                                const historyChunks = [];
+                                                                                if (itemHistoryResults.length === 0) {
+                                                                                    historyChunks.push([]);
+                                                                                } else {
+                                                                                    for (let i = 0; i < itemHistoryResults.length; i += pageSize) {
+                                                                                        historyChunks.push(itemHistoryResults.slice(i, i + pageSize));
+                                                                                    }
+                                                                                }
+
+                                                                                return historyChunks.map((chunk, pageIndex) => (
+                                                                                    <div key={pageIndex} className="report-page bg-white shadow-2xl flex flex-col justify-between" style={{
+                                                                                        width: '297mm',
+                                                                                        height: '210mm',
+                                                                                        overflow: 'hidden',
+                                                                                        paddingTop: `${pdfMargins.top}mm`,
+                                                                                        paddingBottom: `${pdfMargins.bottom}mm`,
+                                                                                        paddingLeft: `${pdfMargins.left}mm`,
+                                                                                        paddingRight: `${pdfMargins.right}mm`,
+                                                                                        position: 'relative',
+                                                                                        pageBreakAfter: 'always',
+                                                                                        fontFamily: "'Inter', sans-serif"
+                                                                                    }}>
+                                                                                        <div className="h-full flex flex-col justify-between">
+                                                                                            <div>
+                                                                                                {/* HEADER (Same as IncidentDetail) */}
+                                                                                                <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12 mt-4">
+                                                                                                    {/* Logo Esquerda (Muni) */}
+                                                                                                    <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                                                                        {customLogoLeft ? (
+                                                                                                            <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Muni" />
+                                                                                                        ) : (
+                                                                                                            <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                                                                <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
+                                                                                                            </div>
+                                                                                                        )}
+                                                                                                    </div>
+
+                                                                                                    <div className="text-center min-w-0 flex-1">
+                                                                                                        <h1 className="text-[14px] font-black uppercase text-slate-900 leading-tight tracking-tight whitespace-nowrap">
+                                                                                                            PREFEITURA MUNICIPAL DE ARAPONGAS
+                                                                                                        </h1>
+                                                                                                        <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-wide mt-1">
+                                                                                                            SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
+                                                                                                        </h2>
+                                                                                                        <h3 className="text-[10px] font-bold uppercase text-blue-600 mt-0.5 tracking-wider">
+                                                                                                            CENTRO DE MONITORAMENTO MUNICIPAL
+                                                                                                        </h3>
+                                                                                                    </div>
+
+                                                                                                    {/* Logo Direita (GCM) */}
+                                                                                                    <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                                                                        {customLogo ? (
+                                                                                                            <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão GCM" />
+                                                                                                        ) : (
+                                                                                                            <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                                                                <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
+                                                                                                            </div>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                </div>
+
+                                                                                                {/* LINHA DE DIVISÃO SUPERIOR (AZUL) */}
+                                                                                                <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '6px' }}></div>
+
+                                                                                                {/* TÍTULO COM LINHAS LATERAIS */}
+                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                                                                                                    <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                                                                    <h2 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+                                                                                                        {historyItemType === 'VEHICLE' ? 'DIÁRIO DE BORDO' : 'RELATÓRIO DE CAUTELAS'}
+                                                                                                    </h2>
+                                                                                                    <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                                                                </div>
+
+                                                                                                {/* LINHA DE DIVISÃO INFERIOR (AZUL) */}
+                                                                                                <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
+
+                                                                                                {/* VEHICLE SPECIFIC HEADER */}
+                                                                                                {historyItemType === 'VEHICLE' ? (
+                                                                                                    <div className="mb-4 font-black uppercase text-[10px] text-slate-900 border border-slate-900">
+                                                                                                        <div className="grid grid-cols-12 bg-slate-100 border-b border-slate-900 divide-x divide-slate-900">
+                                                                                                            <div className="col-span-5 p-2 flex items-center gap-2">
+                                                                                                                <span className="text-slate-500 font-bold">VEÍCULO:</span>
+                                                                                                                <span className="text-[14px]">{vehicles.find(v => v.id === historyItemId)?.model}</span>
+                                                                                                            </div>
+                                                                                                            <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                                                                <span className="text-slate-500 font-bold">PLACA:</span>
+                                                                                                                <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.plate}</span>
+                                                                                                            </div>
+                                                                                                            <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                                                                <span className="text-slate-500 font-bold">Nº FROTA:</span>
+                                                                                                                <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fleetNumber || vehicles.find(v => v.id === historyItemId)?.prefix}</span>
+                                                                                                            </div>
+                                                                                                            <div className="col-span-3 p-2 flex items-center gap-2 justify-center">
+                                                                                                                <span className="text-slate-500 font-bold">COMBUSTÍVEL:</span>
+                                                                                                                <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fuelType || 'FLEX'}</span>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <div className="grid grid-cols-2 bg-slate-100 divide-x divide-slate-900">
+                                                                                                            <div className="p-2 flex items-center gap-2">
+                                                                                                                <span className="text-slate-500 font-bold">MÊS/ANO REF.:</span>
+                                                                                                                <span className="text-[12px]">
+                                                                                                                    {historyStartDate ? new Date(historyStartDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase() : new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                                                                                                                </span>
+                                                                                                            </div>
+                                                                                                            <div className="p-2 flex items-center gap-2">
+                                                                                                                <span className="text-slate-500 font-bold">SECRETARIA:</span>
+                                                                                                                <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.department || 'SESTRAN'}</span>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                ) : (
+                                                                                                    /* GENERIC HEADER ITEM DISPLAY */
+                                                                                                    <div className="mb-6 bg-slate-50 border border-slate-200 rounded p-4 text-center shadow-sm">
+                                                                                                        <span className="text-[15px] font-black uppercase text-slate-900 tracking-wide">
+                                                                                                            {historyItemType === 'VEST' ? 'COLETE ' + vests.find(v => v.id === historyItemId)?.number :
+                                                                                                                historyItemType === 'RADIO' ? 'RÁDIO ' + radios.find(v => v.id === historyItemId)?.number :
+                                                                                                                    equipments.find(e => e.id === historyItemId)?.name || '---'}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                )}
+
+                                                                                                {/* TABLE */}
+                                                                                                {historyItemType === 'VEHICLE' ? (
+                                                                                                    /* VEHICLE DIARY TABLE */
+                                                                                                    <div>
+                                                                                                        <table className="w-full border-collapse border-t border-l border-slate-900 text-[10px]">
+                                                                                                            <thead>
+                                                                                                                <tr className="bg-slate-200 text-slate-900 uppercase font-black">
+                                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
+                                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-left">DESTINO / MOTIVO</th>
+                                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-20">HORA SAÍDA</th>
+                                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-20">KM SAÍDA</th>
+                                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-20">HORA CHEGADA</th>
+                                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-20">KM CHEGADA</th>
+                                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-20">TOTAL KM</th>
+                                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-left w-48">MOTORISTA</th>
+                                                                                                                </tr>
+                                                                                                            </thead>
+                                                                                                            <tbody>
+                                                                                                                {chunk.map((item, idx) => (
+                                                                                                                    <tr key={idx} className="uppercase font-bold text-slate-900">
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-center">
+                                                                                                                            {new Date(item.checkoutTime).getDate().toString().padStart(2, '0')}
+                                                                                                                        </td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-left text-[9px] truncate max-w-[200px]">
+                                                                                                                            {item.meta?.reason || '---'}
+                                                                                                                        </td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-center">
+                                                                                                                            {new Date(item.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                                                        </td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-center">
+                                                                                                                            {item.meta?.kmStart ? Number(item.meta.kmStart).toLocaleString('pt-BR') : '-'}
+                                                                                                                        </td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-center">
+                                                                                                                            {item.returnTime ? new Date(item.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                                                                                        </td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-center">
+                                                                                                                            {item.meta?.kmEnd ? Number(item.meta.kmEnd).toLocaleString('pt-BR') : '-'}
+                                                                                                                        </td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-center">
+                                                                                                                            {(item.meta?.kmEnd && item.meta?.kmStart) ? (item.meta.kmEnd - item.meta.kmStart).toLocaleString('pt-BR') : '-'}
+                                                                                                                        </td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-left pl-2">
+                                                                                                                            {item.receiverName}
+                                                                                                                        </td>
+                                                                                                                    </tr>
+                                                                                                                ))}
+                                                                                                                {/* Empty rows to fill a fixed page size (exactly 15 rows) */}
+                                                                                                                {Array.from({ length: Math.max(0, pageSize - chunk.length) }).map((_, i) => (
+                                                                                                                    <tr key={`empty-${i}`} className="uppercase font-bold text-slate-900">
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-left">&nbsp;</td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
+                                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-left pl-2">&nbsp;</td>
+                                                                                                                    </tr>
+                                                                                                                ))}
+                                                                                                            </tbody>
+                                                                                                        </table>
+                                                                                                    </div>
+                                                                                                ) : (
+                                                                                                    /* GENERIC TABLE FOR OTHER ITEMS */
+                                                                                                    <table className="w-full border-collapse border border-slate-800 text-[9px]">
+                                                                                                        <thead>
+                                                                                                            <tr className="bg-slate-100 text-slate-900 uppercase font-black">
+                                                                                                                <th className="border border-slate-400 p-2 text-center w-20">Retirada</th>
+                                                                                                                <th className="border border-slate-400 p-2 text-center w-20">Devolução</th>
+                                                                                                                <th className="border border-slate-400 p-2 text-left">Responsável</th>
+                                                                                                                <th className="border border-slate-400 p-2 text-center">Status</th>
+                                                                                                                <th className="border border-slate-400 p-2 text-center">Obs</th>
+                                                                                                            </tr>
+                                                                                                        </thead>
+                                                                                                        <tbody>
+                                                                                                            {chunk.map((item, idx) => (
+                                                                                                                <tr key={idx} className="uppercase font-medium text-slate-900">
+                                                                                                                    <td className="border border-slate-300 p-1 text-center leading-tight">
+                                                                                                                        {new Date(item.checkoutTime).toLocaleDateString()}<br />
+                                                                                                                        <span className="text-[8px] text-slate-500">{new Date(item.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                                                                    </td>
+                                                                                                                    <td className="border border-slate-300 p-1 text-center leading-tight">
+                                                                                                                        {item.returnTime ? (
+                                                                                                                            <>
+                                                                                                                                {new Date(item.returnTime).toLocaleDateString()}<br />
+                                                                                                                                <span className="text-[8px] text-slate-500">{new Date(item.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                                                                            </>
+                                                                                                                        ) : '-'}
+                                                                                                                    </td>
+                                                                                                                    <td className="border border-slate-300 p-1 text-left font-bold">{item.receiverName}</td>
+                                                                                                                    <td className="border border-slate-300 p-1 text-center font-bold">
+                                                                                                                        {item.status === 'COMPLETED' ? 'DEVOLVIDO' : item.status === 'ACTIVE' ? 'EM USO' : item.status}
+                                                                                                                    </td>
+                                                                                                                    <td className="border border-slate-300 p-1 text-center">
+                                                                                                                        {item.meta?.notes || '-'}
+                                                                                                                    </td>
+                                                                                                                </tr>
+                                                                                                            ))}
+                                                                                                        </tbody>
+                                                                                                    </table>
+                                                                                                )}
+                                                                                            </div>
+
+                                                                                            <div className="mt-4 pt-4 flex justify-between text-[8px] text-slate-400 uppercase font-bold border-t border-slate-200">
+                                                                                                <span>CENTRO DE MONITORAMENTO - S.M.S.P.T</span>
+                                                                                                <span>EMITIDO EM {new Date().toLocaleDateString('pt-BR')} ÀS {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ));
+                                                                            })()}
+
+                                                                            {/* PAGE 2 - FUEL CONTROL (Only for Vehicles) */}
+                                                                            {historyItemType === 'VEHICLE' && (
+                                                                                <div className="report-page bg-white shadow-2xl flex flex-col justify-between" style={{
+                                                                                    width: '297mm',
+                                                                                    height: '210mm',
+                                                                                    paddingTop: `${pdfMargins.top}mm`,
+                                                                                    paddingBottom: `${pdfMargins.bottom}mm`,
+                                                                                    paddingLeft: `${pdfMargins.left}mm`,
+                                                                                    paddingRight: `${pdfMargins.right}mm`,
+                                                                                    position: 'relative',
+                                                                                    pageBreakAfter: 'always',
+                                                                                    fontFamily: "'Inter', sans-serif"
+                                                                                }}>
+                                                                                    <div className="h-full flex flex-col justify-between">
+                                                                                        {/* HEADER (Replicated) */}
+                                                                                        <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12 mt-4">
+                                                                                            <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                                                                {customLogoLeft ? (
+                                                                                                    <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Muni" />
+                                                                                                ) : (
+                                                                                                    <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                                                        <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
+                                                                                                    </div>
+                                                                                                )}
+                                                                                            </div>
+
+                                                                                            <div className="text-center min-w-0 flex-1">
+                                                                                                <h1 className="text-[14px] font-black uppercase text-slate-900 leading-tight tracking-tight whitespace-nowrap">
+                                                                                                    PREFEITURA MUNICIPAL DE ARAPONGAS
+                                                                                                </h1>
+                                                                                                <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-wide mt-1">
+                                                                                                    SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
+                                                                                                </h2>
+                                                                                                <h3 className="text-[10px] font-bold uppercase text-blue-600 mt-0.5 tracking-wider">
+                                                                                                    CENTRO DE MONITORAMENTO MUNICIPAL
+                                                                                                </h3>
+                                                                                            </div>
+
+                                                                                            <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                                                                                {customLogo ? (
+                                                                                                    <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão GCM" />
+                                                                                                ) : (
+                                                                                                    <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
+                                                                                                        <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
+                                                                                                    </div>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        {/* LINES */}
+                                                                                        <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '6px' }}></div>
+                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                                                                                            <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                                                            <h2 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+                                                                                                CONTROLE DE ABASTECIMENTO
+                                                                                            </h2>
+                                                                                            <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
+                                                                                        </div>
+                                                                                        <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
+
+                                                                                        {/* FUEL HEADER INFO */}
+                                                                                        <div className="mb-4 font-black uppercase text-[10px] text-slate-900 border border-slate-900">
+                                                                                            <div className="grid grid-cols-12 bg-slate-100 border-b border-slate-900 divide-x divide-slate-900">
+                                                                                                <div className="col-span-5 p-2 flex items-center gap-2">
+                                                                                                    <span className="text-slate-500 font-bold">VEÍCULO:</span>
+                                                                                                    <span className="text-[14px]">{vehicles.find(v => v.id === historyItemId)?.model}</span>
+                                                                                                </div>
+                                                                                                <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                                                    <span className="text-slate-500 font-bold">PLACA:</span>
+                                                                                                    <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.plate}</span>
+                                                                                                </div>
+                                                                                                <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
+                                                                                                    <span className="text-slate-500 font-bold">Nº FROTA:</span>
+                                                                                                    <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fleetNumber || vehicles.find(v => v.id === historyItemId)?.prefix}</span>
+                                                                                                </div>
+                                                                                                <div className="col-span-3 p-2 flex items-center gap-2 justify-center">
+                                                                                                    <span className="text-slate-500 font-bold">COMBUSTÍVEL:</span>
+                                                                                                    <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fuelType || 'FLEX'}</span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div className="grid grid-cols-2 bg-slate-100 divide-x divide-slate-900">
+                                                                                                <div className="p-2 flex items-center gap-2">
+                                                                                                    <span className="text-slate-500 font-bold">MÊS/ANO REF.:</span>
+                                                                                                    <span className="text-[12px]">
+                                                                                                        {historyStartDate ? new Date(historyStartDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase() : new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                                <div className="p-2 flex items-center gap-2">
+                                                                                                    <span className="text-slate-500 font-bold">SECRETARIA:</span>
+                                                                                                    <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.department || 'SESTRAN'}</span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        {/* FUEL TABLE */}
+                                                                                        <table className="w-full border-collapse border-t border-l border-slate-900 text-[10px] mb-0">
+                                                                                            <thead>
+                                                                                                <tr className="bg-slate-200 text-slate-900 uppercase font-black">
+                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
+                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-24">QUANT. LITROS</th>
+                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-32">Nº CUPOM ABAST.</th>
+                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center">FORNECEDOR</th>
+                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-24">KILOMETRAGEM</th>
+                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-48">MOTORISTA</th>
+                                                                                                </tr>
+                                                                                            </thead>
+                                                                                            <tbody>
+                                                                                                {itemHistoryResults.filter(item => item.meta?.fuelRefill).map((item, idx) => (
+                                                                                                    <tr key={idx} className="uppercase font-bold text-slate-900 text-center">
+                                                                                                        <td className="border-r border-b border-slate-900 p-1.5">{new Date(item.returnTime || item.checkoutTime).getDate().toString().padStart(2, '0')}</td>
+                                                                                                        <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.fuelLiters ? Number(item.meta.fuelLiters).toLocaleString('pt-BR') : '-'}</td>
+                                                                                                        <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.couponNumber || '-'}</td>
+                                                                                                        <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.supplier || '-'}</td>
+                                                                                                        <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.fuelKm ? Number(item.meta.fuelKm).toLocaleString('pt-BR') : (item.meta?.kmEnd ? Number(item.meta.kmEnd).toLocaleString('pt-BR') : '-')}</td>
+                                                                                                        <td className="border-r border-b border-slate-900 p-1.5 text-left pl-4">{item.meta?.driver || item.receiverName}</td>
+                                                                                                    </tr>
+                                                                                                ))}
+                                                                                                {/* Empty Rows 15 rows approx */}
+                                                                                                {Array.from({ length: Math.max(0, 12 - itemHistoryResults.filter(item => item.meta?.fuelRefill).length) }).map((_, i) => (
+                                                                                                    <tr key={`empty-fuel-${i}`} className="h-6">
+                                                                                                        <td className="border-r border-b border-slate-900"></td>
+                                                                                                        <td className="border-r border-b border-slate-900"></td>
+                                                                                                        <td className="border-r border-b border-slate-900"></td>
+                                                                                                        <td className="border-r border-b border-slate-900"></td>
+                                                                                                        <td className="border-r border-b border-slate-900"></td>
+                                                                                                        <td className="border-r border-b border-slate-900"></td>
+                                                                                                    </tr>
+                                                                                                ))}
+                                                                                            </tbody>
+                                                                                        </table>
+
+                                                                                        {/* OIL CONTROL HEADER & TABLE */}
+                                                                                        <div className="bg-slate-200 border-l border-r border-b border-slate-900 p-1 text-center font-black uppercase text-[10px] text-slate-900">
+                                                                                            CONTROLE DE ÓLEO LUBRIFICANTE
+                                                                                        </div>
+                                                                                        <table className="w-full border-collapse border-l border-slate-900 text-[10px] mb-4">
+                                                                                            <thead>
+                                                                                                <tr className="bg-slate-100 text-slate-900 uppercase font-black">
+                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
+                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-24">QUANT. LITROS</th>
+                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center">TIPO DE ÓLEO</th>
+                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center">FORNECEDOR</th>
+                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-24">KILOMETRAGEM</th>
+                                                                                                    <th className="border-r border-b border-slate-900 p-2 text-center w-48">MOTORISTA</th>
+                                                                                                </tr>
+                                                                                            </thead>
+                                                                                            <tbody>
+                                                                                                {/* Empty rows for Oil (3 rows as per image approx) */}
+                                                                                                {Array.from({ length: 3 }).map((_, i) => (
+                                                                                                    <tr key={`empty-oil-${i}`} className="h-6">
+                                                                                                        <td className="border-r border-b border-slate-900"></td>
+                                                                                                        <td className="border-r border-b border-slate-900"></td>
+                                                                                                        <td className="border-r border-b border-slate-900"></td>
+                                                                                                        <td className="border-r border-b border-slate-900"></td>
+                                                                                                        <td className="border-r border-b border-slate-900"></td>
+                                                                                                        <td className="border-r border-b border-slate-900"></td>
+                                                                                                    </tr>
+                                                                                                ))}
+                                                                                            </tbody>
+                                                                                        </table>
+
+
+
+                                                                                        {/* FOOTER WARNING */}
+                                                                                        <div className="text-[8px] text-slate-500 text-justify leading-tight border-t border-slate-200 pt-2">
+                                                                                            ATENÇÃO: As informações aqui prestadas, para fins de direito, estão sujeitas ao art. 299 Decreto Lei 2.848/1940 (Código Penal). Concomitante ao art. 216, inciso XV. Lei 4451/2016 (Estatuto).
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
-                                                                    )}
-
-                                                                    {/* TABLE */}
-                                                                    {historyItemType === 'VEHICLE' ? (
-                                                                        /* VEHICLE DIARY TABLE */
-                                                                        <div>
-                                                                            <table className="w-full border-collapse border-t border-l border-slate-900 text-[10px]">
-                                                                                <thead>
-                                                                                    <tr className="bg-slate-200 text-slate-900 uppercase font-black">
-                                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
-                                                                                        <th className="border-r border-b border-slate-900 p-2 text-left">DESTINO / MOTIVO</th>
-                                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-20">HORA SAÍDA</th>
-                                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-20">KM SAÍDA</th>
-                                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-20">HORA CHEGADA</th>
-                                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-20">KM CHEGADA</th>
-                                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-20">TOTAL KM</th>
-                                                                                        <th className="border-r border-b border-slate-900 p-2 text-left w-48">MOTORISTA</th>
-                                                                                    </tr>
-                                                                                </thead>
-                                                                                <tbody>
-                                                                                    {chunk.map((item, idx) => (
-                                                                                        <tr key={idx} className="uppercase font-bold text-slate-900">
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">
-                                                                                                {new Date(item.checkoutTime).getDate().toString().padStart(2, '0')}
-                                                                                            </td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-left text-[9px] truncate max-w-[200px]">
-                                                                                                {item.meta?.reason || '---'}
-                                                                                            </td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">
-                                                                                                {new Date(item.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                                            </td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">
-                                                                                                {item.meta?.kmStart ? Number(item.meta.kmStart).toLocaleString('pt-BR') : '-'}
-                                                                                            </td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">
-                                                                                                {item.returnTime ? new Date(item.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
-                                                                                            </td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">
-                                                                                                {item.meta?.kmEnd ? Number(item.meta.kmEnd).toLocaleString('pt-BR') : '-'}
-                                                                                            </td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">
-                                                                                                {(item.meta?.kmEnd && item.meta?.kmStart) ? (item.meta.kmEnd - item.meta.kmStart).toLocaleString('pt-BR') : '-'}
-                                                                                            </td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-left pl-2">
-                                                                                                {item.receiverName}
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                    ))}
-                                                                                    {/* Empty rows to fill a fixed page size (exactly 15 rows) */}
-                                                                                    {Array.from({ length: Math.max(0, pageSize - chunk.length) }).map((_, i) => (
-                                                                                        <tr key={`empty-${i}`} className="uppercase font-bold text-slate-900">
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-left">&nbsp;</td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-center">&nbsp;</td>
-                                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-left pl-2">&nbsp;</td>
-                                                                                        </tr>
-                                                                                    ))}
-                                                                                </tbody>
-                                                                            </table>
-                                                                        </div>
-                                                                    ) : (
-                                                                        /* GENERIC TABLE FOR OTHER ITEMS */
-                                                                        <table className="w-full border-collapse border border-slate-800 text-[9px]">
-                                                                            <thead>
-                                                                                <tr className="bg-slate-100 text-slate-900 uppercase font-black">
-                                                                                    <th className="border border-slate-400 p-2 text-center w-20">Retirada</th>
-                                                                                    <th className="border border-slate-400 p-2 text-center w-20">Devolução</th>
-                                                                                    <th className="border border-slate-400 p-2 text-left">Responsável</th>
-                                                                                    <th className="border border-slate-400 p-2 text-center">Status</th>
-                                                                                    <th className="border border-slate-400 p-2 text-center">Obs</th>
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody>
-                                                                                {chunk.map((item, idx) => (
-                                                                                    <tr key={idx} className="uppercase font-medium text-slate-900">
-                                                                                        <td className="border border-slate-300 p-1 text-center leading-tight">
-                                                                                            {new Date(item.checkoutTime).toLocaleDateString()}<br />
-                                                                                            <span className="text-[8px] text-slate-500">{new Date(item.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                                                        </td>
-                                                                                        <td className="border border-slate-300 p-1 text-center leading-tight">
-                                                                                            {item.returnTime ? (
-                                                                                                <>
-                                                                                                    {new Date(item.returnTime).toLocaleDateString()}<br />
-                                                                                                    <span className="text-[8px] text-slate-500">{new Date(item.returnTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                                                                </>
-                                                                                            ) : '-'}
-                                                                                        </td>
-                                                                                        <td className="border border-slate-300 p-1 text-left font-bold">{item.receiverName}</td>
-                                                                                        <td className="border border-slate-300 p-1 text-center font-bold">
-                                                                                            {item.status === 'COMPLETED' ? 'DEVOLVIDO' : item.status === 'ACTIVE' ? 'EM USO' : item.status}
-                                                                                        </td>
-                                                                                        <td className="border border-slate-300 p-1 text-center">
-                                                                                            {item.meta?.notes || '-'}
-                                                                                        </td>
-                                                                                    </tr>
-                                                                                ))}
-                                                                            </tbody>
-                                                                        </table>
-                                                                    )}
-                                                                </div>
-
-                                                                <div className="mt-4 pt-4 flex justify-between text-[8px] text-slate-400 uppercase font-bold border-t border-slate-200">
-                                                                    <span>CENTRO DE MONITORAMENTO - S.M.S.P.T</span>
-                                                                    <span>EMITIDO EM {new Date().toLocaleDateString('pt-BR')} ÀS {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                                                                </div>
-                                                            </div>
-                                                        ));
-                                                    })()}
-
-                                                    {/* PAGE 2 - FUEL CONTROL (Only for Vehicles) */}
-                                                    {historyItemType === 'VEHICLE' && (
-                                                        <div style={{ pageBreakBefore: 'always' }} className="relative">
-                                                            {/* HEADER (Replicated) */}
-                                                            <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12 mt-4">
-                                                                <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                                                    {customLogoLeft ? (
-                                                                        <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão Muni" />
-                                                                    ) : (
-                                                                        <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
-                                                                            <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />MUNI</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-
-                                                                <div className="text-center min-w-0 flex-1">
-                                                                    <h1 className="text-[14px] font-black uppercase text-slate-900 leading-tight tracking-tight whitespace-nowrap">
-                                                                        PREFEITURA MUNICIPAL DE ARAPONGAS
-                                                                    </h1>
-                                                                    <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-wide mt-1">
-                                                                        SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
-                                                                    </h2>
-                                                                    <h3 className="text-[10px] font-bold uppercase text-blue-600 mt-0.5 tracking-wider">
-                                                                        CENTRO DE MONITORAMENTO MUNICIPAL
-                                                                    </h3>
-                                                                </div>
-
-                                                                <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                                                    {customLogo ? (
-                                                                        <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Brasão GCM" />
-                                                                    ) : (
-                                                                        <div className="w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center bg-slate-50 shadow-sm">
-                                                                            <span className="text-[7px] font-black uppercase text-center text-slate-400">BRASÃO<br />GCM</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-
-                                                            {/* LINES */}
-                                                            <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '6px' }}></div>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-                                                                <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
-                                                                <h2 style={{ fontSize: '16px', fontWeight: '900', textTransform: 'uppercase', color: '#1e3a5f', letterSpacing: '0.15em', whiteSpace: 'nowrap', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-                                                                    CONTROLE DE ABASTECIMENTO
-                                                                </h2>
-                                                                <div style={{ flex: '1', height: '1px', background: 'rgba(30, 58, 95, 0.3)' }}></div>
-                                                            </div>
-                                                            <div style={{ width: '100%', height: '1px', background: '#1e3a5f', marginBottom: '12px' }}></div>
-
-                                                            {/* FUEL HEADER INFO */}
-                                                            <div className="mb-4 font-black uppercase text-[10px] text-slate-900 border border-slate-900">
-                                                                <div className="grid grid-cols-12 bg-slate-100 border-b border-slate-900 divide-x divide-slate-900">
-                                                                    <div className="col-span-5 p-2 flex items-center gap-2">
-                                                                        <span className="text-slate-500 font-bold">VEÍCULO:</span>
-                                                                        <span className="text-[14px]">{vehicles.find(v => v.id === historyItemId)?.model}</span>
-                                                                    </div>
-                                                                    <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
-                                                                        <span className="text-slate-500 font-bold">PLACA:</span>
-                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.plate}</span>
-                                                                    </div>
-                                                                    <div className="col-span-2 p-2 flex items-center gap-2 justify-center">
-                                                                        <span className="text-slate-500 font-bold">Nº FROTA:</span>
-                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fleetNumber || vehicles.find(v => v.id === historyItemId)?.prefix}</span>
-                                                                    </div>
-                                                                    <div className="col-span-3 p-2 flex items-center gap-2 justify-center">
-                                                                        <span className="text-slate-500 font-bold">COMBUSTÍVEL:</span>
-                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.fuelType || 'FLEX'}</span>
                                                                     </div>
                                                                 </div>
-                                                                <div className="grid grid-cols-2 bg-slate-100 divide-x divide-slate-900">
-                                                                    <div className="p-2 flex items-center gap-2">
-                                                                        <span className="text-slate-500 font-bold">MÊS/ANO REF.:</span>
-                                                                        <span className="text-[12px]">
-                                                                            {historyStartDate ? new Date(historyStartDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase() : new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="p-2 flex items-center gap-2">
-                                                                        <span className="text-slate-500 font-bold">SECRETARIA:</span>
-                                                                        <span className="text-[12px]">{vehicles.find(v => v.id === historyItemId)?.department || 'SESTRAN'}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* FUEL TABLE */}
-                                                            <table className="w-full border-collapse border-t border-l border-slate-900 text-[10px] mb-0">
-                                                                <thead>
-                                                                    <tr className="bg-slate-200 text-slate-900 uppercase font-black">
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-24">QUANT. LITROS</th>
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-32">Nº CUPOM ABAST.</th>
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-center">FORNECEDOR</th>
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-24">KILOMETRAGEM</th>
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-48">MOTORISTA</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {itemHistoryResults.filter(item => item.meta?.fuelRefill).map((item, idx) => (
-                                                                        <tr key={idx} className="uppercase font-bold text-slate-900 text-center">
-                                                                            <td className="border-r border-b border-slate-900 p-1.5">{new Date(item.returnTime || item.checkoutTime).getDate().toString().padStart(2, '0')}</td>
-                                                                            <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.fuelLiters ? Number(item.meta.fuelLiters).toLocaleString('pt-BR') : '-'}</td>
-                                                                            <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.couponNumber || '-'}</td>
-                                                                            <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.supplier || '-'}</td>
-                                                                            <td className="border-r border-b border-slate-900 p-1.5">{item.meta?.fuelKm ? Number(item.meta.fuelKm).toLocaleString('pt-BR') : (item.meta?.kmEnd ? Number(item.meta.kmEnd).toLocaleString('pt-BR') : '-')}</td>
-                                                                            <td className="border-r border-b border-slate-900 p-1.5 text-left pl-4">{item.meta?.driver || item.receiverName}</td>
-                                                                        </tr>
-                                                                    ))}
-                                                                    {/* Empty Rows 15 rows approx */}
-                                                                    {Array.from({ length: Math.max(0, 12 - itemHistoryResults.filter(item => item.meta?.fuelRefill).length) }).map((_, i) => (
-                                                                        <tr key={`empty-fuel-${i}`} className="h-6">
-                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                        </tr>
-                                                                    ))}
-                                                                </tbody>
-                                                            </table>
-
-                                                            {/* OIL CONTROL HEADER & TABLE */}
-                                                            <div className="bg-slate-200 border-l border-r border-b border-slate-900 p-1 text-center font-black uppercase text-[10px] text-slate-900">
-                                                                CONTROLE DE ÓLEO LUBRIFICANTE
-                                                            </div>
-                                                            <table className="w-full border-collapse border-l border-slate-900 text-[10px] mb-4">
-                                                                <thead>
-                                                                    <tr className="bg-slate-100 text-slate-900 uppercase font-black">
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-12">DIA</th>
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-24">QUANT. LITROS</th>
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-center">TIPO DE ÓLEO</th>
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-center">FORNECEDOR</th>
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-24">KILOMETRAGEM</th>
-                                                                        <th className="border-r border-b border-slate-900 p-2 text-center w-48">MOTORISTA</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {/* Empty rows for Oil (3 rows as per image approx) */}
-                                                                    {Array.from({ length: 3 }).map((_, i) => (
-                                                                        <tr key={`empty-oil-${i}`} className="h-6">
-                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                            <td className="border-r border-b border-slate-900"></td>
-                                                                        </tr>
-                                                                    ))}
-                                                                </tbody>
-                                                            </table>
-
-
-
-                                                            {/* FOOTER WARNING */}
-                                                            <div className="text-[8px] text-slate-500 text-justify leading-tight border-t border-slate-200 pt-2">
-                                                                ATENÇÃO: As informações aqui prestadas, para fins de direito, estão sujeitas ao art. 299 Decreto Lei 2.848/1940 (Código Penal). Concomitante ao art. 216, inciso XV. Lei 4451/2016 (Estatuto).
                                                             </div>
                                                         </div>
-                                                    )}
-                                                </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
+                                        )}
+                                    </div>
+                                </>
                             )}
 
                             {/* UNIFIED GRID VIEW (Conditionally Rendered) */}

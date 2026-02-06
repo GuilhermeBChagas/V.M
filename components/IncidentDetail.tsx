@@ -60,7 +60,19 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
             margin: [pdfMargins.top, pdfMargins.left, pdfMargins.bottom, pdfMargins.right],
             filename: `RA_${incident.raCode.replace('/', '-')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                scrollY: 0,
+                // Remove visual padding before capturing for PDF to avoid double margins
+                onclone: (doc: Document) => {
+                    const el = doc.getElementById('incident-detail-report');
+                    if (el) {
+                        el.style.padding = '0px';
+                        // Maintain the width constraints in the clone if necessary or let margins handle it
+                    }
+                }
+            },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
@@ -346,7 +358,18 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
 
             {/* --- ÁREA DE IMPRESSÃO / RELATÓRIO (FOLHA A4) --- */}
             <div className="w-full overflow-x-auto md:overflow-x-visible pb-6">
-                <div ref={contentRef} className={`bg-white text-black shadow-2xl relative flex flex-col mx-auto w-full min-w-[320px] md:max-w-[205mm] min-h-[285mm] overflow-hidden p-4 md:p-10 transition-colors ${isCancelled ? 'grayscale opacity-75' : ''}`} style={{ fontFamily: "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+                <div
+                    id="incident-detail-report"
+                    ref={contentRef}
+                    className={`bg-white text-black shadow-2xl relative flex flex-col mx-auto w-full min-w-[320px] md:max-w-[205mm] min-h-[285mm] overflow-hidden transition-all ${isCancelled ? 'grayscale opacity-75' : ''}`}
+                    style={{
+                        fontFamily: "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
+                        paddingTop: `${pdfMargins.top}mm`,
+                        paddingBottom: `${pdfMargins.bottom}mm`,
+                        paddingLeft: `${pdfMargins.left}mm`,
+                        paddingRight: `${pdfMargins.right}mm`
+                    }}
+                >
 
                     {/* CABEÇALHO - BRASÕES MAIS PRÓXIMOS DAS ESCRITAS */}
                     <div className="flex justify-center items-center mb-1 pb-4 gap-4 md:gap-12">
