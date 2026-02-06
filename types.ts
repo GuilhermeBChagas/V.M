@@ -221,6 +221,7 @@ export interface LoanRecord {
     driver?: string;
     notes?: string;
     pendingHandoverToUserId?: string;
+    reason?: string;
     handoverHistory?: Array<{
       fromId: string;
       fromName: string;
