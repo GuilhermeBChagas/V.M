@@ -166,16 +166,17 @@ interface NavItemProps {
   isSubItem?: boolean;
   hasChevron?: boolean;
   isOpen?: boolean;
+  sidebarDark?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, collapsed, badge, isSubItem, hasChevron, isOpen }) => (
+const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, collapsed, badge, isSubItem, hasChevron, isOpen, sidebarDark }) => (
   <button
     onClick={onClick}
     className={`w-full flex items-center transition-all duration-300 relative group gap-4
       ${collapsed ? 'justify-center py-4 px-0' : 'px-4 py-3 mx-0 rounded-2xl'} 
       ${active
-        ? 'bg-blue-600/10 text-blue-400 ring-1 ring-blue-500/20'
-        : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'} 
+        ? `bg-blue-50 text-blue-600 ring-1 ring-blue-500/20 ${sidebarDark ? 'bg-blue-600/10 text-blue-400 ring-blue-500/20' : ''}`
+        : `text-slate-600 hover:bg-slate-200 hover:text-slate-900 ${sidebarDark ? 'text-slate-400 hover:bg-white/20 hover:text-white' : ''}`} 
       ${isSubItem ? 'pl-11' : ''}`}
     title={collapsed ? label : ''}
   >
@@ -274,6 +275,7 @@ const IncidentHistory: React.FC<{
   useEffect(() => {
     localStorage.setItem('app_pdf_margins', JSON.stringify(pdfMargins));
   }, [pdfMargins]);
+
 
 
 
@@ -1679,6 +1681,19 @@ export function App() {
   const [reportsMenuOpen, setReportsMenuOpen] = useState(false);
   const [pendentesMenuOpen, setPendentesMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [sidebarDark, setSidebarDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebar_dark');
+      return saved ? JSON.parse(saved) : true; // Default to dark sidebar
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sidebar_dark', JSON.stringify(sidebarDark));
+  }, [sidebarDark]);
+
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [loading, setLoading] = useState(true);
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -3428,12 +3443,8 @@ export function App() {
       case 'tool_logs': return view === 'LOGS';
       case 'tool_database': return view === 'DATABASE_TOOLS';
       case 'tool_system': return view === 'SYSTEM_INFO';
-      // New structure mappings
-      case 'history_incidents': return view === 'HISTORY' && !modalConfig.isOpen; // Simple check
-      case 'history_loans': return view === 'LOAN_HISTORY' && !modalConfig.isOpen;
       case 'report_incidents': return view === 'INCIDENT_REPORTS';
-      case 'report_loans': return view === 'LOAN_REPORTS'; // Keeping loan history same for now as requested only for incidents? User said "o menu relatorios de atendimentos", but let's check if they want it for loans too? "Cautelas: Historicos, Relatorios". Let's assume loans stays as is or reuse history for now until specified. The request specifically detailed "o menu relatorios de atendimentos".
-      case 'pending_incidents': return view === 'PENDING_APPROVALS' && pendingSubTab === 'INCIDENTS';
+      case 'report_loans': return view === 'LOAN_REPORTS';
       default: return false;
     }
   };
@@ -3509,6 +3520,7 @@ export function App() {
             isSubItem={depth > 1}
             hasChevron={item.children && item.children.length > 0 && !isSidebarCollapsed}
             isOpen={isOpen}
+            sidebarDark={sidebarDark}
           />
           {item.children && isOpen && !isSidebarCollapsed && (
             <div className={`space-y-1 mt-1 ${depth > 0 ? 'pl-0' : 'pl-0'}`}>
@@ -3523,19 +3535,19 @@ export function App() {
   return (
     <div className="min-h-screen flex transition-colors duration-200">
       {sidebarOpen && <div className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />}
-      <aside className={`fixed inset-y-0 left-0 z-50 bg-[#0b101d] transform transition-all duration-500 lg:relative border-r border-white/5 shadow-[10px_0_30px_-15px_rgba(0,0,0,0.5)] ${sidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'} ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'}`}>
-        <div className="h-full flex flex-col text-white">
+      <aside className={`fixed inset-y-0 left-0 z-50 transform transition-all duration-500 lg:relative border-r shadow-[10px_0_30px_-15px_rgba(0,0,0,0.1)] ${sidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'} ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'} ${sidebarDark ? 'bg-[#0b101d] border-white/5 shadow-[10px_0_30px_-15px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-200'}`}>
+        <div className={`h-full flex flex-col ${sidebarDark ? 'text-white' : 'text-slate-800'}`}>
           <div className={`transition-all duration-500 flex items-center ${isSidebarCollapsed ? 'h-20 justify-center px-2' : 'h-24 px-8 justify-start gap-4'}`}>
             <div className={`transition-all duration-500 flex items-center justify-center group hover:scale-110 ${isSidebarCollapsed ? 'h-12 w-12' : 'h-16 w-16'}`}>
               {customLogoRight ? (
                 <img src={customLogoRight} className="w-full h-full object-contain" alt="Logo" />
               ) : (
-                <Shield className="text-white drop-shadow-md" size={isSidebarCollapsed ? 28 : 36} strokeWidth={1.5} />
+                <Shield className={`${sidebarDark ? 'text-white' : 'text-brand-600'} drop-shadow-md`} size={isSidebarCollapsed ? 28 : 36} strokeWidth={1.5} />
               )}
             </div>
             {!isSidebarCollapsed && (
               <div className="flex flex-col animate-in fade-in duration-500 slide-in-from-left-2">
-                <span className="text-white font-black text-lg tracking-tighter uppercase leading-none">Vigilante</span>
+                <span className={`${sidebarDark ? 'text-white' : 'text-slate-800'} font-black text-lg tracking-tighter uppercase leading-none`}>Vigilante</span>
                 <span className="text-blue-500 text-[10px] font-black tracking-[0.3em] uppercase mt-0.5">Municipal</span>
               </div>
             )}
@@ -3543,11 +3555,11 @@ export function App() {
           <nav className={`flex-1 overflow-y-auto no-scrollbar pt-4 ${isSidebarCollapsed ? 'px-0' : 'px-4 space-y-1'}`}>
             {renderMenuItems(MENU_STRUCTURE)}
 
-            <div className="mt-8 pt-4 border-t border-white/5">
-              <NavItem icon={<LogOut className="rotate-180" />} label="Sair do Sistema" onClick={handleLogout} collapsed={isSidebarCollapsed} />
+            <div className={`mt-8 pt-4 border-t ${sidebarDark ? 'border-white/5' : 'border-slate-200'}`}>
+              <NavItem icon={<LogOut className="rotate-180" />} label="Sair do Sistema" onClick={handleLogout} collapsed={isSidebarCollapsed} sidebarDark={sidebarDark} />
               {!isSidebarCollapsed && (
                 <div className="py-2 text-center group-hover:opacity-100 transition-opacity duration-700">
-                  <p className="text-[11px] font-sans font-black text-white/70 mt-1 tracking-widest">
+                  <p className={`text-[11px] font-sans font-black mt-1 tracking-widest ${sidebarDark ? 'text-white/70' : 'text-slate-400'}`}>
                     {DISPLAY_VERSION}
                   </p>
                 </div>
@@ -3580,12 +3592,36 @@ export function App() {
               onDismissExtra={(id) => setTriggeredReminders(prev => prev.filter(t => t.id !== id))}
               onAnnouncementRead={fetchAnnouncementsCount}
             />
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 flex items-center justify-center"
-            >
-              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowThemeMenu(!showThemeMenu)}
+                className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 flex items-center justify-center"
+              >
+                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+
+              {showThemeMenu && (
+                <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <div className="p-2 space-y-1">
+                    <button
+                      onClick={() => { setDarkMode(!darkMode); setShowThemeMenu(false); }}
+                      className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold uppercase text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                    >
+                      <span>Sistema: {darkMode ? 'Escuro' : 'Claro'}</span>
+                      {darkMode ? <Moon size={14} /> : <Sun size={14} />}
+                    </button>
+                    <button
+                      onClick={() => { setSidebarDark(!sidebarDark); setShowThemeMenu(false); }}
+                      className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold uppercase text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                    >
+                      <span>Sidebar: {sidebarDark ? 'Escura' : 'Clara'}</span>
+                      {sidebarDark ? <Moon size={14} /> : <Sun size={14} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            {showThemeMenu && <div className="fixed inset-0 z-40" onClick={() => setShowThemeMenu(false)} />}
 
             <button
               onClick={() => handleNavigate('PROFILE')}
