@@ -3485,9 +3485,9 @@ export function App() {
         if (isSidebarCollapsed) return null;
         return (
           <div key={item.id} className="pt-10 first:pt-4">
-            <h3 className="text-[10px] font-black text-slate-500/80 uppercase tracking-[0.2em] px-4 mb-3 select-none flex items-center gap-2">
+            <h3 className="text-[10px] font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400/90 to-indigo-400/90 uppercase tracking-[0.15em] px-4 mb-3 select-none flex items-center gap-3">
               {item.label}
-              <div className="h-px bg-slate-800/50 flex-1 ml-2 opacity-50"></div>
+              <div className="h-px bg-gradient-to-r from-blue-500/20 to-transparent flex-1 opacity-50"></div>
             </h3>
             {item.children && renderMenuItems(item.children, depth + 1)}
           </div>
