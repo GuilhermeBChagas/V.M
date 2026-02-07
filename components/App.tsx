@@ -867,17 +867,27 @@ const IncidentHistory: React.FC<{
                     const HEADER_HEIGHT = 48; // Balanced header buffer
                     const TABLE_HEADER_HEIGHT = 10;
                     const FOOTER_HEIGHT = 8; // Simplified bottom border/padding
-                    const SAFE_MARGIN = 8; // Balanced buffer (0.8cm)
+                    const SAFE_MARGIN = 5; // Reduced margin, relying on algorithm precision
 
                     const availableContentHeight = PAGE_HEIGHT_MM - pdfMargins.top - pdfMargins.bottom - HEADER_HEIGHT - TABLE_HEADER_HEIGHT - FOOTER_HEIGHT - SAFE_MARGIN;
 
-                    // Row estimation - BALANCED
-                    const BASE_ROW_HEIGHT = 9.5; // Balanced padding buffer
-                    const LINE_HEIGHT_MM = 3.8; // Balanced per-line buffer
+                    // Row estimation - EXPERT ALGORITHM (PHP)
+                    const BASE_ROW_HEIGHT = 9.0; // Precise base height
+                    const LINE_HEIGHT_MM = 3.6; // Precise line vertical space
 
-                    // Column wrap heuristics - Balanced
+                    // Column wrap heuristics
                     const RELATO_CHARS_PER_LINE = pdfOrientation === 'landscape' ? 65 : 24;
                     const PROPRIO_CHARS_PER_LINE = pdfOrientation === 'landscape' ? 24 : 18;
+                    const NATUREZA_CHARS_PER_LINE = pdfOrientation === 'landscape' ? 20 : 14;
+
+                    // Helper to calculate lines considering explicit \n and wrapping
+                    const calculateLines = (text: string, charsPerLine: number) => {
+                      if (!text) return 1;
+                      const segments = text.split('\n');
+                      return segments.reduce((acc, seg) => {
+                        return acc + Math.max(1, Math.ceil(seg.length / charsPerLine));
+                      }, 0);
+                    };
 
                     let currentChunk: Incident[] = [];
                     let currentHeightUsed = 0;
@@ -886,14 +896,15 @@ const IncidentHistory: React.FC<{
                       const description = incident.status === 'CANCELLED'
                         ? `[CANCELADO] ${incident.description || ''}`
                         : (incident.description || '');
-                      const descriptionLength = description.length;
-                      const relatoLines = Math.max(1, Math.ceil(descriptionLength / RELATO_CHARS_PER_LINE));
 
                       const building = buildings.find(b => b.id === incident.buildingId);
                       const buildingName = building?.name || '---';
-                      const proprioLines = Math.max(1, Math.ceil(buildingName.length / PROPRIO_CHARS_PER_LINE));
 
-                      const maxLines = Math.max(relatoLines, proprioLines);
+                      const relatoLines = calculateLines(description, RELATO_CHARS_PER_LINE);
+                      const proprioLines = calculateLines(buildingName, PROPRIO_CHARS_PER_LINE);
+                      const naturezaLines = calculateLines(incident.alterationType, NATUREZA_CHARS_PER_LINE);
+
+                      const maxLines = Math.max(relatoLines, proprioLines, naturezaLines);
                       const estimatedRowHeight = BASE_ROW_HEIGHT + ((maxLines - 1) * LINE_HEIGHT_MM);
 
                       if (currentHeightUsed + estimatedRowHeight > availableContentHeight && currentChunk.length > 0) {
