@@ -36,7 +36,7 @@ interface LoanViewsProps {
     onLogAction: (action: SystemLog['action'], details: string) => void;
     loans: LoanRecord[];
     onRefresh: () => void;
-    initialTab?: 'ACTIVE' | 'HISTORY';
+    initialTab?: 'ACTIVE' | 'HISTORY' | 'NEW';
     isReportView?: boolean;
     hasMore?: boolean;
     isLoadingMore?: boolean;
@@ -64,7 +64,15 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     canCreate = false, canApprove = false, canReturn = false, canViewHistory = false, canViewAll = false,
     customLogo, customLogoLeft, onFilterChange, onBack
 }) => {
-    const [activeTab, setActiveTab] = useState<'ACTIVE' | 'HISTORY' | 'NEW'>(initialTab === 'HISTORY' ? 'HISTORY' : 'ACTIVE');
+    const [activeTab, setActiveTab] = useState<'ACTIVE' | 'HISTORY' | 'NEW'>(
+        initialTab === 'HISTORY' ? 'HISTORY' : (initialTab === 'NEW' ? 'NEW' : 'ACTIVE')
+    );
+
+    // Sync activeTab with initialTab prop when it changes
+    useEffect(() => {
+        if (initialTab) setActiveTab(initialTab);
+    }, [initialTab]);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [isExporting, setIsExporting] = useState(false);

@@ -40,6 +40,7 @@ export const MENU_STRUCTURE: MenuItemDef[] = [
         isSection: true,
         requiredPermissions: [],
         children: [
+            { id: 'new_loan', label: 'Nova Cautela', iconName: 'Plus', requiredPermissions: ['CREATE_LOAN'] },
             { id: 'loans', label: 'Painel de Cautelas', iconName: 'Key', requiredPermissions: ['CREATE_LOAN', 'APPROVE_LOAN', 'RETURN_LOAN', 'VIEW_MY_LOANS'] },
             { id: 'history_loans', label: 'Históricos', iconName: 'History', requiredPermissions: ['VIEW_ALL_LOANS', 'VIEW_MY_LOANS'] },
             { id: 'report_loans', label: 'Relatórios', iconName: 'FileSpreadsheet', requiredPermissions: ['EXPORT_REPORTS', 'VIEW_ALL_LOANS'] }

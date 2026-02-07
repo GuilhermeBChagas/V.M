@@ -297,4 +297,5 @@ export type ViewState =
   | 'ESCALA_REMINDERS'
   | 'MAP'
   | 'LOAN_REPORTS'
+  | 'NEW_LOAN'
   | 'INCIDENT_REPORTS';

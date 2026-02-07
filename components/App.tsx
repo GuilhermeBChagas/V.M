@@ -175,8 +175,8 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, collaps
     className={`w-full flex items-center transition-all duration-300 relative group gap-4
       ${collapsed ? 'justify-center py-4 px-0' : 'px-4 py-3 mx-0 rounded-2xl'} 
       ${active
-        ? `bg-blue-50 text-blue-600 ring-1 ring-blue-500/20 ${sidebarDark ? 'bg-blue-600/10 text-blue-400 ring-blue-500/20' : ''}`
-        : `text-slate-600 hover:bg-slate-200 hover:text-slate-900 ${sidebarDark ? 'text-slate-400 hover:bg-white/20 hover:text-white' : ''}`} 
+        ? `bg-blue-50 text-blue-600 ring-1 ring-blue-500/20 ${sidebarDark ? 'bg-slate-100 text-slate-900 ring-0 shadow-lg shadow-white/5' : ''}`
+        : `text-slate-600 hover:bg-slate-200 hover:text-slate-900 ${sidebarDark ? 'text-slate-400 hover:bg-[#1f2937] hover:text-white' : ''}`} 
       ${isSubItem ? 'pl-11' : ''}`}
     title={collapsed ? label : ''}
   >
@@ -3260,6 +3260,7 @@ export function App() {
       case 'RADIO_FORM': return <RadioForm initialData={editingRadio} onSave={(i: any) => handleSaveAsset('radios', i, 'RADIOS', 'Rádio')} onCancel={handleBack} onDelete={() => editingRadio && handleDeleteAsset('radios', editingRadio.id, 'Rádio')} isLoading={saving} />;
       case 'EQUIPMENTS': return <EquipmentList items={equipments} onAdd={() => { setEditingEquipment(null); handleNavigate('EQUIPMENT_FORM'); }} onEdit={(i) => { setEditingEquipment(i); handleNavigate('EQUIPMENT_FORM'); }} onDelete={(id) => handleDeleteAsset('equipments', id, 'Equipamento')} canEdit={can('MANAGE_EQUIPMENTS')} canDelete={can('MANAGE_EQUIPMENTS')} onBack={handleBack} />;
       case 'EQUIPMENT_FORM': return <EquipmentForm initialData={editingEquipment} onSave={(i: any) => handleSaveAsset('equipments', i, 'EQUIPMENTS', 'Equipamento')} onCancel={handleBack} onDelete={() => editingEquipment && handleDeleteAsset('equipments', editingEquipment.id, 'Equipamento')} isLoading={saving} />;
+      case 'NEW_LOAN': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} initialTab="NEW" filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} onBack={handleBack} />;
       case 'LOANS': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} onBack={handleBack} />;
       case 'LOAN_HISTORY': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} initialTab="HISTORY" loans={loans} onRefresh={() => fetchLoans(false)} hasMore={hasMoreLoans} isLoadingMore={loadingMoreLoans} onLoadMore={() => fetchLoans(true)} onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} onBack={handleBack} />;
       case 'SECTORS': return <SectorList sectors={sectors} onEdit={(s) => { setEditingSector(s); handleNavigate('SECTOR_FORM'); }} onDelete={handleDeleteSector} onAdd={() => { setEditingSector(null); handleNavigate('SECTOR_FORM'); }} canEdit={can('MANAGE_SECTORS')} canDelete={can('MANAGE_SECTORS')} onBack={handleBack} />;
@@ -3453,6 +3454,7 @@ export function App() {
     'dashboard': () => { setViewHistory([]); handleNavigate('DASHBOARD', true); },
     'announcements': () => { setViewHistory([]); handleNavigate('ANNOUNCEMENTS', true); },
     'new_record': () => { setViewHistory([]); setEditingIncident(null); handleNavigate('NEW_RECORD', true); },
+    'new_loan': () => { setViewHistory([]); handleNavigate('NEW_LOAN', true); },
     'loans': () => { setViewHistory([]); handleNavigate('LOANS', true); },
     'history_incidents': () => { setViewHistory([]); handleNavigate('HISTORY', true); },
     'history_loans': () => { setViewHistory([]); handleNavigate('LOAN_HISTORY', true); },
