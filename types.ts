@@ -295,4 +295,6 @@ export type ViewState =
   | 'IMPORT_EXPORT'
   | 'ESCALAS' | 'ESCALA_FORM'
   | 'ESCALA_REMINDERS'
-  | 'MAP';
+  | 'MAP'
+  | 'LOAN_REPORTS'
+  | 'INCIDENT_REPORTS';

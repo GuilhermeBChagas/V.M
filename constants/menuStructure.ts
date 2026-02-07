@@ -23,46 +23,31 @@ export const MENU_STRUCTURE: MenuItemDef[] = [
         ]
     },
     {
-        id: 'section_records_loans',
-        label: 'Registros',
+        id: 'section_incidents_ops',
+        label: 'Atendimentos',
         isSection: true,
         requiredPermissions: [],
         children: [
-            { id: 'new_record', label: 'Registar R.A', iconName: 'FileText', requiredPermissions: ['CREATE_INCIDENT'] },
-            { id: 'loans', label: 'Cautelas', iconName: 'ArrowRightLeft', requiredPermissions: ['CREATE_LOAN', 'APPROVE_LOAN', 'RETURN_LOAN', 'VIEW_MY_LOANS'] }
+            { id: 'new_record', label: 'Novo Registro', iconName: 'FilePlus', requiredPermissions: ['CREATE_INCIDENT'] },
+            { id: 'pending_incidents', label: 'Pendentes', iconName: 'UserCheck', requiredPermissions: ['APPROVE_INCIDENT', 'VIEW_MY_PENDING_INCIDENTS', 'VIEW_ALL_PENDING_INCIDENTS'] },
+            { id: 'history_incidents', label: 'Históricos', iconName: 'History', requiredPermissions: ['VIEW_ALL_INCIDENTS', 'VIEW_MY_INCIDENTS'] },
+            { id: 'report_incidents', label: 'Relatórios', iconName: 'FileSpreadsheet', requiredPermissions: ['EXPORT_REPORTS', 'VIEW_ALL_INCIDENTS'] }
         ]
     },
     {
-        id: 'section_history_pending',
-        label: 'Históricos e Pendentes',
+        id: 'section_loans_ops',
+        label: 'Cautelas',
         isSection: true,
         requiredPermissions: [],
         children: [
-            {
-                id: 'history_root',
-                label: 'Históricos',
-                iconName: 'History',
-                requiredPermissions: ['VIEW_ALL_INCIDENTS', 'VIEW_ALL_LOANS', 'VIEW_MY_INCIDENTS', 'VIEW_MY_LOANS'],
-                children: [
-                    { id: 'history_incidents', label: 'Atendimentos', iconName: 'FileText', requiredPermissions: ['VIEW_ALL_INCIDENTS', 'VIEW_MY_INCIDENTS'] },
-                    { id: 'history_loans', label: 'Cautelas', iconName: 'ArrowRightLeft', requiredPermissions: ['VIEW_ALL_LOANS', 'VIEW_MY_LOANS'] }
-                ]
-            },
-            {
-                id: 'pending_root',
-                label: 'Pendentes',
-                iconName: 'UserCheck',
-                requiredPermissions: ['APPROVE_INCIDENT', 'APPROVE_LOAN', 'RETURN_LOAN', 'VIEW_MY_PENDING_INCIDENTS', 'VIEW_ALL_PENDING_INCIDENTS', 'VIEW_MY_PENDING_LOANS', 'VIEW_ALL_PENDING_LOANS'],
-                children: [
-                    { id: 'pending_incidents', label: 'Atendimentos', iconName: 'FileText', requiredPermissions: ['APPROVE_INCIDENT', 'VIEW_MY_PENDING_INCIDENTS', 'VIEW_ALL_PENDING_INCIDENTS'] },
-                    { id: 'pending_loans', label: 'Cautelas', iconName: 'ArrowRightLeft', requiredPermissions: ['APPROVE_LOAN', 'RETURN_LOAN', 'VIEW_MY_PENDING_LOANS', 'VIEW_ALL_PENDING_LOANS'] }
-                ]
-            }
+            { id: 'loans', label: 'Painel de Cautelas', iconName: 'Key', requiredPermissions: ['CREATE_LOAN', 'APPROVE_LOAN', 'RETURN_LOAN', 'VIEW_MY_LOANS'] },
+            { id: 'history_loans', label: 'Históricos', iconName: 'History', requiredPermissions: ['VIEW_ALL_LOANS', 'VIEW_MY_LOANS'] },
+            { id: 'report_loans', label: 'Relatórios', iconName: 'FileSpreadsheet', requiredPermissions: ['EXPORT_REPORTS', 'VIEW_ALL_LOANS'] }
         ]
     },
     {
-        id: 'section_admin',
-        label: 'Administração',
+        id: 'section_management',
+        label: 'Gestão',
         isSection: true,
         requiredPermissions: [],
         children: [

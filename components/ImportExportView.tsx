@@ -122,22 +122,7 @@ export const ImportExportView: React.FC<{ onLogAction: (action: any, details: st
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in pb-12">
-      <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
-            <FileSpreadsheet size={22} strokeWidth={2} />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
-              Manipulação de Dados em Massa
-            </h2>
-            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
-              Importação e Exportação via Excel (.xlsx)
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="max-w-6xl mx-auto space-y-6 animate-fade-in pb-12">
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Coluna 1: Seleção de Cadastro */}

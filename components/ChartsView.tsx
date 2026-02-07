@@ -186,6 +186,14 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
 
     return (
         <div className="space-y-6 animate-fade-in pb-12">
+            {onBack && (
+                <div className="flex px-1 no-print">
+                    <button type="button" onClick={onBack} className="btn-back">
+                        <ArrowLeft size={18} />
+                        <span>VOLTAR</span>
+                    </button>
+                </div>
+            )}
 
             {/* Unified Header Section */}
             <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -201,12 +209,6 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
                             Análise de dados operacionais e indicadores
                         </p>
                     </div>
-                    {onBack && (
-                        <button onClick={onBack} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group">
-                            <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
-                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
-                        </button>
-                    )}
                 </div>
             </div>
 

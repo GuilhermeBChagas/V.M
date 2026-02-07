@@ -158,6 +158,15 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
 
     return (
         <div className="space-y-6 animate-fade-in pb-20">
+            {onBack && (
+                <div className="flex px-1 no-print">
+                    <button type="button" onClick={onBack} className="btn-back">
+                        <ArrowLeft size={18} />
+                        <span>VOLTAR</span>
+                    </button>
+                </div>
+            )}
+
             {/* Unified Header Section */}
             <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 <div className="flex items-center gap-3">
@@ -188,14 +197,6 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
                         </p>
                     </div>
                 </div>
-                {onBack && (
-                    <div className="absolute top-5 right-5 md:static md:ml-auto">
-                        <button onClick={onBack} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700">
-                            <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
-                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
-                        </button>
-                    </div>
-                )}
             </div>
 
             {activeTab === 'LOGS' && (

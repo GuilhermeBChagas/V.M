@@ -24,7 +24,7 @@ import AnnouncementManager from './AnnouncementManager';
 import { announcementService } from '../services/announcementService';
 import { User, Building, Incident, ViewState, UserRole, Sector, JobTitle, AlterationType, SystemLog, Vehicle, Vest, Radio, Equipment, LoanRecord, SystemPermissionMap, PermissionKey, UserPermissionOverrides, Escala, EscalaReminder } from '../types';
 import { MENU_STRUCTURE, MenuItemDef } from '../constants/menuStructure';
-import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Check, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, ArrowLeft, CloudOff, WifiOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone, ShieldCheck, Printer, Maximize2, RotateCw, Type, Move, Layers, MousePointer2, Minus, Info, Sliders, Square, Maximize } from 'lucide-react';
+import { LayoutDashboard, Building as BuildingIcon, Users, LogOut, Menu, FileText, Pencil, Plus, Map, MapPin, Trash2, ChevronRight, Shield, Loader2, Search, PieChart as PieChartIcon, Download, Filter, CheckCircle, Check, Clock, X, AlertCircle, Database, Settings, UserCheck, Moon, Sun, Wrench, ChevronDown, FolderOpen, Car, Radio as RadioIcon, Package, ArrowRightLeft, ArrowLeft, CloudOff, WifiOff, History, Ban, XCircle, Tag, RefreshCw, Bell, Key, Hash, FileSpreadsheet, Briefcase, Megaphone, ShieldCheck, Printer, Maximize2, RotateCw, Type, Move, Layers, MousePointer2, Minus, Info, Sliders, Square, Maximize, FilePlus } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { normalizeString } from '../utils/stringUtils';
 import CryptoJS from 'crypto-js';
@@ -191,21 +191,27 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, collaps
     )}
 
     {!collapsed && (
-      <span className={`text-sm font-semibold tracking-wide truncate ${isSubItem ? 'text-[13px]' : ''}`}>
+      <span className={`text-sm font-semibold tracking-wide truncate flex-1 text-left ${isSubItem ? 'text-[13px]' : ''}`}>
         {label}
       </span>
     )}
 
-    {hasChevron && !collapsed && (
-      <div className={`ml-auto transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} text-slate-500`}>
-        <ChevronDown size={14} />
-      </div>
-    )}
-
+    {/* Badge - Static when expanded, Absolute when collapsed */}
     {badge && badge > 0 && (
-      <span className={`absolute ${collapsed ? 'top-2 right-1' : (hasChevron ? 'right-[40px]' : 'right-10')} bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full ring-2 ring-[#0b101d] shadow-lg transform transition-transform group-hover:scale-110 top-1/2 -translate-y-1/2`}>
+      <span className={`
+        ${collapsed
+          ? 'absolute top-2 right-1'
+          : 'relative ml-auto mr-2'} 
+        bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full ring-2 ring-[#0b101d] shadow-lg transform transition-transform group-hover:scale-110 flex-shrink-0`}
+      >
         {badge}
       </span>
+    )}
+
+    {hasChevron && !collapsed && (
+      <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} text-slate-500 flex-shrink-0`}>
+        <ChevronDown size={14} />
+      </div>
     )}
   </button>
 );
@@ -235,10 +241,12 @@ const IncidentHistory: React.FC<{
   jobTitles: JobTitle[];
   onFilterChange?: (filters: { dateStart: string, timeStart: string, dateEnd: string, timeEnd: string }) => void;
   onBack?: () => void;
+  requireFilter?: boolean;
+  onLogAction?: (action: any, details: string) => void;
 }> = (props) => {
   const { incidents, buildings, onView, onEdit, onDelete, onApprove,
     filterStatus, currentUser, customLogo, customLogoLeft, loans = [], onConfirmLoanBatch,
-    onLoadMore, hasMore, isLoadingMore, canEdit, canDelete, canApprove, canExport, canViewAll = false, jobTitles, onFilterChange, onBack } = props;
+    onLoadMore, hasMore, isLoadingMore, canEdit, canDelete, canApprove, canExport, canViewAll = false, jobTitles, onFilterChange, onBack, requireFilter = false, onLogAction } = props;
   const [search, setSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [dateStart, setDateStart] = useState('');
@@ -265,22 +273,17 @@ const IncidentHistory: React.FC<{
     localStorage.setItem('app_pdf_margins', JSON.stringify(pdfMargins));
   }, [pdfMargins]);
 
-  const applyPreset = (type: 'normal' | 'narrow' | 'wide') => {
-    switch (type) {
-      case 'normal': setPdfMargins({ top: 15, right: 15, bottom: 15, left: 15 }); break;
-      case 'narrow': setPdfMargins({ top: 5, right: 5, bottom: 5, left: 5 }); break;
-      case 'wide': setPdfMargins({ top: 25, right: 25, bottom: 25, left: 25 }); break;
-    }
-  };
+
 
   const [showMarginSettings, setShowMarginSettings] = useState(false);
   const [showExportPreview, setShowExportPreview] = useState(false);
   const [pdfOrientation, setPdfOrientation] = useState<'portrait' | 'landscape'>('landscape');
   const [pdfPaperSize, setPdfPaperSize] = useState<'A4' | 'LETTER' | 'LEGAL'>('A4');
   const [pdfScale, setPdfScale] = useState(100);
+  const [autoFit, setAutoFit] = useState(true); // New Auto-Fit state
   const [pdfUnit, setPdfUnit] = useState<'mm' | 'cm' | 'in'>('mm');
   const [showMarginGuides, setShowMarginGuides] = useState(true);
-  const [itemsPerPage, setItemsPerPage] = useState(12); // Deprecated but kept for ABI if needed, though unused in new logic
+  const [itemsPerPage, setItemsPerPage] = useState(12);
 
   const [statusFilter, setStatusFilter] = useState<'APPROVED' | 'CANCELLED' | 'PENDING'>(
     filterStatus === 'PENDING' ? 'PENDING' : 'APPROVED'
@@ -380,7 +383,7 @@ const IncidentHistory: React.FC<{
         filename: `Relatorio_Atendimentos_${new Date().toISOString().split('T')[0]}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
-          scale: (pdfScale / 100) * 2,
+          scale: autoFit ? 2 : (pdfScale / 100) * 2,
           useCORS: true,
           letterRendering: true,
           scrollY: 0,
@@ -431,34 +434,47 @@ const IncidentHistory: React.FC<{
     fetchClientIP().then(fetchedIp => { runExportWithIP(fetchedIp); });
   };
 
+  // Helper for Margin Presets
+  const applyPreset = (preset: 'normal' | 'narrow' | 'none') => {
+    if (preset === 'normal') {
+      setPdfMargins({ top: 15, right: 15, bottom: 15, left: 15 });
+    } else if (preset === 'narrow') {
+      setPdfMargins({ top: 5, right: 5, bottom: 5, left: 5 });
+    } else if (preset === 'none') {
+      setPdfMargins({ top: 0, right: 0, bottom: 0, left: 0 });
+    }
+  };
+
+  // Check if any filter is active
+  const isFilterActive = !!(search || (dateStart && dateEnd) || statusFilter !== 'APPROVED'); // Simplified check
+  const showResults = !requireFilter || (requireFilter && (dateStart || dateEnd || search)); // Show if not requiring filter OR if filter is present (basic date filter usually)
+
+
   return (
     <div className="space-y-4">
+      {onBack && (
+        <div className="flex px-1 no-print">
+          <button type="button" onClick={onBack} className="btn-back">
+            <ArrowLeft size={18} />
+            <span>VOLTAR</span>
+          </button>
+        </div>
+      )}
       {/* Header Section */}
       <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm no-print">
         {/* Title Row */}
         <div className="flex items-center gap-3 mb-5">
           <div className={`p-2.5 rounded-xl ${filterStatus === 'PENDING' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
-            {filterStatus === 'PENDING' ? <Clock size={22} strokeWidth={2} /> : <History size={22} strokeWidth={2} />}
+            {requireFilter ? <FileSpreadsheet size={22} strokeWidth={2} /> : (filterStatus === 'PENDING' ? <Clock size={22} strokeWidth={2} /> : <History size={22} strokeWidth={2} />)}
           </div>
           <div className="flex-1">
             <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
-              {filterStatus === 'PENDING' ? 'Atendimentos Pendentes' : 'Histórico de Atendimentos'}
+              {requireFilter ? 'Relatórios de Atendimento' : (filterStatus === 'PENDING' ? 'Atendimentos Pendentes' : 'Histórico de Atendimentos')}
             </h2>
             <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
-              {filterStatus === 'PENDING' ? 'Aguardando validação ou recebimento' : 'Gestão de registros de atendimento'}
+              {requireFilter ? 'Geração de relatórios filtrados' : (filterStatus === 'PENDING' ? 'Aguardando validação ou recebimento' : 'Gestão de registros de atendimento')}
             </p>
           </div>
-          {/* Back Button */}
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700"
-              title="Voltar"
-            >
-              <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
-            </button>
-          )}
         </div>
 
         {/* Search and Actions Row */}
@@ -486,17 +502,19 @@ const IncidentHistory: React.FC<{
 
           {/* Action Buttons */}
           <div className="flex gap-2 sm:flex-shrink-0">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex-1 sm:flex-none px-4 sm:px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all duration-200 flex items-center justify-center gap-2 ${showFilters
-                ? 'bg-brand-600 border-brand-600 text-white shadow-lg shadow-brand-500/25'
-                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand-300 hover:text-brand-600 dark:hover:border-brand-600 dark:hover:text-brand-400'
-                }`}
-            >
-              <Filter size={16} />
-              <span className="hidden sm:inline">Filtros</span>
-            </button>
-            {canExport && filterStatus === 'COMPLETED' && (
+            {!requireFilter && (
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex-1 sm:flex-none px-4 sm:px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all duration-200 flex items-center justify-center gap-2 ${showFilters
+                  ? 'bg-brand-600 border-brand-600 text-white shadow-lg shadow-brand-500/25'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand-300 hover:text-brand-600 dark:hover:border-brand-600 dark:hover:text-brand-400'
+                  }`}
+              >
+                <Filter size={16} />
+                <span className="hidden sm:inline">Filtros</span>
+              </button>
+            )}
+            {canExport && filterStatus === 'COMPLETED' && requireFilter && (
               <div className="flex gap-1">
                 <button
                   onClick={() => setShowExportPreview(true)}
@@ -513,7 +531,7 @@ const IncidentHistory: React.FC<{
         </div>
 
         {/* Filter Panel */}
-        {showFilters && (
+        {(showFilters || requireFilter) && (
           <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-top-2">
             <div>
               <label className="block text-xs font-black text-slate-500 uppercase mb-1 tracking-wider">Data Inicial</label>
@@ -554,56 +572,74 @@ const IncidentHistory: React.FC<{
           </div>
         )}
 
-        {/* Margin Settings Panel */}
+        {/* Margin Settings Panel - SIMPLIFIED */}
         {showMarginSettings && (
           <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-top-2">
             <div className="flex items-center gap-2 mb-3">
               <Settings size={14} className="text-brand-500" />
-              <h4 className="text-[10px] font-black uppercase text-slate-600 tracking-widest">Ajuste de Margens do PDF (mm)</h4>
+              <h4 className="text-[10px] font-black uppercase text-slate-600 tracking-widest">Ajuste de Impressão</h4>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Margin Presets */}
               <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Topo</label>
-                <input
-                  type="number"
-                  value={pdfMargins.top}
-                  onChange={e => setPdfMargins({ ...pdfMargins, top: parseInt(e.target.value) || 0 })}
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
-                />
+                <label className="block text-[9px] font-black text-slate-400 uppercase mb-2">Margens</label>
+                <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1 gap-1">
+                  <button
+                    onClick={() => applyPreset('normal')}
+                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${pdfMargins.top === 15 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}
+                  >
+                    Normal
+                  </button>
+                  <button
+                    onClick={() => applyPreset('narrow')}
+                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${pdfMargins.top === 5 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}
+                  >
+                    Estreita
+                  </button>
+                  <button
+                    onClick={() => setPdfMargins({ top: 0, right: 0, bottom: 0, left: 0 })}
+                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${pdfMargins.top === 0 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}
+                  >
+                    Zero
+                  </button>
+                </div>
               </div>
+
+              {/* Scale / Auto-Fit */}
               <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Inferior</label>
-                <input
-                  type="number"
-                  value={pdfMargins.bottom}
-                  onChange={e => setPdfMargins({ ...pdfMargins, bottom: parseInt(e.target.value) || 0 })}
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-              <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Esquerda</label>
-                <input
-                  type="number"
-                  value={pdfMargins.left}
-                  onChange={e => setPdfMargins({ ...pdfMargins, left: parseInt(e.target.value) || 0 })}
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-              <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Direita</label>
-                <input
-                  type="number"
-                  value={pdfMargins.right}
-                  onChange={e => setPdfMargins({ ...pdfMargins, right: parseInt(e.target.value) || 0 })}
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500"
-                />
+                <label className="block text-[9px] font-black text-slate-400 uppercase mb-2">Escala</label>
+                <div className="flex items-center gap-3 h-[34px]">
+                  <button
+                    onClick={() => setAutoFit(!autoFit)}
+                    className={`flex-1 h-full px-3 rounded-lg border text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 ${autoFit
+                      ? 'bg-brand-50 border-brand-200 text-brand-700'
+                      : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                  >
+                    {autoFit ? <CheckCircle size={12} className="text-brand-600" /> : <Maximize2 size={12} />}
+                    Auto-Fit
+                  </button>
+                  {!autoFit && (
+                    <input
+                      type="number"
+                      value={pdfScale}
+                      onChange={(e) => setPdfScale(Number(e.target.value))}
+                      className="w-16 h-full px-2 text-center text-xs font-bold border border-slate-200 rounded-lg outline-none focus:border-brand-500"
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>
         )}
       </div>
       <div className="grid gap-3">
-        {displayIncidents.map(incident => {
+        {requireFilter && !showResults ? (
+          <div className="py-20 flex flex-col items-center justify-center text-slate-400 bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+            <Filter size={48} className="mb-4 opacity-20" />
+            <p className="text-sm font-bold uppercase tracking-widest text-center">Selecione os filtros acima para gerar o relatório</p>
+          </div>
+        ) : (displayIncidents.map(incident => {
           const building = buildings.find(b => b.id === incident.buildingId);
           const isCancelled = incident.status === 'CANCELLED';
           const isPending = incident.status === 'PENDING';
@@ -635,10 +671,10 @@ const IncidentHistory: React.FC<{
               </div>
             </div>
           );
-        })}
+        }))}
       </div>
 
-      {filterStatus !== 'PENDING' && hasMore && (
+      {filterStatus !== 'PENDING' && !requireFilter && hasMore && (
         <button
           onClick={() => onLoadMore?.()}
           disabled={isLoadingMore}
@@ -688,7 +724,7 @@ const IncidentHistory: React.FC<{
               {/* Sidebar Controls - Modern UX */}
               <div className="w-85 border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-8 overflow-y-auto space-y-8 no-scrollbar">
 
-                {/* Margins Section */}
+                {/* Margins Section - SIMPLIFIED SIDEBAR */}
                 <section className="space-y-4">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="flex items-center gap-2 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
@@ -705,54 +741,24 @@ const IncidentHistory: React.FC<{
 
                   {/* Preset Selector */}
                   <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-200/50 dark:bg-slate-800/50 rounded-2xl">
-                    {(['normal', 'narrow', 'wide'] as const).map(p => (
-                      <button
-                        key={p}
-                        onClick={() => applyPreset(p)}
-                        className="px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm"
-                      >
-                        {p === 'normal' ? 'Normal' : p === 'narrow' ? 'Estreita' : 'Larga'}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Modern Margin Grid */}
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-6 bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm relative">
-                    {/* Top */}
-                    <div className="col-span-2 flex flex-col items-center">
-                      <label className="text-[9px] font-black text-slate-400 uppercase mb-2">Topo</label>
-                      <div className="flex items-center gap-2 w-32 bg-slate-50 dark:bg-slate-900 rounded-xl p-1 border border-slate-100 dark:border-slate-700">
-                        <button onClick={() => setPdfMargins(m => ({ ...m, top: Math.max(0, m.top - 1) }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Minus size={12} /></button>
-                        <input type="number" value={pdfMargins.top} onChange={e => setPdfMargins(m => ({ ...m, top: parseInt(e.target.value) || 0 }))} className="w-full text-center text-xs font-black bg-transparent outline-none" />
-                        <button onClick={() => setPdfMargins(m => ({ ...m, top: m.top + 1 }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Plus size={12} /></button>
-                      </div>
-                    </div>
-                    {/* Left & Right */}
-                    <div className="flex flex-col items-center">
-                      <label className="text-[9px] font-black text-slate-400 uppercase mb-2">Esquerda</label>
-                      <div className="flex items-center gap-2 w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-1 border border-slate-100 dark:border-slate-700">
-                        <button onClick={() => setPdfMargins(m => ({ ...m, left: Math.max(0, m.left - 1) }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Minus size={10} /></button>
-                        <input type="number" value={pdfMargins.left} onChange={e => setPdfMargins(m => ({ ...m, left: parseInt(e.target.value) || 0 }))} className="w-full text-center text-xs font-black bg-transparent outline-none px-0" />
-                        <button onClick={() => setPdfMargins(m => ({ ...m, left: m.left + 1 }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Plus size={10} /></button>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <label className="text-[9px] font-black text-slate-400 uppercase mb-2">Direita</label>
-                      <div className="flex items-center gap-2 w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-1 border border-slate-100 dark:border-slate-700">
-                        <button onClick={() => setPdfMargins(m => ({ ...m, right: Math.max(0, m.right - 1) }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Minus size={10} /></button>
-                        <input type="number" value={pdfMargins.right} onChange={e => setPdfMargins(m => ({ ...m, right: parseInt(e.target.value) || 0 }))} className="w-full text-center text-xs font-black bg-transparent outline-none px-0" />
-                        <button onClick={() => setPdfMargins(m => ({ ...m, right: m.right + 1 }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Plus size={10} /></button>
-                      </div>
-                    </div>
-                    {/* Bottom */}
-                    <div className="col-span-2 flex flex-col items-center mt-2">
-                      <label className="text-[9px] font-black text-slate-400 uppercase mb-2">Base</label>
-                      <div className="flex items-center gap-2 w-32 bg-slate-50 dark:bg-slate-900 rounded-xl p-1 border border-slate-100 dark:border-slate-700">
-                        <button onClick={() => setPdfMargins(m => ({ ...m, bottom: Math.max(0, m.bottom - 1) }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Minus size={12} /></button>
-                        <input type="number" value={pdfMargins.bottom} onChange={e => setPdfMargins(m => ({ ...m, bottom: parseInt(e.target.value) || 0 }))} className="w-full text-center text-xs font-black bg-transparent outline-none" />
-                        <button onClick={() => setPdfMargins(m => ({ ...m, bottom: m.bottom + 1 }))} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"><Plus size={12} /></button>
-                      </div>
-                    </div>
+                    <button
+                      onClick={() => applyPreset('normal')}
+                      className={`px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all ${pdfMargins.top === 15 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}
+                    >
+                      Normal
+                    </button>
+                    <button
+                      onClick={() => applyPreset('narrow')}
+                      className={`px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all ${pdfMargins.top === 5 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}
+                    >
+                      Estreita
+                    </button>
+                    <button
+                      onClick={() => applyPreset('none')}
+                      className={`px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all ${pdfMargins.top === 0 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}
+                    >
+                      Zero
+                    </button>
                   </div>
                 </section>
 
@@ -763,23 +769,7 @@ const IncidentHistory: React.FC<{
                   </h4>
 
                   {/* Orientation Toggle */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Orientação</label>
-                    <div className="flex p-1 bg-slate-200/50 dark:bg-slate-800/50 rounded-2xl relative">
-                      <button
-                        onClick={() => setPdfOrientation('portrait')}
-                        className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all z-10 ${pdfOrientation === 'portrait' ? 'bg-white dark:bg-slate-700 shadow-md text-brand-600 dark:text-brand-400' : 'text-slate-500'}`}
-                      >
-                        <FileText size={16} /> Retrato
-                      </button>
-                      <button
-                        onClick={() => setPdfOrientation('landscape')}
-                        className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all z-10 ${pdfOrientation === 'landscape' ? 'bg-white dark:bg-slate-700 shadow-md text-brand-600 dark:text-brand-400' : 'text-slate-500'}`}
-                      >
-                        <FileText size={16} className="rotate-90" /> Paisagem
-                      </button>
-                    </div>
-                  </div>
+
 
                   {/* Paper Size & Scale */}
                   <div className="grid grid-cols-1 gap-6">
@@ -796,17 +786,33 @@ const IncidentHistory: React.FC<{
                       </select>
                     </div>
 
+                    {/* Scale / Auto-Fit - SIDEBAR */}
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between pl-1">
+                      <div className="flex items-center justify-between pl-1 mb-1">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escala de Conteúdo</label>
-                        <span className="text-[11px] font-black text-brand-600">{pdfScale}%</span>
                       </div>
-                      <input
-                        type="range" min="50" max="150" step="5"
-                        value={pdfScale}
-                        onChange={e => setPdfScale(parseInt(e.target.value))}
-                        className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-brand-500"
-                      />
+                      <div className="flex items-center gap-3 h-[42px]">
+                        <button
+                          onClick={() => setAutoFit(!autoFit)}
+                          className={`flex-1 h-full px-4 rounded-xl border text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${autoFit
+                            ? 'bg-brand-50 border-brand-200 text-brand-700'
+                            : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                        >
+                          {autoFit ? <CheckCircle size={14} className="text-brand-600" /> : <Maximize2 size={14} />}
+                          Auto-Fit
+                        </button>
+                        {!autoFit && (
+                          <div className="relative w-24 h-full">
+                            <input
+                              type="number"
+                              value={pdfScale}
+                              onChange={(e) => setPdfScale(Number(e.target.value))}
+                              className="w-full h-full px-3 text-center text-xs font-black border border-slate-200 rounded-xl outline-none focus:border-brand-500 bg-white"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none">%</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -847,7 +853,7 @@ const IncidentHistory: React.FC<{
                   ref={printRef}
                   id="history-export-container"
                   className="flex flex-col items-center gap-12 bg-transparent transform-gpu"
-                  style={{ scale: pdfScale / 100 }}
+                  style={{ scale: autoFit ? 1 : pdfScale / 100 }}
                 >
                   {(() => {
                     const chunks: Incident[][] = [];
@@ -858,29 +864,37 @@ const IncidentHistory: React.FC<{
                       : (pdfPaperSize === 'A4' ? 297 : pdfPaperSize === 'LETTER' ? 279 : 356);
 
                     // Height deductions (mm)
-                    const HEADER_HEIGHT = 55; // Logos + Title
+                    const HEADER_HEIGHT = 48; // Balanced header buffer
                     const TABLE_HEADER_HEIGHT = 10;
-                    const FOOTER_HEIGHT = 15;
-                    const SAFE_MARGIN = 5; // Extra buffer
+                    const FOOTER_HEIGHT = 8; // Simplified bottom border/padding
+                    const SAFE_MARGIN = 8; // Balanced buffer (0.8cm)
 
                     const availableContentHeight = PAGE_HEIGHT_MM - pdfMargins.top - pdfMargins.bottom - HEADER_HEIGHT - TABLE_HEADER_HEIGHT - FOOTER_HEIGHT - SAFE_MARGIN;
 
-                    // Row estimation
-                    const BASE_ROW_HEIGHT = 8; // Padding + single line data
-                    const LINE_HEIGHT_MM = 3.5;
-                    // Heuristic Refined: Relato column is the variable one.
-                    // Portrait: Very narrow (~40mm). Landscape: Wide (~130mm).
-                    // We must be conservative to prevent overflow.
-                    const CHARS_PER_LINE = pdfOrientation === 'landscape' ? 80 : 32;
+                    // Row estimation - BALANCED
+                    const BASE_ROW_HEIGHT = 9.5; // Balanced padding buffer
+                    const LINE_HEIGHT_MM = 3.8; // Balanced per-line buffer
+
+                    // Column wrap heuristics - Balanced
+                    const RELATO_CHARS_PER_LINE = pdfOrientation === 'landscape' ? 65 : 24;
+                    const PROPRIO_CHARS_PER_LINE = pdfOrientation === 'landscape' ? 24 : 18;
 
                     let currentChunk: Incident[] = [];
                     let currentHeightUsed = 0;
 
                     displayIncidents.forEach((incident) => {
-                      const descriptionLength = incident.description ? incident.description.length : 0;
-                      const lines = Math.max(1, Math.ceil(descriptionLength / CHARS_PER_LINE));
-                      // Extra height if AlterationType or Location wraps (rare, but let's add buffer)
-                      const estimatedRowHeight = BASE_ROW_HEIGHT + (lines * LINE_HEIGHT_MM);
+                      const description = incident.status === 'CANCELLED'
+                        ? `[CANCELADO] ${incident.description || ''}`
+                        : (incident.description || '');
+                      const descriptionLength = description.length;
+                      const relatoLines = Math.max(1, Math.ceil(descriptionLength / RELATO_CHARS_PER_LINE));
+
+                      const building = buildings.find(b => b.id === incident.buildingId);
+                      const buildingName = building?.name || '---';
+                      const proprioLines = Math.max(1, Math.ceil(buildingName.length / PROPRIO_CHARS_PER_LINE));
+
+                      const maxLines = Math.max(relatoLines, proprioLines);
+                      const estimatedRowHeight = BASE_ROW_HEIGHT + ((maxLines - 1) * LINE_HEIGHT_MM);
 
                       if (currentHeightUsed + estimatedRowHeight > availableContentHeight && currentChunk.length > 0) {
                         // Page full, push chunk and start new
@@ -958,14 +972,21 @@ const IncidentHistory: React.FC<{
                               <h3 className="text-[12px] font-bold uppercase text-brand-600 mt-1 tracking-[0.1em]">
                                 CENTRO DE MONITORAMENTO MUNICIPAL
                               </h3>
-                              <div className="mt-4 inline-block px-10 py-3 bg-slate-100 border-2 border-white rounded-2xl text-[14px] font-black uppercase tracking-[0.2em] text-slate-800 shadow-sm">
-                                Relatório Geral de Atendimentos
-                              </div>
-                              {(dateStart || dateEnd) && (
-                                <div className="text-[10px] uppercase font-bold text-slate-400 mt-3 flex items-center justify-center gap-2">
-                                  <Clock size={12} /> {dateStart ? formatDateBR(dateStart) : 'Início'} até {dateEnd ? formatDateBR(dateEnd) : 'Hoje'}
+                              <div className="flex items-center justify-between gap-4 bg-slate-50/80 px-4 py-2 rounded-xl mt-4 border border-slate-100">
+                                <div className="text-left">
+                                  <h4 className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-800 leading-none">Relatório Geral</h4>
                                 </div>
-                              )}
+                                <div className="flex-1 text-center">
+                                  {(dateStart || dateEnd) && (
+                                    <div className="text-[9px] uppercase font-bold text-slate-500 flex items-center justify-center gap-1.5">
+                                      <Clock size={10} strokeWidth={3} /> {dateStart ? formatDateBR(dateStart) : 'Início'} até {dateEnd ? formatDateBR(dateEnd) : 'Hoje'}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="text-right min-w-[80px]">
+                                  <p className="text-[9px] font-black text-slate-900 uppercase tracking-tighter">PÁGINA {pageIndex + 1} DE {chunks.length}</p>
+                                </div>
+                              </div>
                             </div>
 
                             <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center">
@@ -982,13 +1003,20 @@ const IncidentHistory: React.FC<{
                           <table className="w-full border-collapse border-b-2 border-slate-900">
                             <thead style={{ display: 'table-header-group' }}>
                               <tr className="bg-slate-900 text-white">
-                                <th className="p-3 text-[10px] font-black uppercase w-[80px] text-left border-r border-slate-700">Protocolo</th>
-                                <th className="p-3 text-[10px] font-black uppercase w-[150px] text-left border-r border-slate-700">Próprio/Logradouro</th>
-                                <th className="p-3 text-[10px] font-black uppercase w-[90px] text-center border-r border-slate-700">Data</th>
-                                <th className="p-3 text-[10px] font-black uppercase w-[70px] text-center border-r border-slate-700">Início</th>
-                                <th className="p-3 text-[10px] font-black uppercase w-[70px] text-center border-r border-slate-700">Fim</th>
-                                <th className="p-3 text-[10px] font-black uppercase w-[130px] text-center border-r border-slate-700">Natureza</th>
-                                <th className="p-3 text-[10px] font-black uppercase text-left">Relato da Ocorrência</th>
+                                {(() => {
+                                  const isPortrait = pdfOrientation === 'portrait';
+                                  return (
+                                    <>
+                                      <th className={`p-3 text-[10px] font-black uppercase text-left border-r border-slate-700`} style={{ width: isPortrait ? '50px' : '80px' }}>R.A</th>
+                                      <th className={`p-3 text-[10px] font-black uppercase text-left border-r border-slate-700`} style={{ width: isPortrait ? '100px' : '150px' }}>Próprio</th>
+                                      <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '60px' : '90px' }}>Data</th>
+                                      <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '45px' : '70px' }}>Início</th>
+                                      <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '45px' : '70px' }}>Fim</th>
+                                      <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '80px' : '130px' }}>Natureza</th>
+                                      <th className="p-3 text-[10px] font-black uppercase text-left">Relato</th>
+                                    </>
+                                  );
+                                })()}
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200">
@@ -996,13 +1024,24 @@ const IncidentHistory: React.FC<{
                                 const building = buildings.find(b => b.id === i.buildingId);
                                 return (
                                   <tr key={i.id} style={{ pageBreakInside: 'avoid' }} className="hover:bg-slate-50 transition-colors">
-                                    <td className="p-3 text-[10px] font-black text-slate-900 border-x border-slate-200">{i.raCode}</td>
-                                    <td className="p-3 text-[10px] font-bold uppercase text-slate-700 border-r border-slate-200">{building?.name || '---'}</td>
-                                    <td className="p-3 text-[10px] font-bold text-center border-r border-slate-200">{formatDateBR(i.date)}</td>
-                                    <td className="p-3 text-[10px] font-bold text-center border-r border-slate-200">{i.startTime}</td>
-                                    <td className="p-3 text-[10px] font-bold text-center border-r border-slate-200">{i.endTime || '--:--'}</td>
-                                    <td className="p-3 text-[9px] font-black uppercase text-center text-brand-600 border-r border-slate-200">{i.alterationType}</td>
-                                    <td className="p-3 text-[9px] font-medium leading-tight align-top whitespace-pre-wrap break-words border-r border-slate-200">{i.description}</td>
+                                    {/* Calculated styling for columns */}
+                                    {(() => {
+                                      const isPortrait = pdfOrientation === 'portrait';
+                                      return (
+                                        <>
+                                          <td className="p-3 text-[10px] font-black text-slate-900 border-x border-slate-200" style={{ width: isPortrait ? '50px' : '80px' }}>{i.raCode}</td>
+                                          <td className="p-3 text-[10px] font-bold uppercase text-slate-700 border-r border-slate-200" style={{ width: isPortrait ? '100px' : '150px' }}>{building?.name || '---'}</td>
+                                          <td className="p-3 text-[10px] font-bold text-center border-r border-slate-200" style={{ width: isPortrait ? '60px' : '90px' }}>{formatDateBR(i.date)}</td>
+                                          <td className="p-3 text-[10px] font-bold text-center border-r border-slate-200" style={{ width: isPortrait ? '45px' : '70px' }}>{i.startTime}</td>
+                                          <td className="p-3 text-[10px] font-bold text-center border-r border-slate-200" style={{ width: isPortrait ? '45px' : '70px' }}>{i.endTime || '--:--'}</td>
+                                          <td className="p-3 text-[9px] font-black uppercase text-center text-slate-900 border-r border-slate-200" style={{ width: isPortrait ? '80px' : '130px' }}>{i.alterationType}</td>
+                                          <td className={`p-3 text-[9px] leading-tight align-top whitespace-pre-wrap break-words border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 font-bold' : 'font-medium'}`}>
+                                            {i.status === 'CANCELLED' && <span className="text-red-700 font-black mr-1">[CANCELADO]</span>}
+                                            {i.description}
+                                          </td>
+                                        </>
+                                      );
+                                    })()}
                                   </tr>
                                 );
                               })}
@@ -1010,20 +1049,7 @@ const IncidentHistory: React.FC<{
                           </table>
                         </div>
 
-                        {/* Footer info for traceability */}
-                        <div className="flex justify-between items-end border-t border-slate-200 pt-4">
-                          <div className="space-y-1">
-                            <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Documento Gerado por Sistema de Monitoramento Municipal</p>
-                            <div className="flex gap-4">
-                              <span className="text-[6px] font-bold text-slate-300">IP: {exportIP}</span>
-                              <span className="text-[6px] font-bold text-slate-300">HASH: {exportHash.substring(0, 16).toUpperCase()}...</span>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[8px] font-black text-slate-700 uppercase">Página {pageIndex + 1} de {chunks.length}</p>
-                            <p className="text-[7px] font-bold text-slate-400 uppercase mt-1">Impresso em {exportDate}</p>
-                          </div>
-                        </div>
+                        <div className="border-t border-slate-100 mt-1" />
                       </div>
                     ));
                   })()}
@@ -1042,6 +1068,14 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
   const filtered = buildings.filter(b => normalizeString(b.name).includes(normalizeString(search)) || normalizeString(b.buildingNumber).includes(normalizeString(search)));
   return (
     <div className="space-y-4">
+      {onBack && (
+        <div className="flex px-1">
+          <button type="button" onClick={onBack} className="btn-back">
+            <ArrowLeft size={18} />
+            <span>VOLTAR</span>
+          </button>
+        </div>
+      )}
       {/* Unified Header Section */}
       <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
         {/* Title Row */}
@@ -1057,17 +1091,6 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
               Total: {buildings.length} prédios cadastrados
             </p>
           </div>
-          {/* Back Button */}
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700"
-              title="Voltar"
-            >
-              <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
-            </button>
-          )}
         </div>
 
         {/* Search and Actions Row */}
@@ -1208,6 +1231,14 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
 
   return (
     <div className="space-y-6">
+      {onBack && (
+        <div className="flex px-1">
+          <button type="button" onClick={onBack} className="btn-back">
+            <ArrowLeft size={18} />
+            <span>VOLTAR</span>
+          </button>
+        </div>
+      )}
       {/* Unified Header Section */}
       <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
         {/* Title Row */}
@@ -1223,17 +1254,6 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
               Total: {users.length} Colaboradores
             </p>
           </div>
-          {/* Back Button */}
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700"
-              title="Voltar"
-            >
-              <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
-            </button>
-          )}
         </div>
 
         {/* Search and Actions Row */}
@@ -1281,7 +1301,7 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
                 <tr
                   key={u.id}
                   onClick={() => canEdit && onEdit(u)}
-                  className={`transition-all duration-200 group ${canEdit ? 'cursor-pointer' : ''} 
+                  className={`transition-all duration-200 group ${canEdit ? 'cursor-pointer' : ''}
                     ${u.status === 'PENDING'
                       ? 'bg-amber-50/70 dark:bg-amber-900/20 border-l-[4px] border-amber-500 shadow-sm'
                       : 'hover:bg-slate-50 dark:hover:bg-brand-900/10 border-l-[4px] border-transparent'}
@@ -1348,6 +1368,14 @@ const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => v
 
   return (
     <div className="space-y-4">
+      {onBack && (
+        <div className="flex px-1">
+          <button type="button" onClick={onBack} className="btn-back">
+            <ArrowLeft size={18} />
+            <span>VOLTAR</span>
+          </button>
+        </div>
+      )}
       {/* Unified Header Section */}
       <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
         {/* Title Row */}
@@ -1363,17 +1391,6 @@ const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => v
               Total: {jobTitles.length} cargos cadastrados
             </p>
           </div>
-          {/* Back Button */}
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700"
-              title="Voltar"
-            >
-              <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
-            </button>
-          )}
         </div>
 
         {/* Search and Actions Row */}
@@ -1422,6 +1439,14 @@ const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onD
 
   return (
     <div className="space-y-4">
+      {onBack && (
+        <div className="flex px-1">
+          <button type="button" onClick={onBack} className="btn-back">
+            <ArrowLeft size={18} />
+            <span>VOLTAR</span>
+          </button>
+        </div>
+      )}
       {/* Unified Header Section */}
       <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
         {/* Title Row */}
@@ -1437,17 +1462,6 @@ const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onD
               Total: {sectors.length} setores cadastrados
             </p>
           </div>
-          {/* Back Button */}
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700"
-              title="Voltar"
-            >
-              <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
-            </button>
-          )}
         </div>
 
         {/* Search and Actions Row */}
@@ -2976,10 +2990,34 @@ export function App() {
           canViewActiveLoans={can('VIEW_ALL_PENDING_LOANS') || can('VIEW_MY_PENDING_LOANS') || can('APPROVE_LOAN') || can('RETURN_LOAN')}
           canViewRecentActivities={can('VIEW_ALL_INCIDENTS') || can('VIEW_MY_INCIDENTS')}
         />;
+      case 'LOAN_REPORTS':
+        return <LoanViews
+          currentUser={user!}
+          users={users}
+          vehicles={vehicles}
+          vests={vests}
+          radios={radios}
+          equipments={equipments}
+          onLogAction={(a: any, d: string) => createLog(a, d)}
+          loans={loans}
+          onRefresh={fetchLoans}
+          initialTab="HISTORY"
+          isReportView={true}
+          canCreate={can('CREATE_LOAN')}
+          canApprove={can('APPROVE_LOAN')}
+          canReturn={can('RETURN_LOAN')}
+          canViewHistory={can('VIEW_ALL_LOANS') || can('VIEW_MY_LOANS')}
+          canViewAll={can('VIEW_ALL_LOANS') || can('VIEW_ALL_PENDING_LOANS')}
+          onShowConfirm={showConfirm}
+          customLogo={customLogoRight}
+          customLogoLeft={customLogoLeft}
+          onBack={() => handleNavigate('DASHBOARD')}
+        />;
       case 'NEW_RECORD':
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
         return <IncidentForm user={user!} users={users} incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleBack(); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} onShowConfirm={showConfirm} />;
-      case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} jobTitles={jobTitles} onFilterChange={handleIncidentFilterChange} onBack={handleBack} />;
+      case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} jobTitles={jobTitles} onFilterChange={handleIncidentFilterChange} onBack={handleBack} onLogAction={createLog} />;
+      case 'INCIDENT_REPORTS': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} jobTitles={jobTitles} onFilterChange={handleIncidentFilterChange} onBack={handleBack} requireFilter={true} onLogAction={createLog} />;
       case 'PENDING_APPROVALS':
         return (
           <div className="space-y-4 animate-fade-in">
@@ -3005,6 +3043,7 @@ export function App() {
                   canViewAll={can('VIEW_ALL_PENDING_INCIDENTS') || can('APPROVE_INCIDENT')}
                   jobTitles={jobTitles}
                   onBack={handleBack}
+                  onLogAction={createLog}
                 />
               ) : (
                 <LoanViews
@@ -3045,7 +3084,7 @@ export function App() {
       case 'EQUIPMENTS': return <EquipmentList items={equipments} onAdd={() => { setEditingEquipment(null); handleNavigate('EQUIPMENT_FORM'); }} onEdit={(i) => { setEditingEquipment(i); handleNavigate('EQUIPMENT_FORM'); }} onDelete={(id) => handleDeleteAsset('equipments', id, 'Equipamento')} canEdit={can('MANAGE_EQUIPMENTS')} canDelete={can('MANAGE_EQUIPMENTS')} onBack={handleBack} />;
       case 'EQUIPMENT_FORM': return <EquipmentForm initialData={editingEquipment} onSave={(i: any) => handleSaveAsset('equipments', i, 'EQUIPMENTS', 'Equipamento')} onCancel={handleBack} onDelete={() => editingEquipment && handleDeleteAsset('equipments', editingEquipment.id, 'Equipamento')} isLoading={saving} />;
       case 'LOANS': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} onBack={handleBack} />;
-      case 'LOAN_HISTORY': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} initialTab="HISTORY" isReportView={true} loans={loans} onRefresh={() => fetchLoans(false)} hasMore={hasMoreLoans} isLoadingMore={loadingMoreLoans} onLoadMore={() => fetchLoans(true)} onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} onBack={handleBack} />;
+      case 'LOAN_HISTORY': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} initialTab="HISTORY" loans={loans} onRefresh={() => fetchLoans(false)} hasMore={hasMoreLoans} isLoadingMore={loadingMoreLoans} onLoadMore={() => fetchLoans(true)} onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} onBack={handleBack} />;
       case 'SECTORS': return <SectorList sectors={sectors} onEdit={(s) => { setEditingSector(s); handleNavigate('SECTOR_FORM'); }} onDelete={handleDeleteSector} onAdd={() => { setEditingSector(null); handleNavigate('SECTOR_FORM'); }} canEdit={can('MANAGE_SECTORS')} canDelete={can('MANAGE_SECTORS')} onBack={handleBack} />;
       case 'SECTOR_FORM': return <SectorForm initialData={editingSector} onSave={handleSaveSector} onCancel={handleBack} onDelete={handleDeleteSector} />;
       case 'ALTERATION_TYPES': return <AlterationTypeManager types={alterationTypes} onAdd={async (name) => { const newType = { id: crypto.randomUUID(), name, order: alterationTypes.length }; await handleSaveAlterationType(newType); }} onEdit={(t) => { setEditingAlterationType(t); setView('ALTERATION_TYPE_FORM'); }} onDelete={handleDeleteAlterationType} onReorder={handleReorderAlterationTypes} canManage={can('MANAGE_ALTERATION_TYPES')} onBack={handleBack} />;
@@ -3079,7 +3118,7 @@ export function App() {
       case 'CHARTS': return <ChartsView incidents={incidents} buildings={buildings} sectors={sectors} onBack={handleBack} />;
       case 'MAP':
         if (!can('VIEW_MAP')) return <div className="flex flex-col items-center justify-center h-full text-slate-400 font-bold uppercase tracking-widest p-8">Acesso não autorizado</div>;
-        return <MapView buildings={buildings} onNavigateBuilding={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} />;
+        return <MapView buildings={buildings} onNavigateBuilding={(b) => { setEditingBuilding(b); handleNavigate('BUILDING_FORM'); }} onBack={handleBack} />;
       case 'LOGS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} onLogAction={createLog} initialTab='LOGS' onBack={handleBack} />;
       case 'TOOLS': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='APPEARANCE' onBack={handleBack} />;
       case 'IMPORT_EXPORT': return <ToolsView logs={logs} onTestLog={async () => { await createLog('UPDATE_INCIDENT', 'Teste de logs'); await fetchLogs(); }} currentLogo={customLogoRight} onUpdateLogo={handleUpdateLogoRight} currentLogoLeft={customLogoLeft} onUpdateLogoLeft={handleUpdateLogoLeft} onLogAction={createLog} initialTab='IMPORT_EXPORT' onBack={handleBack} />;
@@ -3163,7 +3202,7 @@ export function App() {
 
   // --- DYNAMIC SIDEBAR HELPERS ---
 
-  const getIcon = (name?: string) => {
+  const getIcon = (name: string) => {
     switch (name) {
       case 'LayoutDashboard': return <LayoutDashboard size={20} />;
       case 'Megaphone': return <Megaphone size={20} />;
@@ -3173,17 +3212,20 @@ export function App() {
       case 'UserCheck': return <UserCheck size={20} />;
       case 'PieChartIcon': return <PieChartIcon size={20} />;
       case 'FolderOpen': return <FolderOpen size={20} />;
-      case 'BuildingIcon': return <BuildingIcon size={16} />;
-      case 'Tag': return <Tag size={16} />;
-      case 'Map': return <Map size={16} />;
-      case 'Users': return <Users size={16} />;
-      case 'Briefcase': return <Briefcase size={16} />;
-      case 'Car': return <Car size={16} />;
-      case 'Shield': return <Shield size={16} />;
-      case 'RadioIcon': return <RadioIcon size={16} />;
-      case 'Package': return <Package size={16} />;
+      case 'BuildingIcon': return <BuildingIcon size={20} />;
+      case 'Tag': return <Tag size={20} />;
+      case 'Map': return <Map size={20} />;
+      case 'Users': return <Users size={20} />;
+      case 'Briefcase': return <Briefcase size={20} />;
+      case 'Car': return <Car size={20} />;
+      case 'Shield': return <Shield size={20} />;
+      case 'RadioIcon': return <RadioIcon size={20} />;
+      case 'Package': return <Package size={20} />;
       case 'Wrench': return <Wrench size={20} />;
-      case 'Clock': return <Clock size={16} />;
+      case 'Clock': return <Clock size={20} />;
+      case 'FilePlus': return <FilePlus size={20} />;
+      case 'Key': return <Key size={20} />;
+      case 'FileSpreadsheet': return <FileSpreadsheet size={20} />;
       default: return null;
     }
   };
@@ -3224,6 +3266,12 @@ export function App() {
       case 'tool_logs': return view === 'LOGS';
       case 'tool_database': return view === 'DATABASE_TOOLS';
       case 'tool_system': return view === 'SYSTEM_INFO';
+      // New structure mappings
+      case 'history_incidents': return view === 'HISTORY' && !modalConfig.isOpen; // Simple check
+      case 'history_loans': return view === 'LOAN_HISTORY' && !modalConfig.isOpen;
+      case 'report_incidents': return view === 'INCIDENT_REPORTS';
+      case 'report_loans': return view === 'LOAN_REPORTS'; // Keeping loan history same for now as requested only for incidents? User said "o menu relatorios de atendimentos", but let's check if they want it for loans too? "Cautelas: Historicos, Relatorios". Let's assume loans stays as is or reuse history for now until specified. The request specifically detailed "o menu relatorios de atendimentos".
+      case 'pending_incidents': return view === 'PENDING_APPROVALS' && pendingSubTab === 'INCIDENTS';
       default: return false;
     }
   };
@@ -3235,6 +3283,8 @@ export function App() {
     'loans': () => { setViewHistory([]); handleNavigate('LOANS', true); },
     'history_incidents': () => { setViewHistory([]); handleNavigate('HISTORY', true); },
     'history_loans': () => { setViewHistory([]); handleNavigate('LOAN_HISTORY', true); },
+    'report_incidents': () => { setViewHistory([]); handleNavigate('INCIDENT_REPORTS', true); },
+    'report_loans': () => { setViewHistory([]); handleNavigate('LOAN_REPORTS', true); },
     'pending_incidents': () => { setViewHistory([]); setPendingSubTab('INCIDENTS'); handleNavigate('PENDING_APPROVALS', true); },
     'pending_loans': () => { setViewHistory([]); setPendingSubTab('LOANS'); handleNavigate('PENDING_APPROVALS', true); },
     'map': () => { setViewHistory([]); handleNavigate('MAP', true); },
@@ -3465,6 +3515,14 @@ const EscalaList: React.FC<{
 
   return (
     <div className="space-y-4">
+      {onBack && (
+        <div className="flex px-1">
+          <button type="button" onClick={onBack} className="btn-back">
+            <ArrowLeft size={18} />
+            <span>VOLTAR</span>
+          </button>
+        </div>
+      )}
       <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="flex items-center gap-3 mb-5">
           <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400">
@@ -3478,17 +3536,6 @@ const EscalaList: React.FC<{
               Total: {escalas.length} escalas cadastradas
             </p>
           </div>
-          {/* Back Button */}
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-blue-600 group bg-white dark:bg-slate-900 shadow-sm md:shadow-none border md:border-0 border-slate-200 dark:border-slate-700"
-              title="Voltar"
-            >
-              <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
-            </button>
-          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -3586,7 +3633,14 @@ const EscalaForm: React.FC<{ initialData: Escala | null, onSave: (e: Escala) => 
   };
 
   return (
-    <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-4">
+      <div className="flex px-1">
+        <button type="button" onClick={onCancel} className="btn-back">
+          <ArrowLeft size={18} />
+          <span>VOLTAR</span>
+        </button>
+      </div>
+
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
         <div className="bg-indigo-600 p-8 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
@@ -3721,29 +3775,33 @@ const EscalaReminderManager: React.FC<{
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-500 hover:text-indigo-600 group"
-          >
-            <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
-            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Voltar</span>
-          </button>
-          <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
-          <div>
-            <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Lembretes Automáticos</h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{escala.name} ({escala.startTime} - {escala.endTime})</p>
+      <div className="flex px-1">
+        <button type="button" onClick={onBack} className="btn-back">
+          <ArrowLeft size={18} />
+          <span>VOLTAR</span>
+        </button>
+      </div>
+
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-indigo-600">
+              <Clock size={24} />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Lembretes Automáticos</h2>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{escala.name} ({escala.startTime} - {escala.endTime})</p>
+            </div>
           </div>
+          {!isAdding && (
+            <button
+              onClick={() => { setFormData({ ...defaultReminder, id: crypto.randomUUID() }); setIsAdding(true); }}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
+            >
+              <Plus size={16} strokeWidth={3} /> Novo Lembrete
+            </button>
+          )}
         </div>
-        {!isAdding && (
-          <button
-            onClick={() => { setFormData({ ...defaultReminder, id: crypto.randomUUID() }); setIsAdding(true); }}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
-          >
-            <Plus size={16} strokeWidth={3} /> Novo Lembrete
-          </button>
-        )}
       </div>
 
       {isAdding && (

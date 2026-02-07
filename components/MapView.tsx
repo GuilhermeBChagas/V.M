@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Building } from '../types';
-import { MapPin, Navigation, Info, Crosshair, Loader2, Key, Siren } from 'lucide-react';
+import { MapPin, Navigation, Info, Crosshair, Loader2, Key, Siren, ArrowLeft } from 'lucide-react';
 
 // --- Fix for Leaflet default icons in React ---
 // This is necessary because the default icon paths are often broken in bundlers
@@ -79,7 +79,7 @@ const UserLocationMarker: React.FC<{ position: [number, number] | null }> = ({ p
     return <Marker position={position} icon={userIcon} zIndexOffset={1000} />;
 };
 
-export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding }) => {
+export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding, onBack }) => {
     const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
     const [isLocating, setIsLocating] = useState(false);
 
@@ -153,6 +153,14 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding 
 
     return (
         <div className="space-y-4 animate-fade-in">
+            {onBack && (
+                <div className="flex px-1 no-print">
+                    <button type="button" onClick={onBack} className="btn-back">
+                        <ArrowLeft size={18} />
+                        <span>VOLTAR</span>
+                    </button>
+                </div>
+            )}
             <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 no-print transition-all">
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">

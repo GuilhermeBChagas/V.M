@@ -78,7 +78,7 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
     onUpdatePermissions, onUpdateOverrides
 }) => {
     const [mode, setMode] = useState<'ROLES' | 'USERS'>('ROLES');
-    const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.OPERADOR);
+    const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
     const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [userSearch, setUserSearch] = useState('');
     const [saving, setSaving] = useState(false);
@@ -91,13 +91,8 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
         setLocalOverrides(userOverrides);
     }, [permissions, userOverrides]);
 
-    useEffect(() => {
-        if (mode === 'USERS' && !selectedUserId && users.length > 0) {
-            setSelectedUserId(users[0].id);
-        }
-    }, [mode, users]);
-
     const handleRolePermissionToggle = (key: string) => {
+        if (!selectedRole) return;
         setLocalPermissions(prev => {
             const currentRoles = prev[key] || [];
             const hasRole = currentRoles.includes(selectedRole);
@@ -160,33 +155,18 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
 
     return (
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col min-h-[600px]">
-            <div className="p-4 md:p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50 dark:bg-slate-800/20">
-                <div>
-                    <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
-                            <Key size={22} strokeWidth={2} />
-                        </div>
-                        <div className="flex-1">
-                            <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
-                                Controle de Acessos
-                            </h2>
-                            <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                                Configure permissões funcionais (Menus são automáticos)
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl w-full md:w-auto">
+            {/* Compact Mode Switcher */}
+            <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex justify-end bg-slate-50/30 dark:bg-slate-800/10">
+                <div className="flex bg-slate-200/50 dark:bg-slate-800 p-1 rounded-xl">
                     <button
                         onClick={() => setMode('ROLES')}
-                        className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${mode === 'ROLES' ? 'bg-white dark:bg-slate-700 shadow text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${mode === 'ROLES' ? 'bg-white dark:bg-slate-700 shadow text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         <Shield size={12} /> Por Função
                     </button>
                     <button
                         onClick={() => setMode('USERS')}
-                        className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${mode === 'USERS' ? 'bg-white dark:bg-slate-700 shadow text-purple-600 dark:text-purple-400' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${mode === 'USERS' ? 'bg-white dark:bg-slate-700 shadow text-purple-600 dark:text-purple-400' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         <UserCheck size={12} /> Individual
                     </button>
@@ -260,84 +240,96 @@ export const AccessControlView: React.FC<AccessControlViewProps> = ({
                 </div>
 
                 <div className="flex-1 p-6">
-                    <div className="mb-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
-                        <div>
-                            <h3 className="text-base font-black text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
-                                {mode === 'ROLES' ? (
-                                    <><Shield className="text-blue-500" size={18} /> Editando: {selectedRole}</>
-                                ) : (
-                                    <><UserCheck className="text-purple-500" size={18} /> Editando: {users.find(u => u.id === selectedUserId)?.name || '...'}</>
-                                )}
-                            </h3>
-                        </div>
-
-                        {isSystemLocked && (
-                            <div className="p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-2 animate-in fade-in">
-                                <Lock className="text-amber-500" size={14} />
-                                <p className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase">
-                                    Administrador possui acesso total.
-                                </p>
+                    {(mode === 'ROLES' && !selectedRole) || (mode === 'USERS' && !selectedUserId) ? (
+                        <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50 space-y-4">
+                            <Activity size={64} strokeWidth={1} />
+                            <div className="text-center">
+                                <p className="text-sm font-black uppercase tracking-widest">Aguardando Seleção</p>
+                                <p className="text-[10px] font-bold uppercase tracking-tight">Selecione uma função ou um usuário para gerenciar permissões</p>
                             </div>
-                        )}
-                    </div>
-
-                    <div className="p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800/30 flex items-start gap-3 mb-8">
-                        <Info className="text-blue-500 mt-1 shrink-0" size={20} />
-                        <div className="space-y-1">
-                            <p className="text-xs font-black text-blue-900 dark:text-blue-100 uppercase">Visibilidade Inteligente</p>
-                            <p className="text-[10px] text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
-                                Os menus da barra lateral são exibidos automaticamente com base nas permissões funcionais abaixo.
-                                Se o usuário não tiver permissão para uma ação, o menu correspondente será ocultado.
-                            </p>
                         </div>
-                    </div>
+                    ) : (
+                        <>
+                            <div className="mb-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                                <div>
+                                    <h3 className="text-base font-black text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
+                                        {mode === 'ROLES' ? (
+                                            <><Shield className="text-blue-500" size={18} /> Editando: {selectedRole}</>
+                                        ) : (
+                                            <><UserCheck className="text-purple-500" size={18} /> Editando: {users.find(u => u.id === selectedUserId)?.name || '...'}</>
+                                        )}
+                                    </h3>
+                                </div>
 
-                    <div className="grid grid-cols-1 gap-6 max-w-3xl mx-auto">
-                        {PERMISSION_GROUPS.map((group, idx) => (
-                            <div key={idx} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
-                                <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">{group.title}</h5>
-                                <div className="space-y-3">
-                                    {group.permissions.map(perm => {
-                                        if (mode === 'ROLES') {
-                                            const isAllowed = (localPermissions[perm.key as PermissionKey] || []).includes(selectedRole);
-                                            return (
-                                                <div key={perm.key} className="flex items-center justify-between">
-                                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">{perm.label}</span>
-                                                    <button
-                                                        onClick={() => !isSystemLocked && handleRolePermissionToggle(perm.key)}
-                                                        className={`w-10 h-6 rounded-full flex items-center transition-all p-1 ${isSystemLocked || isAllowed ? (isSystemLocked ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600') : 'bg-slate-200 dark:bg-slate-700'} ${isSystemLocked || isAllowed ? 'justify-end' : 'justify-start'}`}
-                                                        disabled={isSystemLocked}
-                                                    >
-                                                        <div className="w-4 h-4 bg-white rounded-full shadow-sm flex items-center justify-center">
-                                                            {isSystemLocked && <Lock size={10} className="text-slate-500" />}
-                                                        </div>
-                                                    </button>
-                                                </div>
-                                            );
-                                        } else {
-                                            const { allowed, source } = getEffectiveUserPermission(selectedUserId, perm.key);
-                                            const isInherited = source === 'ROLE';
-                                            return (
-                                                <div key={perm.key} className="flex items-center justify-between group">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">{perm.label}</span>
-                                                        <span className={`text-[9px] uppercase font-bold ${source === 'ROLE' ? 'text-slate-400' : 'text-purple-500'}`}>
-                                                            {source === 'ROLE' ? 'Herdado do Cargo' : source === 'OVERRIDE_ALLOW' ? 'Permitido (Manual)' : 'Bloqueado (Manual)'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-0.5">
-                                                        <button onClick={() => handleUserPermissionOverride(selectedUserId, perm.key as PermissionKey, undefined)} className={`p-1.5 rounded transition-colors ${isInherited ? 'bg-slate-100 text-slate-600' : 'text-slate-300 hover:text-slate-500'}`} title="Herdar"><RefreshCw size={12} /></button>
-                                                        <button onClick={() => handleUserPermissionOverride(selectedUserId, perm.key as PermissionKey, true)} className={`p-1.5 rounded transition-colors ${!isInherited && allowed ? 'bg-green-100 text-green-700' : 'text-slate-300 hover:text-green-500'}`} title="Permitir"><Check size={12} /></button>
-                                                        <button onClick={() => handleUserPermissionOverride(selectedUserId, perm.key as PermissionKey, false)} className={`p-1.5 rounded transition-colors ${!isInherited && !allowed ? 'bg-red-100 text-red-700' : 'text-slate-300 hover:text-red-500'}`} title="Bloquear"><X size={12} /></button>
-                                                    </div>
-                                                </div>
-                                            );
-                                        }
-                                    })}
+                                {isSystemLocked && (
+                                    <div className="p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-2 animate-in fade-in">
+                                        <Lock className="text-amber-500" size={14} />
+                                        <p className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase">
+                                            Administrador possui acesso total.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800/30 flex items-start gap-3 mb-8">
+                                <Info className="text-blue-500 mt-1 shrink-0" size={20} />
+                                <div className="space-y-1">
+                                    <p className="text-xs font-black text-blue-900 dark:text-blue-100 uppercase">Visibilidade Inteligente</p>
+                                    <p className="text-[10px] text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                                        Os menus da barra lateral são exibidos automaticamente com base nas permissões funcionais abaixo.
+                                        Se o usuário não tiver permissão para uma ação, o menu correspondente será ocultado.
+                                    </p>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+
+                            <div className="grid grid-cols-1 gap-6 max-w-5xl mx-auto">
+                                {PERMISSION_GROUPS.map((group, idx) => (
+                                    <div key={idx} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
+                                        <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">{group.title}</h5>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                                            {group.permissions.map(perm => {
+                                                if (mode === 'ROLES') {
+                                                    const isAllowed = (localPermissions[perm.key as PermissionKey] || []).includes(selectedRole!);
+                                                    return (
+                                                        <div key={perm.key} className="flex items-center justify-between">
+                                                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">{perm.label}</span>
+                                                            <button
+                                                                onClick={() => !isSystemLocked && handleRolePermissionToggle(perm.key)}
+                                                                className={`w-10 h-6 rounded-full flex items-center transition-all p-1 ${isSystemLocked || isAllowed ? (isSystemLocked ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600') : 'bg-slate-200 dark:bg-slate-700'} ${isSystemLocked || isAllowed ? 'justify-end' : 'justify-start'}`}
+                                                                disabled={isSystemLocked}
+                                                            >
+                                                                <div className="w-4 h-4 bg-white rounded-full shadow-sm flex items-center justify-center">
+                                                                    {isSystemLocked && <Lock size={10} className="text-slate-500" />}
+                                                                </div>
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                } else {
+                                                    const { allowed, source } = getEffectiveUserPermission(selectedUserId, perm.key);
+                                                    const isInherited = source === 'ROLE';
+                                                    return (
+                                                        <div key={perm.key} className="flex items-center justify-between group">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">{perm.label}</span>
+                                                                <span className={`text-[9px] uppercase font-bold ${source === 'ROLE' ? 'text-slate-400' : 'text-purple-500'}`}>
+                                                                    {source === 'ROLE' ? 'Herdado do Cargo' : source === 'OVERRIDE_ALLOW' ? 'Permitido (Manual)' : 'Bloqueado (Manual)'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-0.5">
+                                                                <button onClick={() => handleUserPermissionOverride(selectedUserId, perm.key as PermissionKey, undefined)} className={`p-1.5 rounded transition-colors ${isInherited ? 'bg-slate-100 text-slate-600' : 'text-slate-300 hover:text-slate-500'}`} title="Herdar"><RefreshCw size={12} /></button>
+                                                                <button onClick={() => handleUserPermissionOverride(selectedUserId, perm.key as PermissionKey, true)} className={`p-1.5 rounded transition-colors ${!isInherited && allowed ? 'bg-green-100 text-green-700' : 'text-slate-300 hover:text-green-500'}`} title="Permitir"><Check size={12} /></button>
+                                                                <button onClick={() => handleUserPermissionOverride(selectedUserId, perm.key as PermissionKey, false)} className={`p-1.5 rounded transition-colors ${!isInherited && !allowed ? 'bg-red-100 text-red-700' : 'text-slate-300 hover:text-red-500'}`} title="Bloquear"><X size={12} /></button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
