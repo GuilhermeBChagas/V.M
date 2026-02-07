@@ -615,7 +615,7 @@ const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({ currentUser, 
     );
 
     return (
-        <div className="space-y-4 animate-fade-in pb-10 max-w-7xl mx-auto">
+        <div className="space-y-8 animate-fade-in pb-10 max-w-7xl mx-auto">
             {(view !== 'LIST' || onBack) && (
                 <div className="flex mb-2 px-1">
                     <button

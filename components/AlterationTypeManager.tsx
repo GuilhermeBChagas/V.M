@@ -30,7 +30,7 @@ export const AlterationTypeManager: React.FC<AlterationTypeManagerProps> = ({ ty
     const filteredTypes = types.filter(t => normalizeString(t.name).includes(normalizeString(search)));
 
     return (
-        <div className="space-y-4 animate-fade-in pb-10">
+        <div className="space-y-8 animate-fade-in pb-10">
             {onBack && (
                 <div className="flex px-1 no-print">
                     <button type="button" onClick={onBack} className="btn-back">

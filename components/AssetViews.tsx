@@ -26,7 +26,7 @@ interface ListHeaderProps {
 const ListHeader: React.FC<ListHeaderProps> = ({
     title, subtitle, icon, searchValue, onSearchChange, searchPlaceholder, onAdd, addLabel, onBack
 }) => (
-    <div className="animate-fade-in space-y-4">
+    <div className="animate-fade-in space-y-8">
         {onBack && (
             <div className="flex px-1">
                 <button onClick={onBack} className="btn-back">
@@ -112,7 +112,7 @@ interface GenericFormProps {
 }
 
 const GenericForm: React.FC<GenericFormProps> = ({ title, icon, children, onSubmit, onCancel, onDelete, isEditing, isLoading, maxWidth = 'max-w-3xl' }) => (
-    <div className={`${maxWidth} mx-auto space-y-4`}>
+    <div className={`${maxWidth} mx-auto space-y-8`}>
         <div className="flex px-1">
             <button onClick={onCancel} className="btn-back">
                 <ArrowLeft size={18} />

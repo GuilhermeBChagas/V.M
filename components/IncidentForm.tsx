@@ -400,7 +400,7 @@ export const IncidentForm: React.FC<IncidentFormProps> = ({
     const currentRa = initialData?.raCode || nextRaCode;
 
     return (
-        <div className="max-w-4xl mx-auto animate-fade-in space-y-4 mb-20">
+        <div className="max-w-4xl mx-auto animate-fade-in space-y-8 mb-20">
             <div className="flex px-1">
                 <button type="button" onClick={onCancel} className="btn-back">
                     <ArrowLeft size={18} />

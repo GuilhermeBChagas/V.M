@@ -218,7 +218,7 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
     };
 
     return (
-        <div className="max-w-4xl mx-auto pb-10 px-0 md:px-4">
+        <div className="max-w-4xl mx-auto pb-10 px-0 md:px-4 space-y-8">
             {/* --- BARRA DE CONTROLE (TELA - NÃO IMPRIME) --- */}
             {showToolbar && (
                 <div className={`mb-6 p-4 rounded-3xl border flex flex-col md:flex-row justify-between items-center no-print shadow-sm gap-4 transition-colors duration-300 ${isCancelled

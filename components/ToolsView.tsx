@@ -157,7 +157,7 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
     };
 
     return (
-        <div className="space-y-6 animate-fade-in pb-20">
+        <div className="space-y-8 animate-fade-in pb-20">
             {onBack && (
                 <div className="flex px-1 no-print">
                     <button type="button" onClick={onBack} className="btn-back">

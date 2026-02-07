@@ -91,7 +91,7 @@ export const BuildingForm: React.FC<BuildingFormProps> = ({ initialData, sectors
     };
 
     return (
-        <div className="max-w-3xl mx-auto animate-fade-in space-y-4">
+        <div className="max-w-3xl mx-auto animate-fade-in space-y-8">
             <div className="flex px-1">
                 <button type="button" onClick={onCancel} className="btn-back">
                     <ArrowLeft size={18} />

@@ -1266,8 +1266,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     }, [itemHistoryResults, pdfOrientation, pdfMargins, historyItemType]);
 
     return (
-        <div className="space-y-4 animate-fade-in relative">
-            <div className="flex items-center justify-between no-print mb-2 px-1">
+        <div className="space-y-8 animate-fade-in relative">
+            <div className="flex items-center justify-between no-print px-1">
                 {(activeTab === 'NEW' || onBack) && (
                     <button
                         onClick={() => {
@@ -1284,11 +1284,12 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
             {/* Header Section */}
             <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm no-print">
-                {/* Title Row */}
-                <div className="flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-3">
-                        <div className={`p-2.5 rounded-xl ${activeTab === 'HISTORY' ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'}`}>
-                            {activeTab === 'HISTORY' ? <History size={22} strokeWidth={2} /> : <ArrowRightLeft size={22} strokeWidth={2} />}
+                {/* Top Row: Title, Search and Main Actions */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    {/* Title Block */}
+                    <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-2xl shadow-sm border ${activeTab === 'HISTORY' ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'}`}>
+                            {activeTab === 'HISTORY' ? <History size={24} strokeWidth={2.5} /> : <ArrowRightLeft size={24} strokeWidth={2.5} />}
                         </div>
                         <div>
                             <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
@@ -1299,110 +1300,112 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                             </p>
                         </div>
                     </div>
-                </div>
 
-                {/* Search and Actions Row */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                    {/* Search Input - Only in USER mode or ACTIVE tab */}
-                    {(activeTab !== 'HISTORY' || historyMode === 'USER') && (
-                        <div className="relative flex-1">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                            <input
-                                type="text"
-                                placeholder="Buscar por nome, item ou matrícula..."
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                                className="w-full pl-12 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all shadow-sm"
-                            />
-                            {searchTerm && (
+                    <div className="flex flex-col sm:flex-row items-center gap-3 md:flex-1 md:justify-end">
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 w-full sm:w-auto sm:flex-shrink-0">
+                            {(activeTab !== 'HISTORY' || historyMode === 'USER') && (
                                 <button
-                                    type="button"
-                                    onClick={() => setSearchTerm('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className={`flex-1 sm:flex-none px-4 sm:px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all duration-200 flex items-center justify-center gap-2 ${showFilters
+                                        ? 'bg-brand-600 border-brand-600 text-white shadow-lg shadow-brand-500/25'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand-300 hover:text-brand-600 dark:hover:border-brand-600 dark:hover:text-brand-400'
+                                        }`}
                                 >
-                                    <X size={18} />
+                                    <Filter size={16} />
+                                    <span className="hidden sm:inline">Filtros</span>
+                                </button>
+                            )}
+                            {(activeTab === 'HISTORY' && historyMode === 'ITEM' && isReportView) && (
+                                <button
+                                    onClick={handleExportHistoryPDF}
+                                    disabled={isExporting || itemHistoryResults.length === 0}
+                                    className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 transition-all duration-200 disabled:opacity-50"
+                                >
+                                    {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                                    <span className="hidden sm:inline">Exportar Relatório</span>
+                                    <span className="sm:hidden">Exportar</span>
                                 </button>
                             )}
                         </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 sm:flex-shrink-0 ml-auto">
-                        {(activeTab !== 'HISTORY' || historyMode === 'USER') && (
-                            <button
-                                onClick={() => setShowFilters(!showFilters)}
-                                className={`flex-1 sm:flex-none px-4 sm:px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all duration-200 flex items-center justify-center gap-2 ${showFilters
-                                    ? 'bg-brand-600 border-brand-600 text-white shadow-lg shadow-brand-500/25'
-                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand-300 hover:text-brand-600 dark:hover:border-brand-600 dark:hover:text-brand-400'
-                                    }`}
-                            >
-                                <Filter size={16} />
-                                <span className="hidden sm:inline">Filtros</span>
-                            </button>
-                        )}
-                        {(activeTab === 'HISTORY' && historyMode === 'ITEM' && isReportView) && (
-                            <button
-                                onClick={handleExportHistoryPDF}
-                                disabled={isExporting || itemHistoryResults.length === 0}
-                                className="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 transition-all duration-200 disabled:opacity-50"
-                            >
-                                {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                                <span className="hidden sm:inline">Exportar Relatório</span>
-                                <span className="sm:hidden">Exportar</span>
-                            </button>
-                        )}
                     </div>
                 </div>
 
                 {/* Filter Panel */}
                 {showFilters && (
-                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-top-2">
-                        <div className="relative">
-                            <label className="block text-[10px] font-black text-slate-500 uppercase mb-1.5 ml-1">Data Inicial</label>
-                            <div className="relative">
-                                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4 animate-in slide-in-from-top-2">
+                        {/* Search Bar - Integrated in Filter Panel */}
+                        {(activeTab !== 'HISTORY' || historyMode === 'USER') && (
+                            <div className="relative w-full">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <input
-                                    type="date"
-                                    value={dateStart}
-                                    onChange={e => setDateStart(e.target.value)}
-                                    className="w-full pl-9 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                                    type="text"
+                                    placeholder="Buscar por nome, item ou matrícula..."
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    className="w-full pl-12 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-medium placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all shadow-sm"
                                 />
+                                {searchTerm && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchTerm('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                )}
                             </div>
-                        </div>
-                        <div className="relative">
-                            <label className="block text-[10px] font-black text-slate-500 uppercase mb-1.5 ml-1">Hora Inicial</label>
+                        )}
+
+                        {/* Filters Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="relative">
-                                <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="time"
-                                    value={timeStart}
-                                    onChange={e => setTimeStart(e.target.value)}
-                                    className="w-full pl-9 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500 transition-all"
-                                />
+                                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1.5 ml-1">Data Inicial</label>
+                                <div className="relative">
+                                    <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="date"
+                                        value={dateStart}
+                                        onChange={e => setDateStart(e.target.value)}
+                                        className="w-full pl-9 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                        <div className="relative">
-                            <label className="block text-[10px] font-black text-slate-500 uppercase mb-1.5 ml-1">Data Final</label>
                             <div className="relative">
-                                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="date"
-                                    value={dateEnd}
-                                    onChange={e => setDateEnd(e.target.value)}
-                                    className="w-full pl-9 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500 transition-all"
-                                />
+                                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1.5 ml-1">Hora Inicial</label>
+                                <div className="relative">
+                                    <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="time"
+                                        value={timeStart}
+                                        onChange={e => setTimeStart(e.target.value)}
+                                        className="w-full pl-9 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                        <div className="relative">
-                            <label className="block text-[10px] font-black text-slate-500 uppercase mb-1.5 ml-1">Hora Final</label>
                             <div className="relative">
-                                <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="time"
-                                    value={timeEnd}
-                                    onChange={e => setTimeEnd(e.target.value)}
-                                    className="w-full pl-9 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500 transition-all"
-                                />
+                                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1.5 ml-1">Data Final</label>
+                                <div className="relative">
+                                    <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="date"
+                                        value={dateEnd}
+                                        onChange={e => setDateEnd(e.target.value)}
+                                        className="w-full pl-9 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                                    />
+                                </div>
+                            </div>
+                            <div className="relative">
+                                <label className="block text-[10px] font-black text-slate-500 uppercase mb-1.5 ml-1">Hora Final</label>
+                                <div className="relative">
+                                    <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="time"
+                                        value={timeEnd}
+                                        onChange={e => setTimeEnd(e.target.value)}
+                                        className="w-full pl-9 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1640,7 +1643,6 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                             {/* HISTORY MODE TOGGLE */}
                             {activeTab === 'HISTORY' && (
                                 <>
-
                                     {/* ITEM HISTORY FILTERS & VIEW */}
                                     {historyMode === 'ITEM' && (
                                         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm animate-in fade-in slide-in-from-top-2 mb-6">
@@ -3101,6 +3103,6 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     />
                 )
             }
-        </div >
+        </div>
     );
 };

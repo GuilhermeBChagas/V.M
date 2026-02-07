@@ -185,7 +185,7 @@ export const ChartsView: React.FC<ChartsViewProps> = ({ incidents, buildings, se
     }, [activeIncidents, sectors, buildings]);
 
     return (
-        <div className="space-y-6 animate-fade-in pb-12">
+        <div className="space-y-8 animate-fade-in pb-12">
             {onBack && (
                 <div className="flex px-1 no-print">
                     <button type="button" onClick={onBack} className="btn-back">

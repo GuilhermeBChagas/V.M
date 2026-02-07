@@ -243,10 +243,12 @@ const IncidentHistory: React.FC<{
   onBack?: () => void;
   requireFilter?: boolean;
   onLogAction?: (action: any, details: string) => void;
+  embeddedPreview?: boolean;
 }> = (props) => {
   const { incidents, buildings, onView, onEdit, onDelete, onApprove,
     filterStatus, currentUser, customLogo, customLogoLeft, loans = [], onConfirmLoanBatch,
-    onLoadMore, hasMore, isLoadingMore, canEdit, canDelete, canApprove, canExport, canViewAll = false, jobTitles, onFilterChange, onBack, requireFilter = false, onLogAction } = props;
+    onLoadMore, hasMore, isLoadingMore, canEdit, canDelete, canApprove, canExport, canViewAll = false, jobTitles, onFilterChange, onBack, requireFilter = false, onLogAction,
+    embeddedPreview = false } = props;
   const [search, setSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [dateStart, setDateStart] = useState('');
@@ -293,6 +295,8 @@ const IncidentHistory: React.FC<{
     setStatusFilter(filterStatus === 'PENDING' ? 'PENDING' : 'APPROVED');
   }, [filterStatus]);
 
+  const [measuredChunks, setMeasuredChunks] = useState<Incident[][] | null>(null);
+
   const fetchClientIP = async () => {
     try {
       const res = await fetch('https://api.ipify.org?format=json');
@@ -305,6 +309,7 @@ const IncidentHistory: React.FC<{
   };
 
   const printRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   let filtered = incidents.filter(i => {
@@ -357,6 +362,336 @@ const IncidentHistory: React.FC<{
     );
   });
 
+  // Helper for Margin Presets
+  const applyPreset = (preset: 'normal' | 'narrow' | 'none') => {
+    if (preset === 'normal') {
+      setPdfMargins({ top: 15, right: 15, bottom: 15, left: 15 });
+    } else if (preset === 'narrow') {
+      setPdfMargins({ top: 5, right: 5, bottom: 5, left: 5 });
+    } else if (preset === 'none') {
+      setPdfMargins({ top: 0, right: 0, bottom: 0, left: 0 });
+    }
+  };
+
+  // Check if any filter is active
+  const isFilterActive = !!(search || (dateStart && dateEnd) || statusFilter !== 'APPROVED'); // Simplified check
+  const showResults = !requireFilter || (requireFilter && (dateStart || dateEnd || search)); // Show if not requiring filter OR if filter is present (basic date filter usually)
+
+  // Local component for rendering a single report page
+  const ReportView: React.FC<{
+    chunk: Incident[];
+    pageIndex: number;
+    chunksLength: number;
+    pdfOrientation: 'portrait' | 'landscape';
+    pdfPaperSize: 'A4' | 'LETTER' | 'LEGAL';
+    pdfMargins: { top: number; right: number; bottom: number; left: number };
+    pdfUnit: 'mm' | 'cm' | 'in';
+    showMarginGuides: boolean;
+    customLogo: string | null;
+    customLogoLeft?: string | null;
+    jobTitles: JobTitle[];
+    exportDate: string;
+    exportIP: string;
+    exportHash: string;
+    buildings: Building[];
+    currentUser: User | null;
+    hideFooter?: boolean;
+  }> = ({
+    chunk,
+    pageIndex,
+    chunksLength,
+    pdfOrientation,
+    pdfPaperSize,
+    pdfMargins,
+    pdfUnit,
+    showMarginGuides,
+    customLogo,
+    customLogoLeft,
+    jobTitles,
+    exportDate,
+    exportIP,
+    exportHash,
+    buildings,
+    currentUser,
+    hideFooter = false,
+  }) => {
+      const pageWidth = pdfOrientation === 'landscape' ? (pdfPaperSize === 'A4' ? '297mm' : pdfPaperSize === 'LETTER' ? '279mm' : '356mm') : (pdfPaperSize === 'A4' ? '210mm' : '216mm');
+      const pageHeight = pdfOrientation === 'landscape' ? (pdfPaperSize === 'A4' ? '210mm' : '216mm') : (pdfPaperSize === 'A4' ? '297mm' : pdfPaperSize === 'LETTER' ? '279mm' : '356mm');
+
+      return (
+        <div
+          key={pageIndex}
+          className="report-page bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col justify-between relative group"
+          style={{
+            width: pageWidth,
+            height: pageHeight,
+            paddingTop: `${pdfMargins.top}${pdfUnit}`,
+            paddingBottom: `${pdfMargins.bottom}${pdfUnit}`,
+            paddingLeft: `${pdfMargins.left}${pdfUnit}`,
+            paddingRight: `${pdfMargins.right}${pdfUnit}`,
+            pageBreakAfter: 'always',
+            fontFamily: "'Inter', sans-serif",
+            boxSizing: 'border-box'
+          }}
+        >
+          {/* Interactive Margin Guides (Dashed) */}
+          {showMarginGuides && (
+            <div
+              className="margin-guide absolute inset-0 pointer-events-none transition-opacity opacity-0 group-hover:opacity-100"
+              style={{
+                top: `${pdfMargins.top}${pdfUnit}`,
+                bottom: `${pdfMargins.bottom}${pdfUnit}`,
+                left: `${pdfMargins.left}${pdfUnit}`,
+                right: `${pdfMargins.right}${pdfUnit}`,
+                border: '1px dashed rgba(59, 130, 246, 0.3)'
+              }}
+            >
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full text-[8px] font-black text-blue-400 uppercase py-1">Top: {pdfMargins.top}{pdfUnit}</div>
+              <div className="absolute left-0 top-1/2 -rotate-90 -translate-x-full text-[8px] font-black text-blue-400 uppercase py-1">Left: {pdfMargins.left}{pdfUnit}</div>
+            </div>
+          )}
+
+          <div>
+            <div className="flex justify-center items-start mb-6 gap-12 pt-4">
+              <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center">
+                {customLogoLeft ? (
+                  <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão" />
+                ) : (
+                  <div className="w-16 h-16 rounded-full border border-slate-300 flex items-center justify-center bg-slate-50 shadow-inner">
+                    <Shield size={24} className="text-slate-300" />
+                  </div>
+                )}
+              </div>
+
+              <div className="text-center">
+                <h1 className="text-[18px] font-black uppercase text-slate-900 leading-tight tracking-tight">
+                  PREFEITURA MUNICIPAL DE ARAPONGAS
+                </h1>
+                <h2 className="text-[14px] font-black uppercase text-slate-900 mt-1">
+                  SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
+                </h2>
+                <h3 className="text-[12px] font-bold uppercase text-brand-600 mt-1 tracking-[0.1em]">
+                  CENTRO DE MONITORAMENTO MUNICIPAL
+                </h3>
+                <div className="flex items-center justify-between gap-4 bg-slate-50/80 px-4 py-2 rounded-xl mt-4 border border-slate-100">
+                  <div className="text-left">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-800 leading-none">Relatório Geral</h4>
+                  </div>
+                  <div className="flex-1 text-center">
+                    {(dateStart || dateEnd) && (
+                      <div className="text-[9px] uppercase font-bold text-slate-500 flex items-center justify-center gap-1.5">
+                        <Clock size={10} strokeWidth={3} /> {dateStart ? formatDateBR(dateStart) : 'Início'} até {dateEnd ? formatDateBR(dateEnd) : 'Hoje'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right min-w-[80px]">
+                    <p className="text-[9px] font-black text-slate-900 uppercase tracking-tighter">PÁGINA {pageIndex + 1} DE {chunksLength}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center">
+                {customLogo ? (
+                  <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Logo" />
+                ) : (
+                  <div className="w-16 h-16 rounded-full border border-slate-300 flex items-center justify-center bg-slate-50 shadow-inner">
+                    <Shield size={24} className="text-slate-300" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <table className="w-full border-collapse border-b-2 border-slate-900">
+              <thead style={{ display: 'table-header-group' }}>
+                <tr className="bg-slate-900 text-white">
+                  {(() => {
+                    const isPortrait = pdfOrientation === 'portrait';
+                    return (
+                      <>
+                        <th className={`p-3 text-[10px] font-black uppercase text-left border-r border-slate-700`} style={{ width: isPortrait ? '50px' : '80px' }}>R.A</th>
+                        <th className={`p-3 text-[10px] font-black uppercase text-left border-r border-slate-700`} style={{ width: isPortrait ? '100px' : '150px' }}>Próprio</th>
+                        <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '60px' : '90px' }}>Data</th>
+                        <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '45px' : '70px' }}>Início</th>
+                        <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '45px' : '70px' }}>Fim</th>
+                        <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '80px' : '130px' }}>Natureza</th>
+                        <th className="p-3 text-[10px] font-black uppercase text-left">Relato</th>
+                      </>
+                    );
+                  })()}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {chunk.map(i => {
+                  const building = buildings.find(b => b.id === i.buildingId);
+                  return (
+                    <tr key={i.id} style={{ pageBreakInside: 'avoid' }} className="hover:bg-slate-50 transition-colors break-inside-avoid">
+                      {/* Calculated styling for columns */}
+                      {(() => {
+                        const isPortrait = pdfOrientation === 'portrait';
+                        return (
+                          <>
+                            <td className="p-2 text-[9px] font-black text-slate-900 border-x border-slate-200" style={{ width: isPortrait ? '50px' : '80px' }}>{i.raCode}</td>
+                            <td className="p-2 text-[9px] font-bold uppercase text-slate-700 border-r border-slate-200" style={{ width: isPortrait ? '100px' : '150px' }}>{building?.name || '---'}</td>
+                            <td className="p-2 text-[9px] font-bold text-center border-r border-slate-200" style={{ width: isPortrait ? '60px' : '90px' }}>{formatDateBR(i.date)}</td>
+                            <td className="p-2 text-[9px] font-bold text-center border-r border-slate-200" style={{ width: isPortrait ? '45px' : '70px' }}>{i.startTime}</td>
+                            <td className="p-2 text-[9px] font-bold text-center border-r border-slate-200" style={{ width: isPortrait ? '45px' : '70px' }}>{i.endTime || '--:--'}</td>
+                            <td className="p-2 text-[8px] font-black uppercase text-center text-slate-900 border-r border-slate-200" style={{ width: isPortrait ? '80px' : '130px' }}>{i.alterationType}</td>
+                            <td className={`p-2 text-[8px] leading-tight align-top whitespace-pre-wrap break-words border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 font-bold' : 'font-medium'}`}>
+                              {i.status === 'CANCELLED' && <span className="text-red-700 font-black mr-1">[CANCELADO]</span>}
+                              {i.description}
+                            </td>
+                          </>
+                        );
+                      })()}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {!hideFooter && (
+            <>
+              <div className="border-t border-slate-100 mt-1" />
+
+              {/* RODAPÉ E ASSINATURAS - ESTILO INCIDENTDETAIL */}
+              <div className="mt-auto pt-6 border-t-2 border-slate-100 pb-2">
+                <div className="grid grid-cols-2 gap-8 items-end">
+                  {/* Assinatura Operador */}
+                  <div className="flex flex-col items-start justify-end h-full">
+                    <div className="text-[10px] font-black uppercase text-slate-900 leading-tight mb-2">
+                      {currentUser?.name || 'OPERADOR NÃO IDENTIFICADO'}
+                    </div>
+                    <div className="text-[7px] font-black uppercase text-slate-500 tracking-widest mb-1">
+                      {jobTitles.find(t => t.id === currentUser?.jobTitleId)?.name || currentUser?.role || 'OPERADOR'}
+                    </div>
+
+                    <div className="space-y-1 w-full pt-1">
+                      <div className="text-[6px] font-bold uppercase text-slate-400">RELATÓRIO GERADO POR:</div>
+                      <div className="text-[6.5px] font-black uppercase text-slate-700">
+                        {currentUser?.name} <span className="text-slate-400 font-medium">EM</span> {exportDate.split(' às ')[0]} <span className="text-slate-400 font-medium">ÀS</span> {exportDate.split(' às ')[1]}
+                      </div>
+                      <div className="text-[5.5px] font-mono text-slate-400 uppercase">IP: {exportIP}</div>
+                    </div>
+                  </div>
+
+                  {/* Validação e Hash de Segurança */}
+                  <div className="flex flex-col items-end justify-end h-full text-right">
+                    <div className="w-full flex flex-col items-end">
+                      <div className="text-[7px] font-bold uppercase text-slate-500 flex items-center gap-1 mb-1 justify-end">
+                        <ShieldCheck size={10} className="text-blue-600" /> CONFERÊNCIA DIGITAL DE INTEGRIDADE
+                      </div>
+                      <div className="text-[5.5px] font-mono font-bold text-slate-400 uppercase break-all max-w-[200px] leading-[1.1]">
+                        HASH: {exportHash}
+                      </div>
+                      <div className="text-[5px] font-mono text-slate-300 uppercase mt-1">
+                        REGISTRO OFICIAL DE AUDITORIA - {new Date().getFullYear()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      );
+    };
+
+  const calculateChunks = useCallback(() => {
+    if (!measureRef.current) return;
+
+    // --- NEW PAGINATION LOGIC: REAL-TIME DOM MEASUREMENT ---
+    const PAGE_HEIGHT_MM = pdfOrientation === 'landscape'
+      ? (pdfPaperSize === 'A4' ? 210 : 216)
+      : (pdfPaperSize === 'A4' ? 297 : 279);
+
+    // Ajuste dos parâmetros de altura para aproveitar melhor o espaço sem ultrapassar as margens
+    const HEADER_HEIGHT_EST = 55; // Aumentado para incluir cabeçalho da tabela e info do relatório
+    const FOOTER_HEIGHT_EST = embeddedPreview ? 0 : 15;
+    const SAFE_MARGIN_MM = 5; // Margem de segurança mais conservadora
+    const AVAILABLE_HEIGHT_MM = PAGE_HEIGHT_MM - pdfMargins.top - pdfMargins.bottom - HEADER_HEIGHT_EST - FOOTER_HEIGHT_EST - SAFE_MARGIN_MM;
+
+    // Convert mm to pixels for measurement (approx 3.78px per mm)
+    const MM_TO_PX = 3.78;
+    const availableHeightPx = AVAILABLE_HEIGHT_MM * MM_TO_PX;
+
+    const rows = Array.from(measureRef.current.querySelectorAll('tr.incident-row'));
+    const chunkedIncidents: Incident[][] = [];
+    let currentChunk: Incident[] = [];
+    let currentHeight = 0;
+
+    rows.forEach((row, index) => {
+      const rowHeight = (row as HTMLElement).offsetHeight;
+      const incident = displayIncidents[index];
+
+      if (currentHeight + rowHeight > availableHeightPx && currentChunk.length > 0) {
+        chunkedIncidents.push(currentChunk);
+        currentChunk = [incident];
+        currentHeight = rowHeight;
+      } else {
+        currentChunk.push(incident);
+        currentHeight += rowHeight;
+      }
+    });
+
+    if (currentChunk.length > 0) chunkedIncidents.push(currentChunk);
+
+    setMeasuredChunks(chunkedIncidents);
+    return chunkedIncidents;
+  }, [pdfOrientation, pdfPaperSize, pdfMargins, embeddedPreview, displayIncidents, measureRef]);
+
+  // Efeito para recalcular paginação automaticamente no modo embedded
+  useEffect(() => {
+    if (embeddedPreview && displayIncidents.length > 0) {
+      const timer = setTimeout(() => {
+        calculateChunks();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [embeddedPreview, displayIncidents, calculateChunks]);
+
+  const renderReportPages = () => {
+    let chunks: Incident[][] = measuredChunks || (window as any)._measuredChunks;
+
+    if (!chunks || chunks.length === 0) {
+      // Fallback to basic chunking for initial render/preview
+      chunks = [[]];
+      let current: Incident[] = [];
+      displayIncidents.forEach((item, idx) => {
+        current.push(item);
+        // Simple heuristic: roughly 12 items per page
+        if (current.length >= 12 || idx === displayIncidents.length - 1) {
+          chunks.push(current);
+          current = [];
+        }
+      });
+      if (chunks.length > 1 && chunks[0].length === 0) chunks.shift();
+    }
+
+    return chunks.map((chunk, pageIndex) => (
+      <ReportView
+        key={`page-${pageIndex}`}
+        chunk={chunk}
+        pageIndex={pageIndex}
+        chunksLength={chunks.length}
+        pdfOrientation={pdfOrientation}
+        pdfPaperSize={pdfPaperSize}
+        pdfMargins={pdfMargins}
+        pdfUnit={pdfUnit}
+        showMarginGuides={showMarginGuides}
+        customLogo={customLogo}
+        customLogoLeft={customLogoLeft}
+        jobTitles={jobTitles}
+        exportDate={exportDate}
+        exportIP={exportIP}
+        exportHash={exportHash}
+        buildings={buildings}
+        currentUser={currentUser}
+        hideFooter={embeddedPreview}
+      />
+    ));
+  };
+
   const runExportWithIP = (ip: string) => {
     // --- PREPARAÇÃO DOS DADOS ---
     const now = new Date();
@@ -375,53 +710,73 @@ const IncidentHistory: React.FC<{
     setExportDate(formattedDate);
     setExportHash(hash);
 
+    setExportHash(hash);
+
     // Pequeno delay para garantir que o React renderizou o IP/Data no DOM
-    setTimeout(() => {
-      const element = printRef.current;
-      const opt = {
-        margin: 0,
-        filename: `Relatorio_Atendimentos_${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: autoFit ? 2 : (pdfScale / 100) * 2,
-          useCORS: true,
-          letterRendering: true,
-          scrollY: 0,
-          windowWidth: document.documentElement.offsetWidth,
-          onclone: (doc: Document) => {
-            const el = doc.getElementById('history-export-container');
-            if (el) {
-              el.style.scale = '1'; // Reset scale during capture to avoid artifacts
-              el.style.gap = '0px';
-              el.style.padding = '0';
-              // Remove visual styles from pages for clean print
-              const pages = el.querySelectorAll('.report-page');
-              pages.forEach((p: any) => {
-                p.style.boxShadow = 'none';
-                p.style.border = 'none';
-                // Hide margin guides on export
-                const guides = p.querySelectorAll('.margin-guide');
-                guides.forEach((g: any) => g.style.display = 'none');
-              });
+    setTimeout(async () => {
+      if (!measureRef.current || !printRef.current) return;
+
+      const chunkedIncidents = calculateChunks();
+      if (!chunkedIncidents) return;
+
+      (window as any)._measuredChunks = chunkedIncidents;
+      // Trigger a re-render to use measured chunks
+      setIsExporting(true);
+
+      setTimeout(() => {
+        const element = printRef.current;
+        const pageWidthMm = pdfOrientation === 'landscape'
+          ? (pdfPaperSize === 'A4' ? 297 : pdfPaperSize === 'LETTER' ? 279 : 356)
+          : (pdfPaperSize === 'A4' ? 210 : 216);
+        const targetWidthPx = Math.round(pageWidthMm * 3.78);
+
+        const opt = {
+          margin: [0, 0, 0, 0],
+          filename: `Relatorio_Atendimentos_${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: {
+            scale: autoFit ? 3 : (pdfScale / 100) * 3,
+            useCORS: true,
+            letterRendering: true,
+            scrollY: 0,
+            windowWidth: targetWidthPx,
+            onclone: (doc: Document) => {
+              const el = doc.getElementById('history-export-container');
+              if (el) {
+                el.style.scale = '1';
+                el.style.width = 'max-content';
+                el.style.alignItems = 'flex-start'; // Garante que comece no (0,0) e não corte a esquerda
+                el.style.gap = '0px';
+                el.style.padding = '0';
+                const pages = el.querySelectorAll('.report-page');
+                pages.forEach((p: any) => {
+                  p.style.boxShadow = 'none';
+                  p.style.border = 'none';
+                  const guides = p.querySelectorAll('.margin-guide');
+                  guides.forEach((g: any) => g.style.display = 'none');
+                });
+              }
             }
-          }
-        },
-        jsPDF: {
-          unit: pdfUnit,
-          format: pdfPaperSize.toLowerCase(),
-          orientation: pdfOrientation
-        }
-      };
-      html2pdf().set(opt).from(element).save().then(() => {
-        setIsExporting(false);
-      });
+          },
+          jsPDF: {
+            unit: pdfUnit,
+            format: pdfPaperSize.toLowerCase(),
+            orientation: pdfOrientation
+          },
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+        html2pdf().set(opt).from(element).save().then(() => {
+          setIsExporting(false);
+          (window as any)._measuredChunks = null;
+        });
+      }, 150);
     }, 100);
   };
 
   // Export PDF function
   const handleExportPDF = () => {
     // If preview is not open, open it first
-    if (!showExportPreview) {
+    if (!showExportPreview && !embeddedPreview) {
       setShowExportPreview(true);
       return;
     }
@@ -434,105 +789,79 @@ const IncidentHistory: React.FC<{
     fetchClientIP().then(fetchedIp => { runExportWithIP(fetchedIp); });
   };
 
-  // Helper for Margin Presets
-  const applyPreset = (preset: 'normal' | 'narrow' | 'none') => {
-    if (preset === 'normal') {
-      setPdfMargins({ top: 15, right: 15, bottom: 15, left: 15 });
-    } else if (preset === 'narrow') {
-      setPdfMargins({ top: 5, right: 5, bottom: 5, left: 5 });
-    } else if (preset === 'none') {
-      setPdfMargins({ top: 0, right: 0, bottom: 0, left: 0 });
-    }
-  };
-
-  // Check if any filter is active
-  const isFilterActive = !!(search || (dateStart && dateEnd) || statusFilter !== 'APPROVED'); // Simplified check
-  const showResults = !requireFilter || (requireFilter && (dateStart || dateEnd || search)); // Show if not requiring filter OR if filter is present (basic date filter usually)
-
+  const showEmbeddedPreview = embeddedPreview && showResults && displayIncidents.length > 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       {onBack && (
-        <div className="flex px-1 no-print">
+        <div className="flex px-1">
           <button type="button" onClick={onBack} className="btn-back">
             <ArrowLeft size={18} />
             <span>VOLTAR</span>
           </button>
         </div>
       )}
-      {/* Header Section */}
-      <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm no-print">
-        {/* Title Row */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className={`p-2.5 rounded-xl ${filterStatus === 'PENDING' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
-            {requireFilter ? <FileSpreadsheet size={22} strokeWidth={2} /> : (filterStatus === 'PENDING' ? <Clock size={22} strokeWidth={2} /> : <History size={22} strokeWidth={2} />)}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all">
+        {/* Header Logic remains same */}
+        <div className="flex items-center gap-4">
+          <div className={`p-3 rounded-2xl shadow-sm border ${filterStatus === 'PENDING' ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-brand-50 border-brand-100 text-brand-600'}`}>
+            <FileText size={24} strokeWidth={2.5} />
           </div>
-          <div className="flex-1">
+          <div>
             <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">
-              {requireFilter ? 'Relatórios de Atendimento' : (filterStatus === 'PENDING' ? 'Atendimentos Pendentes' : 'Histórico de Atendimentos')}
+              {filterStatus === 'PENDING' ? 'Validação de Registros' : (requireFilter ? 'Relatórios de Atendimento' : 'Histórico de Atendimentos')}
             </h2>
             <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
-              {requireFilter ? 'Geração de relatórios filtrados' : (filterStatus === 'PENDING' ? 'Aguardando validação ou recebimento' : 'Gestão de registros de atendimento')}
+              Gerencie e visualize os registros de serviço do sistema
             </p>
           </div>
         </div>
 
-        {/* Search and Actions Row */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search Input - Full Width */}
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input
-              type="text"
-              placeholder="Buscar por RA, local ou descrição..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-12 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:text-white transition-all"
-            />
-            {search && (
+        {/* Action Buttons */}
+        <div className="flex gap-2 sm:flex-shrink-0">
+          {!requireFilter && (
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex-1 sm:flex-none px-4 sm:px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all duration-200 flex items-center justify-center gap-2 ${showFilters
+                ? 'bg-brand-600 border-brand-600 text-white shadow-lg shadow-brand-500/25'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand-300 hover:text-brand-600 dark:hover:border-brand-600 dark:hover:text-brand-400'
+                }`}
+            >
+              <Filter size={16} />
+              <span className="hidden sm:inline">Filtros</span>
+            </button>
+          )}
+          {canExport && filterStatus === 'COMPLETED' && requireFilter && !embeddedPreview && (
+            <div className="flex gap-1">
               <button
-                type="button"
-                onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+                onClick={() => setShowExportPreview(true)}
+                disabled={isExporting}
+                className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 dark:from-slate-700 dark:to-slate-800 dark:hover:from-slate-600 dark:hover:to-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 transition-all duration-200 disabled:opacity-50"
               >
-                <X size={18} />
+                <Download size={16} />
+                <span className="hidden sm:inline">Exportar Relatório</span>
+                <span className="sm:hidden">PDF</span>
               </button>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 sm:flex-shrink-0">
-            {!requireFilter && (
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex-1 sm:flex-none px-4 sm:px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wide border-2 transition-all duration-200 flex items-center justify-center gap-2 ${showFilters
-                  ? 'bg-brand-600 border-brand-600 text-white shadow-lg shadow-brand-500/25'
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand-300 hover:text-brand-600 dark:hover:border-brand-600 dark:hover:text-brand-400'
-                  }`}
-              >
-                <Filter size={16} />
-                <span className="hidden sm:inline">Filtros</span>
-              </button>
-            )}
-            {canExport && filterStatus === 'COMPLETED' && requireFilter && (
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setShowExportPreview(true)}
-                  disabled={isExporting}
-                  className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 dark:from-slate-700 dark:to-slate-800 dark:hover:from-slate-600 dark:hover:to-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 transition-all duration-200 disabled:opacity-50"
-                >
-                  <Download size={16} />
-                  <span className="hidden sm:inline">Exportar Relatório</span>
-                  <span className="sm:hidden">PDF</span>
-                </button>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
+          {showEmbeddedPreview && (
+            <button
+              onClick={handleExportPDF}
+              disabled={isExporting}
+              className="flex-1 sm:flex-none px-4 sm:px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25 transition-all duration-200 disabled:opacity-50"
+            >
+              <Printer size={16} />
+              <span className="hidden sm:inline">Exportar PDF</span>
+              <span className="sm:hidden">PDF</span>
+            </button>
+          )}
         </div>
+      </div>
 
-        {/* Filter Panel */}
-        {(showFilters || requireFilter) && (
-          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-top-2">
+      {/* Filter Panel */}
+      {(showFilters || requireFilter) && (
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm animate-in slide-in-from-top-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-black text-slate-500 uppercase mb-1 tracking-wider">Data Inicial</label>
               <input
@@ -570,111 +899,161 @@ const IncidentHistory: React.FC<{
               />
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Margin Settings Panel - SIMPLIFIED */}
-        {showMarginSettings && (
-          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-top-2">
-            <div className="flex items-center gap-2 mb-3">
-              <Settings size={14} className="text-brand-500" />
-              <h4 className="text-[10px] font-black uppercase text-slate-600 tracking-widest">Ajuste de Impressão</h4>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Margin Presets */}
-              <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase mb-2">Margens</label>
-                <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1 gap-1">
-                  <button
-                    onClick={() => applyPreset('normal')}
-                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${pdfMargins.top === 15 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}
-                  >
-                    Normal
-                  </button>
-                  <button
-                    onClick={() => applyPreset('narrow')}
-                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${pdfMargins.top === 5 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}
-                  >
-                    Estreita
-                  </button>
-                  <button
-                    onClick={() => setPdfMargins({ top: 0, right: 0, bottom: 0, left: 0 })}
-                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${pdfMargins.top === 0 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}
-                  >
-                    Zero
-                  </button>
-                </div>
-              </div>
-
-              {/* Scale / Auto-Fit */}
-              <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase mb-2">Escala</label>
-                <div className="flex items-center gap-3 h-[34px]">
-                  <button
-                    onClick={() => setAutoFit(!autoFit)}
-                    className={`flex-1 h-full px-3 rounded-lg border text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 ${autoFit
-                      ? 'bg-brand-50 border-brand-200 text-brand-700'
-                      : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-                  >
-                    {autoFit ? <CheckCircle size={12} className="text-brand-600" /> : <Maximize2 size={12} />}
-                    Auto-Fit
-                  </button>
-                  {!autoFit && (
-                    <input
-                      type="number"
-                      value={pdfScale}
-                      onChange={(e) => setPdfScale(Number(e.target.value))}
-                      className="w-16 h-full px-2 text-center text-xs font-bold border border-slate-200 rounded-lg outline-none focus:border-brand-500"
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Main Content Area */}
       <div className="grid gap-3">
         {requireFilter && !showResults ? (
           <div className="py-20 flex flex-col items-center justify-center text-slate-400 bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
             <Filter size={48} className="mb-4 opacity-20" />
             <p className="text-sm font-bold uppercase tracking-widest text-center">Selecione os filtros acima para gerar o relatório</p>
           </div>
-        ) : (displayIncidents.map(incident => {
-          const building = buildings.find(b => b.id === incident.buildingId);
-          const isCancelled = incident.status === 'CANCELLED';
-          const isPending = incident.status === 'PENDING';
-          const isApproved = incident.status === 'APPROVED';
-          let borderClass = 'border-l-4 border-slate-300';
-          if (isApproved) borderClass = 'border-l-4 border-emerald-500';
-          else if (isCancelled) borderClass = 'border-l-4 border-red-500';
-          else if (isPending) borderClass = 'border-l-4 border-amber-500';
-          return (
-            <div key={incident.id} onClick={() => onView(incident)} className={`bg-white dark:bg-slate-900 p-4 rounded-xl ${borderClass} shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer group relative overflow-hidden ${isCancelled ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}>
-              <div className="flex-1 w-full min-w-0 z-10">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="bg-slate-800 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">RA {incident.raCode}</span>
-                  {incident.isLocal && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><WifiOff size={10} /> Local</span>}
-                  {isCancelled && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Ban size={10} /> Cancelado</span>}
-                  {isApproved && <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><CheckCircle size={10} /> Validado</span>}
-                  {isPending && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Clock size={10} /> Pendente</span>}
-                  <span className="text-[10px] font-bold text-slate-400 ml-auto whitespace-nowrap">{formatDateBR(incident.date)} • {incident.startTime}</span>
+        ) : showEmbeddedPreview ? (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[700px]">
+            {/* Sidebar Controls - Embedded */}
+            <div className="w-full md:w-64 border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-6 space-y-6 overflow-y-auto">
+              <section className="space-y-4">
+                <h4 className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  <Square size={14} className="text-brand-500" /> Margem Manual ({pdfUnit})
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-slate-400 uppercase pl-1">Topo</label>
+                    <input
+                      type="number"
+                      value={pdfMargins.top}
+                      onChange={e => setPdfMargins({ ...pdfMargins, top: Number(e.target.value) })}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-black outline-none focus:ring-2 focus:ring-brand-500/20"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-slate-400 uppercase pl-1">Fundo</label>
+                    <input
+                      type="number"
+                      value={pdfMargins.bottom}
+                      onChange={e => setPdfMargins({ ...pdfMargins, bottom: Number(e.target.value) })}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-black outline-none focus:ring-2 focus:ring-brand-500/20"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-slate-400 uppercase pl-1">Esq.</label>
+                    <input
+                      type="number"
+                      value={pdfMargins.left}
+                      onChange={e => setPdfMargins({ ...pdfMargins, left: Number(e.target.value) })}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-black outline-none focus:ring-2 focus:ring-brand-500/20"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-slate-400 uppercase pl-1">Dir.</label>
+                    <input
+                      type="number"
+                      value={pdfMargins.right}
+                      onChange={e => setPdfMargins({ ...pdfMargins, right: Number(e.target.value) })}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-black outline-none focus:ring-2 focus:ring-brand-500/20"
+                    />
+                  </div>
                 </div>
-                <h3 className={`font-black text-sm uppercase mb-1 break-words group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors ${isCancelled ? 'text-slate-500 line-through decoration-red-500 decoration-2' : 'text-slate-800 dark:text-slate-100'}`}>{building?.name || 'Local Desconhecido'}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium break-words whitespace-normal leading-relaxed">{incident.description}</p>
-              </div>
-              <div className="w-full md:w-auto mt-2 md:mt-0 flex-shrink-0 z-20" onClick={(e) => e.stopPropagation()}>
-                {isPending && canApprove && (
-                  <button onClick={() => onApprove?.(incident.id)} className="w-full md:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all">
-                    <CheckCircle size={14} /> Validar
+
+                <div className="flex items-center justify-between gap-2 mt-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    onClick={() => setPdfOrientation('portrait')}
+                    className={`flex-1 py-2 text-[10px] font-black border rounded-lg transition-all ${pdfOrientation === 'portrait' ? 'bg-brand-600 border-brand-600 text-white' : 'bg-white border-slate-200 text-slate-400'}`}
+                  >
+                    Retrato
                   </button>
-                )}
+                  <button
+                    onClick={() => setPdfOrientation('landscape')}
+                    className={`flex-1 py-2 text-[10px] font-black border rounded-lg transition-all ${pdfOrientation === 'landscape' ? 'bg-brand-600 border-brand-600 text-white' : 'bg-white border-slate-200 text-slate-400'}`}
+                  >
+                    Paisagem
+                  </button>
+                </div>
+              </section>
+
+              <section className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPdfScale(Math.max(50, pdfScale - 10))}
+                    className="p-1.5 bg-white border border-slate-200 rounded text-slate-400 hover:text-brand-600"
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <span className="flex-1 text-center text-xs font-black">{pdfScale}%</span>
+                  <button
+                    onClick={() => setPdfScale(Math.min(150, pdfScale + 10))}
+                    className="p-1.5 bg-white border border-slate-200 rounded text-slate-400 hover:text-brand-600"
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+              </section>
+
+              <button
+                onClick={handleExportPDF}
+                disabled={isExporting}
+                className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl shadow-slate-900/20 disabled:opacity-50"
+              >
+                {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
+                {isExporting ? 'Processando...' : 'Imprimir PDF'}
+              </button>
+            </div>
+
+            {/* Preview Canvas - Embedded */}
+            <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-4 md:p-8 overflow-y-auto no-scrollbar scroll-smooth flex flex-col items-center min-h-[600px]">
+              <div className="mb-8 flex items-center gap-3 px-4 py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur rounded-full border border-slate-200 dark:border-slate-800 shadow-sm opacity-60">
+                <Maximize size={14} className="text-slate-400" />
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Previsualização fiel à impressão</span>
+              </div>
+              <div
+                ref={printRef}
+                id="history-export-container"
+                className="flex flex-col items-center gap-8 bg-transparent transform-gpu origin-top"
+                style={{ scale: pdfScale / 100 }}
+              >
+                {renderReportPages()}
               </div>
             </div>
-          );
-        }))}
+          </div>
+        ) : (
+          displayIncidents.map(incident => {
+            const building = buildings.find(b => b.id === incident.buildingId);
+            const isCancelled = incident.status === 'CANCELLED';
+            const isPending = incident.status === 'PENDING';
+            const isApproved = incident.status === 'APPROVED';
+            let borderClass = 'border-l-4 border-slate-300';
+            if (isApproved) borderClass = 'border-l-4 border-emerald-500';
+            else if (isCancelled) borderClass = 'border-l-4 border-red-500';
+            else if (isPending) borderClass = 'border-l-4 border-amber-500';
+            return (
+              <div key={incident.id} onClick={() => onView(incident)} className={`bg-white dark:bg-slate-900 p-4 rounded-xl ${borderClass} shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer group relative overflow-hidden ${isCancelled ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}>
+                <div className="flex-1 w-full min-w-0 z-10">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className="bg-slate-800 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">RA {incident.raCode}</span>
+                    {incident.isLocal && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><WifiOff size={10} /> Local</span>}
+                    {isCancelled && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Ban size={10} /> Cancelado</span>}
+                    {isApproved && <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><CheckCircle size={10} /> Validado</span>}
+                    {isPending && <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1"><Clock size={10} /> Pendente</span>}
+                    <span className="text-[10px] font-bold text-slate-400 ml-auto whitespace-nowrap">{formatDateBR(incident.date)} • {incident.startTime}</span>
+                  </div>
+                  <h3 className={`font-black text-sm uppercase mb-1 break-words group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors ${isCancelled ? 'text-slate-500 line-through decoration-red-500 decoration-2' : 'text-slate-800 dark:text-slate-100'}`}>{building?.name || 'Local Desconhecido'}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium break-words whitespace-normal leading-relaxed">{incident.description}</p>
+                </div>
+                <div className="w-full md:w-auto mt-2 md:mt-0 flex-shrink-0 z-20" onClick={(e) => e.stopPropagation()}>
+                  {isPending && canApprove && (
+                    <button onClick={() => onApprove?.(incident.id)} className="w-full md:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all">
+                      <CheckCircle size={14} /> Validar
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
-      {filterStatus !== 'PENDING' && !requireFilter && hasMore && (
+      {!requireFilter && !showEmbeddedPreview && hasMore && (
         <button
           onClick={() => onLoadMore?.()}
           disabled={isLoadingMore}
@@ -685,7 +1064,7 @@ const IncidentHistory: React.FC<{
         </button>
       )}
 
-      {/* Export Preview Modal */}
+      {/* Export Preview Modal (Remaining for fallback or other views) */}
       {showExportPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md animate-in fade-in zoom-in-95 duration-300">
           <div className="bg-white dark:bg-slate-900 w-full max-w-[98vw] h-[95vh] rounded-3xl flex flex-col shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-200 dark:border-slate-800">
@@ -721,10 +1100,7 @@ const IncidentHistory: React.FC<{
 
             {/* Modal Body - Split View */}
             <div className="flex-1 flex overflow-hidden">
-              {/* Sidebar Controls - Modern UX */}
               <div className="w-85 border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-8 overflow-y-auto space-y-8 no-scrollbar">
-
-                {/* Margins Section - SIMPLIFIED SIDEBAR */}
                 <section className="space-y-4">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="flex items-center gap-2 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
@@ -738,339 +1114,114 @@ const IncidentHistory: React.FC<{
                       <MousePointer2 size={14} />
                     </button>
                   </div>
-
-                  {/* Preset Selector */}
                   <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-200/50 dark:bg-slate-800/50 rounded-2xl">
-                    <button
-                      onClick={() => applyPreset('normal')}
-                      className={`px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all ${pdfMargins.top === 15 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}
-                    >
-                      Normal
-                    </button>
-                    <button
-                      onClick={() => applyPreset('narrow')}
-                      className={`px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all ${pdfMargins.top === 5 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}
-                    >
-                      Estreita
-                    </button>
-                    <button
-                      onClick={() => applyPreset('none')}
-                      className={`px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all ${pdfMargins.top === 0 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}
-                    >
-                      Zero
-                    </button>
+                    <button onClick={() => applyPreset('normal')} className={`px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all ${pdfMargins.top === 15 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}>Normal</button>
+                    <button onClick={() => applyPreset('narrow')} className={`px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all ${pdfMargins.top === 5 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}>Estreita</button>
+                    <button onClick={() => applyPreset('none')} className={`px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all ${pdfMargins.top === 0 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}>Zero</button>
                   </div>
                 </section>
 
-                {/* Page Setup Section */}
                 <section className="space-y-6">
                   <h4 className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">
                     <Layers size={14} className="text-brand-500" /> Configuração de Página
                   </h4>
-
-                  {/* Orientation Toggle */}
-
-
-                  {/* Paper Size & Scale */}
                   <div className="grid grid-cols-1 gap-6">
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Tamanho do Papel</label>
-                      <select
-                        value={pdfPaperSize}
-                        onChange={e => setPdfPaperSize(e.target.value as any)}
-                        className="w-full p-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl text-[11px] font-black uppercase outline-none focus:ring-2 focus:ring-brand-500/20"
-                      >
-                        <option value="A4">A4 (210x297mm)</option>
-                        <option value="LETTER">Carta (216x279mm)</option>
-                        <option value="LEGAL">Ofício (216x356mm)</option>
-                      </select>
-                    </div>
-
-                    {/* Scale / Auto-Fit - SIDEBAR */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between pl-1 mb-1">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escala de Conteúdo</label>
                       </div>
                       <div className="flex items-center gap-3 h-[42px]">
-                        <button
-                          onClick={() => setAutoFit(!autoFit)}
-                          className={`flex-1 h-full px-4 rounded-xl border text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${autoFit
-                            ? 'bg-brand-50 border-brand-200 text-brand-700'
-                            : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
-                        >
+                        <button onClick={() => setAutoFit(!autoFit)} className={`flex-1 h-full px-4 rounded-xl border text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${autoFit ? 'bg-brand-50 border-brand-200 text-brand-700' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>
                           {autoFit ? <CheckCircle size={14} className="text-brand-600" /> : <Maximize2 size={14} />}
                           Auto-Fit
                         </button>
-                        {!autoFit && (
-                          <div className="relative w-24 h-full">
-                            <input
-                              type="number"
-                              value={pdfScale}
-                              onChange={(e) => setPdfScale(Number(e.target.value))}
-                              className="w-full h-full px-3 text-center text-xs font-black border border-slate-200 rounded-xl outline-none focus:border-brand-500 bg-white"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none">%</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-
-
-                  {/* Unit Switcher */}
-                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Info size={14} className="text-slate-400" />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Unidade de Medida</span>
-                      </div>
-                      <div className="flex gap-2">
-                        {(['mm', 'cm', 'in'] as const).map(u => (
-                          <button
-                            key={u}
-                            onClick={() => setPdfUnit(u)}
-                            className={`w-8 h-8 rounded-lg text-[9px] font-black uppercase flex items-center justify-center border transition-all ${pdfUnit === u ? 'bg-brand-600 border-brand-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400'}`}
-                          >
-                            {u}
-                          </button>
-                        ))}
+                        {!autoFit && <div className="relative w-24 h-full"><input type="number" value={pdfScale} onChange={(e) => setPdfScale(Number(e.target.value))} className="w-full h-full px-3 text-center text-xs font-black border border-slate-200 rounded-xl outline-none focus:border-brand-500 bg-white" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none">%</span></div>}
                       </div>
                     </div>
                   </div>
                 </section>
               </div>
 
-              {/* Preview Area (The Canvas) - WYSIWYG */}
               <div className="flex-1 bg-[#F3F4F6] dark:bg-slate-950 p-12 overflow-y-auto no-scrollbar scroll-smooth flex flex-col items-center">
-                {/* Visual Scale Controller Info */}
-                <div className="mb-8 flex items-center gap-3 px-4 py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur rounded-full border border-slate-200 dark:border-slate-800 shadow-sm transition-opacity hover:opacity-100 opacity-60">
-                  <Maximize size={14} className="text-slate-400" />
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Previsualização fiel à impressão</span>
-                </div>
+                {(() => {
+                  let chunks: Incident[][] = (window as any)._measuredChunks;
 
-                <div
-                  ref={printRef}
-                  id="history-export-container"
-                  className="flex flex-col items-center gap-12 bg-transparent transform-gpu"
-                  style={{ scale: autoFit ? 1 : pdfScale / 100 }}
-                >
-                  {(() => {
-                    const chunks: Incident[][] = [];
-
-                    // --- DYNAMIC PAGINATION CONSTANTS ---
-                    const PAGE_HEIGHT_MM = pdfOrientation === 'landscape'
-                      ? (pdfPaperSize === 'A4' ? 210 : pdfPaperSize === 'LETTER' ? 216 : 216)
-                      : (pdfPaperSize === 'A4' ? 297 : pdfPaperSize === 'LETTER' ? 279 : 356);
-
-                    // Height deductions (mm)
-                    const HEADER_HEIGHT = 48; // Balanced header buffer
-                    const TABLE_HEADER_HEIGHT = 10;
-                    const FOOTER_HEIGHT = 8; // Simplified bottom border/padding
-                    const SAFE_MARGIN = 5; // Reduced margin, relying on algorithm precision
-
-                    const availableContentHeight = PAGE_HEIGHT_MM - pdfMargins.top - pdfMargins.bottom - HEADER_HEIGHT - TABLE_HEADER_HEIGHT - FOOTER_HEIGHT - SAFE_MARGIN;
-
-                    // Row estimation - EXPERT ALGORITHM (PHP)
-                    const BASE_ROW_HEIGHT = 9.0; // Precise base height
-                    const LINE_HEIGHT_MM = 3.6; // Precise line vertical space
-
-                    // Column wrap heuristics
-                    const RELATO_CHARS_PER_LINE = pdfOrientation === 'landscape' ? 65 : 24;
-                    const PROPRIO_CHARS_PER_LINE = pdfOrientation === 'landscape' ? 24 : 18;
-                    const NATUREZA_CHARS_PER_LINE = pdfOrientation === 'landscape' ? 20 : 14;
-
-                    // Helper to calculate lines considering explicit \n and wrapping
-                    const calculateLines = (text: string, charsPerLine: number) => {
-                      if (!text) return 1;
-                      const segments = text.split('\n');
-                      return segments.reduce((acc, seg) => {
-                        return acc + Math.max(1, Math.ceil(seg.length / charsPerLine));
-                      }, 0);
-                    };
-
-                    let currentChunk: Incident[] = [];
-                    let currentHeightUsed = 0;
-
-                    displayIncidents.forEach((incident) => {
-                      const description = incident.status === 'CANCELLED'
-                        ? `[CANCELADO] ${incident.description || ''}`
-                        : (incident.description || '');
-
-                      const building = buildings.find(b => b.id === incident.buildingId);
-                      const buildingName = building?.name || '---';
-
-                      const relatoLines = calculateLines(description, RELATO_CHARS_PER_LINE);
-                      const proprioLines = calculateLines(buildingName, PROPRIO_CHARS_PER_LINE);
-                      const naturezaLines = calculateLines(incident.alterationType, NATUREZA_CHARS_PER_LINE);
-
-                      const maxLines = Math.max(relatoLines, proprioLines, naturezaLines);
-                      const estimatedRowHeight = BASE_ROW_HEIGHT + ((maxLines - 1) * LINE_HEIGHT_MM);
-
-                      if (currentHeightUsed + estimatedRowHeight > availableContentHeight && currentChunk.length > 0) {
-                        // Page full, push chunk and start new
-                        chunks.push(currentChunk);
-                        currentChunk = [incident];
-                        currentHeightUsed = estimatedRowHeight;
-                      } else {
-                        currentChunk.push(incident);
-                        currentHeightUsed += estimatedRowHeight;
+                  if (!chunks || chunks.length === 0) {
+                    chunks = [[]];
+                    let current: Incident[] = [];
+                    displayIncidents.forEach((item, idx) => {
+                      current.push(item);
+                      if (current.length >= 10 || idx === displayIncidents.length - 1) {
+                        chunks.push(current);
+                        current = [];
                       }
                     });
+                    if (chunks.length > 1 && chunks[0].length === 0) chunks.shift();
+                  }
 
-                    // Push last chunk
-                    if (currentChunk.length > 0) {
-                      chunks.push(currentChunk);
-                    }
-
-                    if (chunks.length === 0) chunks.push([]);
-                    if (chunks.length === 0) chunks.push([]);
-
-                    const pageWidth = pdfOrientation === 'landscape' ? (pdfPaperSize === 'A4' ? '297mm' : pdfPaperSize === 'LETTER' ? '279mm' : '356mm') : (pdfPaperSize === 'A4' ? '210mm' : '216mm');
-                    const pageHeight = pdfOrientation === 'landscape' ? (pdfPaperSize === 'A4' ? '210mm' : '216mm') : (pdfPaperSize === 'A4' ? '297mm' : pdfPaperSize === 'LETTER' ? '279mm' : '356mm');
-
-                    return chunks.map((chunk, pageIndex) => (
-                      <div
-                        key={pageIndex}
-                        className="report-page bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col justify-between relative group"
-                        style={{
-                          width: pageWidth,
-                          height: pageHeight,
-                          paddingTop: `${pdfMargins.top}${pdfUnit}`,
-                          paddingBottom: `${pdfMargins.bottom}${pdfUnit}`,
-                          paddingLeft: `${pdfMargins.left}${pdfUnit}`,
-                          paddingRight: `${pdfMargins.right}${pdfUnit}`,
-                          pageBreakAfter: 'always',
-                          fontFamily: "'Inter', sans-serif"
-                        }}
-                      >
-                        {/* Interactive Margin Guides (Dashed) */}
-                        {showMarginGuides && (
-                          <div
-                            className="margin-guide absolute inset-0 pointer-events-none transition-opacity opacity-0 group-hover:opacity-100"
-                            style={{
-                              top: `${pdfMargins.top}${pdfUnit}`,
-                              bottom: `${pdfMargins.bottom}${pdfUnit}`,
-                              left: `${pdfMargins.left}${pdfUnit}`,
-                              right: `${pdfMargins.right}${pdfUnit}`,
-                              border: '1px dashed rgba(59, 130, 246, 0.3)'
-                            }}
-                          >
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full text-[8px] font-black text-blue-400 uppercase py-1">Top: {pdfMargins.top}{pdfUnit}</div>
-                            <div className="absolute left-0 top-1/2 -rotate-90 -translate-x-full text-[8px] font-black text-blue-400 uppercase py-1">Left: {pdfMargins.left}{pdfUnit}</div>
-                          </div>
-                        )}
-
-                        <div>
-                          <div className="flex justify-center items-start mb-6 gap-12 pt-4">
-                            <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center">
-                              {customLogoLeft ? (
-                                <img src={customLogoLeft} className="max-h-full max-w-full object-contain" alt="Brasão" />
-                              ) : (
-                                <div className="w-16 h-16 rounded-full border border-slate-300 flex items-center justify-center bg-slate-50 shadow-inner">
-                                  <Shield size={24} className="text-slate-300" />
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="text-center">
-                              <h1 className="text-[18px] font-black uppercase text-slate-900 leading-tight tracking-tight">
-                                PREFEITURA MUNICIPAL DE ARAPONGAS
-                              </h1>
-                              <h2 className="text-[14px] font-black uppercase text-slate-900 mt-1">
-                                SECRETARIA MUNICIPAL DE SEGURANÇA PÚBLICA E TRÂNSITO
-                              </h2>
-                              <h3 className="text-[12px] font-bold uppercase text-brand-600 mt-1 tracking-[0.1em]">
-                                CENTRO DE MONITORAMENTO MUNICIPAL
-                              </h3>
-                              <div className="flex items-center justify-between gap-4 bg-slate-50/80 px-4 py-2 rounded-xl mt-4 border border-slate-100">
-                                <div className="text-left">
-                                  <h4 className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-800 leading-none">Relatório Geral</h4>
-                                </div>
-                                <div className="flex-1 text-center">
-                                  {(dateStart || dateEnd) && (
-                                    <div className="text-[9px] uppercase font-bold text-slate-500 flex items-center justify-center gap-1.5">
-                                      <Clock size={10} strokeWidth={3} /> {dateStart ? formatDateBR(dateStart) : 'Início'} até {dateEnd ? formatDateBR(dateEnd) : 'Hoje'}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="text-right min-w-[80px]">
-                                  <p className="text-[9px] font-black text-slate-900 uppercase tracking-tighter">PÁGINA {pageIndex + 1} DE {chunks.length}</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="w-24 h-20 flex-shrink-0 flex items-center justify-center">
-                              {customLogo ? (
-                                <img src={customLogo} className="max-h-full max-w-full object-contain" alt="Logo" />
-                              ) : (
-                                <div className="w-16 h-16 rounded-full border border-slate-300 flex items-center justify-center bg-slate-50 shadow-inner">
-                                  <Shield size={24} className="text-slate-300" />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          <table className="w-full border-collapse border-b-2 border-slate-900">
-                            <thead style={{ display: 'table-header-group' }}>
-                              <tr className="bg-slate-900 text-white">
-                                {(() => {
-                                  const isPortrait = pdfOrientation === 'portrait';
-                                  return (
-                                    <>
-                                      <th className={`p-3 text-[10px] font-black uppercase text-left border-r border-slate-700`} style={{ width: isPortrait ? '50px' : '80px' }}>R.A</th>
-                                      <th className={`p-3 text-[10px] font-black uppercase text-left border-r border-slate-700`} style={{ width: isPortrait ? '100px' : '150px' }}>Próprio</th>
-                                      <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '60px' : '90px' }}>Data</th>
-                                      <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '45px' : '70px' }}>Início</th>
-                                      <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '45px' : '70px' }}>Fim</th>
-                                      <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '80px' : '130px' }}>Natureza</th>
-                                      <th className="p-3 text-[10px] font-black uppercase text-left">Relato</th>
-                                    </>
-                                  );
-                                })()}
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-200">
-                              {chunk.map(i => {
-                                const building = buildings.find(b => b.id === i.buildingId);
-                                return (
-                                  <tr key={i.id} style={{ pageBreakInside: 'avoid' }} className="hover:bg-slate-50 transition-colors">
-                                    {/* Calculated styling for columns */}
-                                    {(() => {
-                                      const isPortrait = pdfOrientation === 'portrait';
-                                      return (
-                                        <>
-                                          <td className="p-3 text-[10px] font-black text-slate-900 border-x border-slate-200" style={{ width: isPortrait ? '50px' : '80px' }}>{i.raCode}</td>
-                                          <td className="p-3 text-[10px] font-bold uppercase text-slate-700 border-r border-slate-200" style={{ width: isPortrait ? '100px' : '150px' }}>{building?.name || '---'}</td>
-                                          <td className="p-3 text-[10px] font-bold text-center border-r border-slate-200" style={{ width: isPortrait ? '60px' : '90px' }}>{formatDateBR(i.date)}</td>
-                                          <td className="p-3 text-[10px] font-bold text-center border-r border-slate-200" style={{ width: isPortrait ? '45px' : '70px' }}>{i.startTime}</td>
-                                          <td className="p-3 text-[10px] font-bold text-center border-r border-slate-200" style={{ width: isPortrait ? '45px' : '70px' }}>{i.endTime || '--:--'}</td>
-                                          <td className="p-3 text-[9px] font-black uppercase text-center text-slate-900 border-r border-slate-200" style={{ width: isPortrait ? '80px' : '130px' }}>{i.alterationType}</td>
-                                          <td className={`p-3 text-[9px] leading-tight align-top whitespace-pre-wrap break-words border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 font-bold' : 'font-medium'}`}>
-                                            {i.status === 'CANCELLED' && <span className="text-red-700 font-black mr-1">[CANCELADO]</span>}
-                                            {i.description}
-                                          </td>
-                                        </>
-                                      );
-                                    })()}
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-
-                        <div className="border-t border-slate-100 mt-1" />
-                      </div>
-                    ));
-                  })()}
-                </div>
+                  return chunks.map((chunk, pageIndex) => (
+                    <ReportView
+                      key={`modal-page-${pageIndex}`}
+                      chunk={chunk}
+                      pageIndex={pageIndex}
+                      chunksLength={chunks.length}
+                      pdfOrientation={pdfOrientation}
+                      pdfPaperSize={pdfPaperSize}
+                      pdfMargins={pdfMargins}
+                      pdfUnit={pdfUnit}
+                      showMarginGuides={showMarginGuides}
+                      customLogo={customLogo}
+                      customLogoLeft={customLogoLeft}
+                      jobTitles={jobTitles}
+                      exportDate={exportDate}
+                      exportIP={exportIP}
+                      exportHash={exportHash}
+                      buildings={buildings}
+                      currentUser={currentUser}
+                      hideFooter={embeddedPreview}
+                    />
+                  ));
+                })()}
               </div>
             </div>
           </div>
         </div>
       )}
-    </div >
+
+      {/* HIDDEN MEASUREMENT CONTAINER */}
+      <div
+        ref={measureRef}
+        aria-hidden="true"
+        className="fixed -left-[5000px] top-0 pointer-events-none bg-white overflow-hidden"
+        style={{
+          width: pdfOrientation === 'landscape'
+            ? (pdfPaperSize === 'A4' ? '297mm' : '356mm')
+            : (pdfPaperSize === 'A4' ? '210mm' : '216mm'),
+          paddingLeft: `${pdfMargins.left}${pdfUnit}`,
+          paddingRight: `${pdfMargins.right}${pdfUnit}`
+        }}
+      >
+        <table className="w-full border-collapse">
+          <tbody>
+            {displayIncidents.map(i => {
+              const building = buildings.find(b => b.id === i.buildingId);
+              const isPortrait = pdfOrientation === 'portrait';
+              return (
+                <tr key={i.id} className="incident-row">
+                  <td className="p-2 text-[9px]" style={{ width: isPortrait ? '50px' : '80px' }}>{i.raCode}</td>
+                  <td className="p-2 text-[9px]" style={{ width: isPortrait ? '100px' : '150px' }}>{building?.name}</td>
+                  <td className="p-2 text-[9px]" style={{ width: isPortrait ? '80px' : '130px' }}>{i.alterationType}</td>
+                  <td className="p-2 text-[8px] whitespace-pre-wrap break-words">
+                    {i.status === 'CANCELLED' && <span>[CANCELADO] </span>}
+                    {i.description}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 };
 
@@ -1078,7 +1229,7 @@ const BuildingList: React.FC<{ buildings: Building[], sectors: Sector[], onEdit:
   const [search, setSearch] = useState('');
   const filtered = buildings.filter(b => normalizeString(b.name).includes(normalizeString(search)) || normalizeString(b.buildingNumber).includes(normalizeString(search)));
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       {onBack && (
         <div className="flex px-1">
           <button type="button" onClick={onBack} className="btn-back">
@@ -1241,7 +1392,7 @@ const UserList: React.FC<{ users: User[], jobTitles?: JobTitle[], onEdit: (u: Us
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {onBack && (
         <div className="flex px-1">
           <button type="button" onClick={onBack} className="btn-back">
@@ -1378,7 +1529,7 @@ const JobTitleList: React.FC<{ jobTitles: JobTitle[], onEdit: (j: JobTitle) => v
   const filtered = jobTitles.filter(j => normalizeString(j.name).includes(normalizeString(search)));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       {onBack && (
         <div className="flex px-1">
           <button type="button" onClick={onBack} className="btn-back">
@@ -1449,7 +1600,7 @@ const SectorList: React.FC<{ sectors: Sector[], onEdit: (s: Sector) => void, onD
   const filtered = sectors.filter(s => normalizeString(s.name).includes(normalizeString(search)));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       {onBack && (
         <div className="flex px-1">
           <button type="button" onClick={onBack} className="btn-back">
@@ -3028,10 +3179,10 @@ export function App() {
         if (!can('CREATE_INCIDENT') && !can('EDIT_INCIDENT')) return <div className="p-8 text-center">Acesso Negado</div>;
         return <IncidentForm user={user!} users={users} incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} nextRaCode={generateNextRaCode()} onSave={handleSaveIncident} onCancel={() => { setEditingIncident(null); setPreSelectedBuildingId(undefined); handleBack(); }} initialData={editingIncident} isLoading={saving} preSelectedBuildingId={preSelectedBuildingId} onShowConfirm={showConfirm} />;
       case 'HISTORY': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} jobTitles={jobTitles} onFilterChange={handleIncidentFilterChange} onBack={handleBack} onLogAction={createLog} />;
-      case 'INCIDENT_REPORTS': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} jobTitles={jobTitles} onFilterChange={handleIncidentFilterChange} onBack={handleBack} requireFilter={true} onLogAction={createLog} />;
+      case 'INCIDENT_REPORTS': return <IncidentHistory incidents={incidents} buildings={buildings} alterationTypes={alterationTypes} onView={handleViewIncident} onEdit={(i) => { setEditingIncident(i); handleNavigate('NEW_RECORD'); }} onDelete={handleDeleteIncident} filterStatus="COMPLETED" currentUser={user} customLogo={customLogoRight} customLogoLeft={customLogoLeft} hasMore={hasMore} isLoadingMore={loadingMore} onLoadMore={() => fetchIncidents(true)} canEdit={can('EDIT_INCIDENT')} canDelete={can('DELETE_INCIDENT')} canApprove={can('APPROVE_INCIDENT')} canExport={can('EXPORT_REPORTS')} canViewAll={can('VIEW_ALL_INCIDENTS')} jobTitles={jobTitles} onFilterChange={handleIncidentFilterChange} onBack={handleBack} requireFilter={true} onLogAction={createLog} embeddedPreview={true} />;
       case 'PENDING_APPROVALS':
         return (
-          <div className="space-y-4 animate-fade-in">
+          <div className="space-y-8 animate-fade-in">
             <div className="animate-in slide-in-from-bottom-2 duration-300">
               {pendingSubTab === 'INCIDENTS' ? (
                 <IncidentHistory
@@ -3525,7 +3676,7 @@ const EscalaList: React.FC<{
   const filtered = escalas.filter(e => normalizeString(e.name).includes(normalizeString(search)));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       {onBack && (
         <div className="flex px-1">
           <button type="button" onClick={onBack} className="btn-back">
@@ -3644,7 +3795,7 @@ const EscalaForm: React.FC<{ initialData: Escala | null, onSave: (e: Escala) => 
   };
 
   return (
-    <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-4">
+    <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
       <div className="flex px-1">
         <button type="button" onClick={onCancel} className="btn-back">
           <ArrowLeft size={18} />
@@ -3785,7 +3936,7 @@ const EscalaReminderManager: React.FC<{
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex px-1">
         <button type="button" onClick={onBack} className="btn-back">
           <ArrowLeft size={18} />

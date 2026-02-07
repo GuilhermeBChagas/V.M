@@ -336,7 +336,7 @@ export const PermissionsView: React.FC<PermissionsViewProps> = ({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* TABS SELECTOR */}
       <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-fit shadow-inner">
         <button

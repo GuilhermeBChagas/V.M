@@ -152,7 +152,7 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding,
     }
 
     return (
-        <div className="space-y-4 animate-fade-in">
+        <div className="space-y-8 animate-fade-in">
             {onBack && (
                 <div className="flex px-1 no-print">
                     <button type="button" onClick={onBack} className="btn-back">
