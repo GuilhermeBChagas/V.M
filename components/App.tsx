@@ -530,15 +530,15 @@ const IncidentHistory: React.FC<{
                         const isPortrait = pdfOrientation === 'portrait';
                         return (
                           <>
-                            <td className="p-2 text-[9px] font-black text-slate-900 border-x border-slate-200" style={{ width: isPortrait ? '50px' : '80px' }}>{i.raCode}</td>
-                            <td className="p-2 text-[9px] font-bold uppercase text-slate-700 border-r border-slate-200" style={{ width: isPortrait ? '100px' : '150px' }}>{building?.name || '---'}</td>
-                            <td className="p-2 text-[9px] font-bold text-center border-r border-slate-200" style={{ width: isPortrait ? '60px' : '90px' }}>{formatDateBR(i.date)}</td>
-                            <td className="p-2 text-[9px] font-bold text-center border-r border-slate-200" style={{ width: isPortrait ? '45px' : '70px' }}>{i.startTime}</td>
-                            <td className="p-2 text-[9px] font-bold text-center border-r border-slate-200" style={{ width: isPortrait ? '45px' : '70px' }}>{i.endTime || '--:--'}</td>
-                            <td className="p-2 text-[8px] font-black uppercase text-center text-slate-900 border-r border-slate-200" style={{ width: isPortrait ? '80px' : '130px' }}>{i.alterationType}</td>
+                            <td className={`p-2 text-[9px] font-black border-x border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : 'text-slate-900'}`} style={{ width: isPortrait ? '50px' : '80px' }}>{i.raCode}</td>
+                            <td className={`p-2 text-[9px] font-bold uppercase border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : 'text-slate-700'}`} style={{ width: isPortrait ? '100px' : '150px' }}>{building?.name || '---'}</td>
+                            <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '60px' : '90px' }}>{formatDateBR(i.date)}</td>
+                            <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '45px' : '70px' }}>{i.startTime}</td>
+                            <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '45px' : '70px' }}>{i.endTime || '--:--'}</td>
+                            <td className={`p-2 text-[8px] font-black uppercase text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : 'text-slate-900'}`} style={{ width: isPortrait ? '80px' : '130px' }}>{i.alterationType}</td>
                             <td className={`p-2 text-[8px] leading-tight align-top whitespace-pre-wrap break-words border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 font-bold' : 'font-medium'}`}>
                               {i.status === 'CANCELLED' && <span className="text-red-700 font-black mr-1">[CANCELADO]</span>}
-                              {i.description}
+                              {i.status !== 'CANCELLED' && i.description}
                             </td>
                           </>
                         );
@@ -1208,12 +1208,12 @@ const IncidentHistory: React.FC<{
               const isPortrait = pdfOrientation === 'portrait';
               return (
                 <tr key={i.id} className="incident-row">
-                  <td className="p-2 text-[9px]" style={{ width: isPortrait ? '50px' : '80px' }}>{i.raCode}</td>
-                  <td className="p-2 text-[9px]" style={{ width: isPortrait ? '100px' : '150px' }}>{building?.name}</td>
-                  <td className="p-2 text-[9px]" style={{ width: isPortrait ? '80px' : '130px' }}>{i.alterationType}</td>
+                  <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '50px' : '80px' }}>{i.raCode}</td>
+                  <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '100px' : '150px' }}>{building?.name}</td>
+                  <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '80px' : '130px' }}>{i.alterationType}</td>
                   <td className="p-2 text-[8px] whitespace-pre-wrap break-words">
                     {i.status === 'CANCELLED' && <span>[CANCELADO] </span>}
-                    {i.description}
+                    {i.status !== 'CANCELLED' && i.description}
                   </td>
                 </tr>
               );
@@ -1787,7 +1787,7 @@ export function App() {
 
     try {
       let finalData: Incident[] = [];
-      const listColumns = 'id, ra_code, building_id, user_id, operator_name, date, start_time, end_time, alteration_type, status, timestamp, is_edited, last_edited_at, edited_by, created_ip, updated_ip, approved_ip, signature_hash, approved_by, approved_at, created_at';
+      const listColumns = 'id, ra_code, building_id, user_id, operator_name, date, start_time, end_time, alteration_type, description, status, timestamp, is_edited, last_edited_at, edited_by, created_ip, updated_ip, approved_ip, signature_hash, approved_by, approved_at, created_at';
 
       if (!isLoadMore) {
         // ... (Logic for initial load / refresh)
