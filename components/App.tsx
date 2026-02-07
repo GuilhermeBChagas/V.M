@@ -3484,8 +3484,11 @@ export function App() {
       if (item.isSection) {
         if (isSidebarCollapsed) return null;
         return (
-          <div key={item.id} className="pt-6 first:pt-2">
-            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 mb-4">{item.label}</h3>
+          <div key={item.id} className="pt-10 first:pt-4">
+            <h3 className="text-[10px] font-black text-slate-500/80 uppercase tracking-[0.2em] px-4 mb-3 select-none flex items-center gap-2">
+              {item.label}
+              <div className="h-px bg-slate-800/50 flex-1 ml-2 opacity-50"></div>
+            </h3>
             {item.children && renderMenuItems(item.children, depth + 1)}
           </div>
         );
