@@ -57,7 +57,7 @@ export const MENU_STRUCTURE: MenuItemDef[] = [
                 id: 'registrations_root',
                 label: 'Cadastros',
                 iconName: 'FolderOpen',
-                requiredPermissions: ['MANAGE_BUILDINGS', 'MANAGE_USERS', 'MANAGE_SECTORS', 'MANAGE_ALTERATION_TYPES', 'MANAGE_ESCALAS', 'MANAGE_VEHICLES', 'MANAGE_VESTS', 'MANAGE_RADIOS', 'MANAGE_EQUIPMENTS'],
+                requiredPermissions: ['MANAGE_BUILDINGS', 'MANAGE_USERS', 'MANAGE_SECTORS', 'MANAGE_ALTERATION_TYPES', 'MANAGE_ESCALAS', 'MANAGE_VEHICLES', 'MANAGE_VESTS', 'MANAGE_RADIOS', 'MANAGE_EQUIPMENTS', 'MANAGE_JOB_TITLES'],
                 children: [
                     { id: 'reg_buildings', label: 'Prédios', iconName: 'BuildingIcon', requiredPermissions: ['MANAGE_BUILDINGS'] },
                     { id: 'reg_types', label: 'Tipos Alter.', iconName: 'Tag', requiredPermissions: ['MANAGE_ALTERATION_TYPES'] },
