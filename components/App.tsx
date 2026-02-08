@@ -637,16 +637,14 @@ const IncidentHistory: React.FC<{
     let currentHeight = 0;
 
     rows.forEach((row, index) => {
-      const rowHeight = (row as HTMLElement).offsetHeight;
       const incident = displayIncidents[index];
 
-      if ((currentHeight + rowHeight > availableHeightPx || currentChunk.length >= 15) && currentChunk.length > 0) {
+      // Use ONLY the 15-row limit, ignore height calculations
+      if (currentChunk.length >= 15 && currentChunk.length > 0) {
         chunkedIncidents.push(currentChunk);
         currentChunk = [incident];
-        currentHeight = rowHeight;
       } else {
         currentChunk.push(incident);
-        currentHeight += rowHeight;
       }
     });
 
@@ -1120,7 +1118,7 @@ const IncidentHistory: React.FC<{
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <div className="h-10 w-px bg-slate-200 dark:bg-slate-800 hidden md:block mx-2"></div>
+                <div className="h-10 w-px bg-slate-200 dark:bg-slate-800 mx-2"></div>
                 <button
                   onClick={async () => {
                     const reportContainer = document.querySelector('.report-preview-container');
