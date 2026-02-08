@@ -252,74 +252,80 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
             )}
 
             {/* --- BARRA DE AÇÕES (ÍCONES COMPACTOS) --- */}
-            <div className="px-4 md:px-0 flex flex-wrap items-center gap-2 no-print">
-                {!isCancelled && (
-                    <>
-                        {/* 1. Validar (Positive Action) */}
-                        {canApprove && isPending && (
-                            <button
-                                onClick={handleApprove}
-                                disabled={isValidating}
-                                title="Validar Documento"
-                                className="w-12 h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 transition-all active:scale-90 flex items-center justify-center disabled:opacity-50"
-                            >
-                                {isValidating ? <Loader2 size={24} className="animate-spin" /> : <CheckCircle size={24} strokeWidth={2.5} />}
-                            </button>
-                        )}
-                        {/* 2. Editar (Neutral Action) */}
-                        {canEdit && (
-                            <button
-                                onClick={onEdit}
-                                disabled={isValidating || incident.status === 'APPROVED'}
-                                title="Editar Registro"
-                                className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all active:scale-90 flex items-center justify-center disabled:opacity-50 shadow-sm"
-                            >
-                                <Pencil size={24} strokeWidth={2} />
-                            </button>
-                        )}
-                        {/* 3. Cancelar (Negative Action) */}
-                        {canDelete && (
-                            <button
-                                onClick={handleDelete}
-                                title="Cancelar Registro"
-                                className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-90 flex items-center justify-center shadow-sm"
-                            >
-                                <Ban size={24} strokeWidth={2} />
-                            </button>
-                        )}
-                    </>
-                )}
+            <div className="px-4 md:px-0 flex flex-row items-center justify-between no-print gap-4">
+                {/* Left Group: Validation Actions */}
+                <div className="flex items-center gap-2">
+                    {!isCancelled && (
+                        <>
+                            {/* 1. Validar (Positive Action) */}
+                            {canApprove && isPending && (
+                                <button
+                                    onClick={handleApprove}
+                                    disabled={isValidating}
+                                    title="Validar Documento"
+                                    className="w-12 h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 transition-all active:scale-90 flex items-center justify-center disabled:opacity-50"
+                                >
+                                    {isValidating ? <Loader2 size={24} className="animate-spin" /> : <CheckCircle size={24} strokeWidth={2.5} />}
+                                </button>
+                            )}
+                            {/* 2. Editar (Neutral Action) */}
+                            {canEdit && (
+                                <button
+                                    onClick={onEdit}
+                                    disabled={isValidating || incident.status === 'APPROVED'}
+                                    title="Editar Registro"
+                                    className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all active:scale-90 flex items-center justify-center disabled:opacity-50 shadow-sm"
+                                >
+                                    <Pencil size={24} strokeWidth={2} />
+                                </button>
+                            )}
+                            {/* 3. Cancelar (Negative Action) */}
+                            {canDelete && (
+                                <button
+                                    onClick={handleDelete}
+                                    title="Cancelar Registro"
+                                    className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-90 flex items-center justify-center shadow-sm"
+                                >
+                                    <Ban size={24} strokeWidth={2} />
+                                </button>
+                            )}
+                        </>
+                    )}
+                </div>
 
-                <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+                {/* Right Group: Utility Tools */}
+                <div className="flex items-center gap-2">
+                    {/* 4. Compartilhar (Utility) */}
+                    <button
+                        onClick={handleShareImage}
+                        disabled={isSharing}
+                        title="Compartilhar Imagem"
+                        className="w-12 h-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all active:scale-90 flex items-center justify-center active:bg-blue-800 disabled:opacity-50"
+                    >
+                        {isSharing ? <Loader2 size={24} className="animate-spin" /> : <Share2 size={24} strokeWidth={2} />}
+                    </button>
 
-                {/* 4. Compartilhar (Utility) */}
-                <button
-                    onClick={handleShareImage}
-                    disabled={isSharing}
-                    title="Compartilhar Imagem"
-                    className="w-12 h-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all active:scale-90 flex items-center justify-center active:bg-blue-800 disabled:opacity-50"
-                >
-                    {isSharing ? <Loader2 size={24} className="animate-spin" /> : <Share2 size={24} strokeWidth={2} />}
-                </button>
+                    {/* 5. PDF (Utility) */}
+                    <button
+                        onClick={handleExportPDF}
+                        disabled={isExporting}
+                        title="Gerar PDF"
+                        className="w-12 h-12 rounded-2xl bg-slate-800 hover:bg-slate-900 text-white shadow-lg shadow-slate-500/20 transition-all active:scale-90 flex items-center justify-center disabled:opacity-50"
+                    >
+                        {isExporting ? <Loader2 size={24} className="animate-spin" /> : <Download size={24} strokeWidth={2} />}
+                    </button>
 
-                {/* 5. PDF (Utility) */}
-                <button
-                    onClick={handleExportPDF}
-                    disabled={isExporting}
-                    title="Gerar PDF"
-                    className="w-12 h-12 rounded-2xl bg-slate-800 hover:bg-slate-900 text-white shadow-lg shadow-slate-500/20 transition-all active:scale-90 flex items-center justify-center disabled:opacity-50"
-                >
-                    {isExporting ? <Loader2 size={24} className="animate-spin" /> : <Download size={24} strokeWidth={2} />}
-                </button>
+                    <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
 
-                {/* 6. Margens (Utility/Settings) */}
-                <button
-                    onClick={() => setShowMarginSettings(!showMarginSettings)}
-                    title="Ajustar Margens"
-                    className={`w-12 h-12 rounded-2xl border-2 transition-all flex items-center justify-center active:scale-90 ${showMarginSettings ? 'bg-blue-50 border-blue-500 text-blue-600 shadow-inner' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 hover:border-slate-300'}`}
-                >
-                    <Settings size={24} strokeWidth={2} />
-                </button>
+                    {/* 6. Margens (Utility/Settings) */}
+                    <button
+                        onClick={() => setShowMarginSettings(!showMarginSettings)}
+                        title="Ajustar Margens"
+                        className={`w-12 h-12 rounded-2xl border-2 transition-all flex items-center justify-center active:scale-90 ${showMarginSettings ? 'bg-blue-50 border-blue-500 text-blue-600 shadow-inner' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 hover:border-slate-300'}`}
+                    >
+                        <Settings size={24} strokeWidth={2} />
+                    </button>
+                </div>
             </div>
 
             {/* Margin Settings Panel */}
