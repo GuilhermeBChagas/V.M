@@ -1184,50 +1184,51 @@ const IncidentHistory: React.FC<{
               </div>
             </div>
 
-            {/* Modal Body - Split View */}
-            <div className="flex-1 flex overflow-hidden">
-              <div className="w-85 border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-8 overflow-y-auto space-y-8 no-scrollbar">
-                <section className="space-y-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="flex items-center gap-2 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
-                      <Square size={14} className="text-brand-500" /> Margens ({pdfUnit})
-                    </h4>
-                    <button
-                      onClick={() => setShowMarginGuides(!showMarginGuides)}
-                      className={`p-1.5 rounded-lg border transition-all ${showMarginGuides ? 'bg-brand-50 border-brand-200 text-brand-600' : 'bg-white border-slate-200 text-slate-400'}`}
-                      title="Mostrar Guias"
-                    >
-                      <MousePointer2 size={14} />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-200/50 dark:bg-slate-800/50 rounded-2xl">
-                    <button onClick={() => applyPreset('normal')} className={`px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all ${pdfMargins.top === 15 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}>Normal</button>
-                    <button onClick={() => applyPreset('narrow')} className={`px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all ${pdfMargins.top === 5 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}>Estreita</button>
-                    <button onClick={() => applyPreset('none')} className={`px-2 py-2 text-[9px] font-black uppercase rounded-xl transition-all ${pdfMargins.top === 0 ? 'bg-white shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50'}`}>Zero</button>
-                  </div>
-                </section>
-
-                <section className="space-y-6">
-                  <h4 className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                    <Layers size={14} className="text-brand-500" /> Configuração de Página
-                  </h4>
-                  <div className="grid grid-cols-1 gap-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between pl-1 mb-1">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escala de Conteúdo</label>
-                      </div>
-                      <div className="flex items-center gap-3 h-[42px]">
-                        <button onClick={() => setAutoFit(!autoFit)} className={`flex-1 h-full px-4 rounded-xl border text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${autoFit ? 'bg-brand-50 border-brand-200 text-brand-700' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>
-                          {autoFit ? <CheckCircle size={14} className="text-brand-600" /> : <Maximize2 size={14} />}
-                          Auto-Fit
-                        </button>
-                        {!autoFit && <div className="relative w-24 h-full"><input type="number" value={pdfScale} onChange={(e) => setPdfScale(Number(e.target.value))} className="w-full h-full px-3 text-center text-xs font-black border border-slate-200 rounded-xl outline-none focus:border-brand-500 bg-white" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 pointer-events-none">%</span></div>}
-                      </div>
+            {/* Modal Body - Full Width with Controls Above */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Margin Controls Bar */}
+              <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-8 py-4">
+                <div className="flex items-center gap-8">
+                  {/* Margin Presets */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Square size={14} className="text-brand-500" />
+                      <h4 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">Margens ({pdfUnit})</h4>
+                    </div>
+                    <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                      <button onClick={() => applyPreset('normal')} className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-lg transition-all ${pdfMargins.top === 15 ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50 dark:hover:bg-slate-700/50'}`}>Normal</button>
+                      <button onClick={() => applyPreset('narrow')} className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-lg transition-all ${pdfMargins.top === 5 ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50 dark:hover:bg-slate-700/50'}`}>Estreita</button>
+                      <button onClick={() => applyPreset('none')} className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-lg transition-all ${pdfMargins.top === 0 ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50 dark:hover:bg-slate-700/50'}`}>Zero</button>
                     </div>
                   </div>
-                </section>
+
+                  {/* Margin Guides Toggle */}
+                  <button
+                    onClick={() => setShowMarginGuides(!showMarginGuides)}
+                    className={`px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase transition-all flex items-center gap-2 ${showMarginGuides ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800 text-brand-600' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-brand-300'}`}
+                    title="Mostrar Guias"
+                  >
+                    <MousePointer2 size={14} />
+                    Guias
+                  </button>
+
+                  {/* Auto-Fit Toggle */}
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setAutoFit(!autoFit)} className={`px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase transition-all flex items-center gap-2 ${autoFit ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800 text-brand-700' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300'}`}>
+                      {autoFit ? <CheckCircle size={14} className="text-brand-600" /> : <Maximize2 size={14} />}
+                      Auto-Fit
+                    </button>
+                    {!autoFit && (
+                      <div className="relative w-20">
+                        <input type="number" value={pdfScale} onChange={(e) => setPdfScale(Number(e.target.value))} className="w-full px-2 py-1.5 text-center text-[10px] font-black border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-brand-500 bg-white dark:bg-slate-800" />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400 pointer-events-none">%</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
+              {/* Report Preview Area */}
               <div className="flex-1 bg-[#F3F4F6] dark:bg-slate-950 p-12 overflow-y-auto no-scrollbar scroll-smooth flex flex-col items-center report-preview-container">
                 {(() => {
                   let chunks: Incident[][] = (window as any)._measuredChunks;
