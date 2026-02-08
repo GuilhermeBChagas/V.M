@@ -1048,7 +1048,7 @@ const IncidentHistory: React.FC<{
                       <button
                         onClick={() => onApprove?.(incident.id)}
                         title="Validar Registro"
-                        className="p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md active:scale-90 transition-all flex items-center justify-center"
+                        className="w-10 h-10 flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md active:scale-90 transition-all"
                       >
                         <CheckCircle size={18} />
                       </button>
@@ -1057,7 +1057,7 @@ const IncidentHistory: React.FC<{
                       <button
                         onClick={() => onEdit(incident)}
                         title="Editar Registro"
-                        className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-xl hover:border-blue-400 hover:text-blue-600 transition-all shadow-sm active:scale-90 flex items-center justify-center"
+                        className="w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-xl hover:border-blue-400 hover:text-blue-600 transition-all shadow-sm active:scale-90"
                       >
                         <Pencil size={18} />
                       </button>
@@ -1066,7 +1066,7 @@ const IncidentHistory: React.FC<{
                       <button
                         onClick={() => onDelete(incident.id)}
                         title="Excluir/Cancelar Registro"
-                        className="p-2.5 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 transition-all shadow-sm active:scale-90 flex items-center justify-center"
+                        className="w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 transition-all shadow-sm active:scale-90"
                       >
                         <Ban size={18} />
                       </button>
