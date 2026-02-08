@@ -385,6 +385,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     };
 
     const handleCreateLoan = async () => {
+        console.log('🚀 handleCreateLoan CHAMADO!', { receiverId, selectedAssets: selectedAssets.length });
         if (!receiverId || selectedAssets.length === 0) return alert("Selecione um recebedor e ao menos um item.");
 
         const vehicleAssets = selectedAssets.filter(a => a.type === 'VEHICLE');
@@ -397,6 +398,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
             await finalProcessLoanCreation({});
         }
     };
+
 
     const confirmCreationStep = (km: number, reason: string) => {
         if (!vehicleStartData) return;
