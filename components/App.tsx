@@ -533,19 +533,25 @@ const IncidentHistory: React.FC<{
                         return (
                           <>
                             <td className={`p-2 text-[9px] font-black border-x border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : 'text-slate-900'}`} style={{ width: isPortrait ? '50px' : '80px' }}>
-                              <div className="line-clamp-2 overflow-hidden">{i.raCode}</div>
+                              <div className="line-clamp-2 overflow-hidden h-[24px] flex items-center">{i.raCode}</div>
                             </td>
                             <td className={`p-2 text-[9px] font-bold uppercase border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : 'text-slate-700'}`} style={{ width: isPortrait ? '130px' : '200px' }}>
-                              <div className="line-clamp-2 overflow-hidden">{building?.name || '---'}</div>
+                              <div className="line-clamp-2 overflow-hidden h-[24px] flex items-center">{building?.name || '---'}</div>
                             </td>
-                            <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '60px' : '90px' }}>{formatDateBR(i.date)}</td>
-                            <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '45px' : '70px' }}>{i.startTime}</td>
-                            <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '45px' : '70px' }}>{i.endTime || '--:--'}</td>
+                            <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '60px' : '90px' }}>
+                              <div className="h-[24px] flex items-center justify-center">{formatDateBR(i.date)}</div>
+                            </td>
+                            <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '45px' : '70px' }}>
+                              <div className="h-[24px] flex items-center justify-center">{i.startTime}</div>
+                            </td>
+                            <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '45px' : '70px' }}>
+                              <div className="h-[24px] flex items-center justify-center">{i.endTime || '--:--'}</div>
+                            </td>
                             <td className={`p-2 text-[8px] font-black uppercase text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : 'text-slate-900'}`} style={{ width: isPortrait ? '80px' : '130px' }}>
-                              <div className="line-clamp-2 overflow-hidden">{i.alterationType}</div>
+                              <div className="line-clamp-2 overflow-hidden h-[24px] flex items-center justify-center">{i.alterationType}</div>
                             </td>
                             <td className={`p-2 text-[8px] leading-tight align-top border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 font-bold' : 'font-medium'}`}>
-                              <div className="line-clamp-2 overflow-hidden">
+                              <div className="line-clamp-2 overflow-hidden h-[24px]">
                                 {i.status === 'CANCELLED' && <span className="text-red-700 font-black mr-1">[CANCELADO]</span>}
                                 {i.status !== 'CANCELLED' && i.description}
                               </div>
@@ -1243,16 +1249,16 @@ const IncidentHistory: React.FC<{
               return (
                 <tr key={i.id} className="incident-row">
                   <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '50px' : '80px' }}>
-                    <div className="line-clamp-2 overflow-hidden">{i.raCode}</div>
+                    <div className="line-clamp-2 overflow-hidden h-[24px] flex items-center">{i.raCode}</div>
                   </td>
                   <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '130px' : '200px' }}>
-                    <div className="line-clamp-2 overflow-hidden">{building?.name}</div>
+                    <div className="line-clamp-2 overflow-hidden h-[24px] flex items-center">{building?.name}</div>
                   </td>
                   <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '80px' : '130px' }}>
-                    <div className="line-clamp-2 overflow-hidden">{i.alterationType}</div>
+                    <div className="line-clamp-2 overflow-hidden h-[24px] flex items-center">{i.alterationType}</div>
                   </td>
                   <td className="p-2 text-[8px] leading-tight">
-                    <div className="line-clamp-2 overflow-hidden">
+                    <div className="line-clamp-2 overflow-hidden h-[24px]">
                       {i.status === 'CANCELLED' && <span>[CANCELADO] </span>}
                       {i.status !== 'CANCELLED' && i.description}
                     </div>
