@@ -219,71 +219,8 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
 
     return (
         <div className="max-w-4xl mx-auto pb-10 px-0 md:px-4 space-y-8">
-            {/* --- BARRA DE CONTROLE (TELA - NÃO IMPRIME) --- */}
-            {showToolbar && (
-                <div className={`mb-6 p-4 rounded-3xl border flex flex-col md:flex-row justify-between items-center no-print shadow-sm gap-4 transition-colors duration-300 ${isCancelled
-                    ? 'bg-red-50 border-red-100 dark:bg-red-900/10 dark:border-red-900/30'
-                    : isPending
-                        ? 'bg-blue-50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-900/30'
-                        : 'bg-white border-slate-100 dark:bg-slate-900 dark:border-slate-800'
-                    }`}>
-
-                    {/* Left: Status Indicator & Title */}
-                    <div className="flex items-center gap-4 w-full md:w-auto">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm ${isCancelled ? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400' : isPending ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`}>
-                            {isCancelled ? <Ban size={24} strokeWidth={1.5} /> : <ShieldCheck size={24} strokeWidth={1.5} />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <h2 className="font-extrabold text-sm uppercase text-slate-800 dark:text-slate-100 leading-tight">
-                                {isCancelled ? 'Registro Cancelado' : isPending ? `Validação RA ${incident.raCode}` : 'Registro Oficial'}
-                            </h2>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-0.5">
-                                {isCancelled ? 'Sem validade legal' : isPending ? 'Aguardando Aprovação' : 'Validado e Publicado'}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Right: Actions Group */}
-                    <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto">
-                        {!isCancelled && (
-                            <>
-                                {canDelete && (
-                                    <button
-                                        onClick={handleDelete}
-                                        className="h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-wide border border-red-200 dark:border-red-800/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 transition-all active:scale-95 flex items-center gap-2 flex-grow md:flex-grow-0 justify-center"
-                                    >
-                                        <XCircle size={16} />
-                                        Cancelar
-                                    </button>
-                                )}
-                                {canEdit && (
-                                    <button
-                                        onClick={onEdit}
-                                        disabled={isValidating || incident.status === 'APPROVED'}
-                                        className="h-10 px-5 rounded-xl text-[10px] font-black uppercase tracking-wide bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-300 hover:text-blue-600 dark:hover:border-blue-700 dark:hover:text-blue-400 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed flex-grow md:flex-grow-0 justify-center shadow-sm"
-                                    >
-                                        <Pencil size={16} />
-                                        Editar
-                                    </button>
-                                )}
-                            </>
-                        )}
-
-                        {isPending && !isCancelled && canApprove && (
-                            <button
-                                onClick={handleApprove}
-                                disabled={isValidating}
-                                className="h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-wide bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed w-full md:w-auto justify-center"
-                            >
-                                {isValidating ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} className="ml-[-2px]" />}
-                                {isValidating ? 'Processando...' : 'Validar Documento'}
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 no-print px-4 md:px-0 w-full max-w-[210mm] mx-auto gap-4">
+            {/* --- VOLTAR E CONFIGURAÇÕES --- */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center no-print px-4 md:px-0 w-full max-w-[210mm] mx-auto gap-4">
                 <button onClick={onBack} className="btn-back">
                     <ArrowLeft size={18} />
                     <span>VOLTAR</span>
@@ -306,6 +243,69 @@ export const IncidentDetail: React.FC<IncidentDetailProps> = ({
                     </button>
                 </div>
             </div>
+
+            {/* --- BARRA DE CONTROLE (VALIDAÇÃO) --- */}
+            {showToolbar && (
+                <div className={`p-3 rounded-2xl border flex flex-row justify-between items-center no-print shadow-sm gap-2 transition-colors duration-300 ${isCancelled
+                    ? 'bg-red-50 border-red-100 dark:bg-red-900/10 dark:border-red-900/30'
+                    : isPending
+                        ? 'bg-blue-50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-900/30'
+                        : 'bg-white border-slate-100 dark:bg-slate-900 dark:border-slate-800'
+                    }`}>
+
+                    {/* Left: Status Indicator & Title */}
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${isCancelled ? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400' : isPending ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`}>
+                            {isCancelled ? <Ban size={20} strokeWidth={2} /> : <ShieldCheck size={20} strokeWidth={2} />}
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="font-black text-[11px] uppercase text-slate-800 dark:text-slate-100 leading-none truncate">
+                                {isCancelled ? 'Cancelado' : isPending ? `Validação RA ${incident.raCode}` : 'Registro Oficial'}
+                            </h2>
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-1">
+                                {isCancelled ? 'Sem validade' : isPending ? 'Pendente' : 'Validado'}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Right: Actions Group (Icon Only) */}
+                    <div className="flex items-center gap-1.5">
+                        {!isCancelled && (
+                            <>
+                                {canApprove && isPending && (
+                                    <button
+                                        onClick={handleApprove}
+                                        disabled={isValidating}
+                                        title="Validar Documento"
+                                        className="w-10 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 transition-all active:scale-90 flex items-center justify-center disabled:opacity-50"
+                                    >
+                                        {isValidating ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                                    </button>
+                                )}
+                                {canEdit && (
+                                    <button
+                                        onClick={onEdit}
+                                        disabled={isValidating || incident.status === 'APPROVED'}
+                                        title="Editar Registro"
+                                        className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all active:scale-90 flex items-center justify-center disabled:opacity-50 shadow-sm"
+                                    >
+                                        <Pencil size={18} />
+                                    </button>
+                                )}
+                                {canDelete && (
+                                    <button
+                                        onClick={handleDelete}
+                                        title="Cancelar Registro"
+                                        className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-90 flex items-center justify-center shadow-sm"
+                                    >
+                                        <Ban size={18} />
+                                    </button>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Margin Settings Panel */}
             {showMarginSettings && (

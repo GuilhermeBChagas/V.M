@@ -1043,11 +1043,35 @@ const IncidentHistory: React.FC<{
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium break-words whitespace-normal leading-relaxed">{incident.description}</p>
                 </div>
                 <div className="w-full md:w-auto mt-2 md:mt-0 flex-shrink-0 z-20" onClick={(e) => e.stopPropagation()}>
-                  {isPending && canApprove && (
-                    <button onClick={() => onApprove?.(incident.id)} className="w-full md:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all">
-                      <CheckCircle size={14} /> Validar
-                    </button>
-                  )}
+                  <div className="flex items-center justify-end gap-2">
+                    {isPending && canApprove && (
+                      <button
+                        onClick={() => onApprove?.(incident.id)}
+                        title="Validar Registro"
+                        className="p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md active:scale-90 transition-all flex items-center justify-center"
+                      >
+                        <CheckCircle size={18} />
+                      </button>
+                    )}
+                    {canEdit && !isCancelled && !isApproved && (
+                      <button
+                        onClick={() => onEdit(incident)}
+                        title="Editar Registro"
+                        className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-xl hover:border-blue-400 hover:text-blue-600 transition-all shadow-sm active:scale-90 flex items-center justify-center"
+                      >
+                        <Pencil size={18} />
+                      </button>
+                    )}
+                    {canDelete && !isCancelled && (
+                      <button
+                        onClick={() => onDelete(incident.id)}
+                        title="Excluir/Cancelar Registro"
+                        className="p-2.5 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 text-red-500 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 transition-all shadow-sm active:scale-90 flex items-center justify-center"
+                      >
+                        <Ban size={18} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
