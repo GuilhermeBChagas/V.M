@@ -3193,8 +3193,8 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                                         setVehicleStartData({ ...vehicleStartData, manualKm: numeric });
                                     }}
                                     className={`w-full pl-10 p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 font-bold text-lg outline-none focus:ring-2 transition-all ${vehicleStartData.manualKm < vehicleStartData.currentKm
-                                            ? 'border-red-300 focus:ring-red-500 text-red-600'
-                                            : 'border-slate-300 dark:border-slate-600 focus:ring-blue-500 text-slate-800 dark:text-white'
+                                        ? 'border-red-300 focus:ring-red-500 text-red-600'
+                                        : 'border-slate-300 dark:border-slate-600 focus:ring-blue-500 text-slate-800 dark:text-white'
                                         }`}
                                 />
                                 <Gauge className="absolute left-3 top-3.5 text-slate-400" size={20} />
