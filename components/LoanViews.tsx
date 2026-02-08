@@ -310,10 +310,9 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         .sort((a, b) => parseInt(a.number) - parseInt(b.number)),
         [radios, loans]);
 
-    // Sync activeTab with initialTab prop on change (fix for navigation)
     React.useEffect(() => {
         if (initialTab) {
-            setActiveTab(initialTab === 'HISTORY' ? 'HISTORY' : 'ACTIVE');
+            setActiveTab(initialTab === 'HISTORY' ? 'HISTORY' : (initialTab === 'NEW' ? 'NEW' : 'ACTIVE'));
         }
     }, [initialTab]);
 
@@ -1421,7 +1420,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
 
                 {/* Tabs */}
-                {showTabs && (
+                {showTabs && activeTab !== 'NEW' && false && (
                     <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                         <button
                             onClick={() => { setActiveTab('ACTIVE'); }}
@@ -1432,17 +1431,6 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                         >
                             Monitoramento
                         </button>
-                        {canCreate && (
-                            <button
-                                onClick={() => setActiveTab('NEW')}
-                                className={`flex-1 justify-center px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 border-2 flex items-center gap-1.5 ${activeTab === 'NEW'
-                                    ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/25'
-                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-blue-300 hover:text-blue-600'
-                                    }`}
-                            >
-                                <Plus size={14} /> <span className="hidden sm:inline">Nova Cautela</span><span className="sm:hidden">Novo</span>
-                            </button>
-                        )}
                     </div>
                 )}
             </div>

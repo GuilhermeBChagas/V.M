@@ -28,10 +28,10 @@ export const MENU_STRUCTURE: MenuItemDef[] = [
         isSection: true,
         requiredPermissions: [],
         children: [
-            { id: 'new_record', label: 'Novo Registro', iconName: 'FilePlus', requiredPermissions: ['CREATE_INCIDENT'] },
-            { id: 'pending_incidents', label: 'Pendentes', iconName: 'UserCheck', requiredPermissions: ['APPROVE_INCIDENT', 'VIEW_MY_PENDING_INCIDENTS', 'VIEW_ALL_PENDING_INCIDENTS'] },
-            { id: 'history_incidents', label: 'Históricos', iconName: 'History', requiredPermissions: ['VIEW_ALL_INCIDENTS', 'VIEW_MY_INCIDENTS'] },
-            { id: 'report_incidents', label: 'Relatórios', iconName: 'FileSpreadsheet', requiredPermissions: ['EXPORT_REPORTS', 'VIEW_ALL_INCIDENTS'] }
+            { id: 'new_record', label: 'Novo Atend.', iconName: 'FilePlus', requiredPermissions: ['CREATE_INCIDENT'] },
+            { id: 'pending_incidents', label: 'Pendências', iconName: 'UserCheck', requiredPermissions: ['APPROVE_INCIDENT', 'VIEW_MY_PENDING_INCIDENTS', 'VIEW_ALL_PENDING_INCIDENTS'] },
+            { id: 'history_incidents', label: 'Hist. Atendimentos', iconName: 'History', requiredPermissions: ['VIEW_ALL_INCIDENTS', 'VIEW_MY_INCIDENTS'] },
+            { id: 'report_incidents', label: 'Relat. Atendimentos', iconName: 'FileSpreadsheet', requiredPermissions: ['EXPORT_REPORTS', 'VIEW_ALL_INCIDENTS'] }
         ]
     },
     {
@@ -40,10 +40,10 @@ export const MENU_STRUCTURE: MenuItemDef[] = [
         isSection: true,
         requiredPermissions: [],
         children: [
-            { id: 'new_loan', label: 'Nova Cautela', iconName: 'Plus', requiredPermissions: ['CREATE_LOAN'] },
-            { id: 'loans', label: 'Painel de Cautelas', iconName: 'Key', requiredPermissions: ['CREATE_LOAN', 'APPROVE_LOAN', 'RETURN_LOAN', 'VIEW_MY_LOANS'] },
-            { id: 'history_loans', label: 'Históricos', iconName: 'History', requiredPermissions: ['VIEW_ALL_LOANS', 'VIEW_MY_LOANS'] },
-            { id: 'report_loans', label: 'Relatórios', iconName: 'FileSpreadsheet', requiredPermissions: ['EXPORT_REPORTS', 'VIEW_ALL_LOANS'] }
+            { id: 'new_loan', label: 'Nova Cautela', iconName: 'FilePlus', requiredPermissions: ['CREATE_LOAN'] },
+            { id: 'loans', label: 'Cautelas Ativas', iconName: 'Key', requiredPermissions: ['CREATE_LOAN', 'APPROVE_LOAN', 'RETURN_LOAN', 'VIEW_MY_LOANS'] },
+            { id: 'history_loans', label: 'Hist. Cautelas', iconName: 'History', requiredPermissions: ['VIEW_ALL_LOANS', 'VIEW_MY_LOANS'] },
+            { id: 'report_loans', label: 'Relat. Cautelas', iconName: 'FileSpreadsheet', requiredPermissions: ['EXPORT_REPORTS', 'VIEW_ALL_LOANS'] }
         ]
     },
     {
@@ -60,11 +60,11 @@ export const MENU_STRUCTURE: MenuItemDef[] = [
                 requiredPermissions: ['MANAGE_BUILDINGS', 'MANAGE_USERS', 'MANAGE_SECTORS', 'MANAGE_ALTERATION_TYPES', 'MANAGE_ESCALAS', 'MANAGE_VEHICLES', 'MANAGE_VESTS', 'MANAGE_RADIOS', 'MANAGE_EQUIPMENTS'],
                 children: [
                     { id: 'reg_buildings', label: 'Prédios', iconName: 'BuildingIcon', requiredPermissions: ['MANAGE_BUILDINGS'] },
-                    { id: 'reg_types', label: 'Tipos de Alteração', iconName: 'Tag', requiredPermissions: ['MANAGE_ALTERATION_TYPES'] },
+                    { id: 'reg_types', label: 'Tipos Alter.', iconName: 'Tag', requiredPermissions: ['MANAGE_ALTERATION_TYPES'] },
                     { id: 'reg_sectors', label: 'Setores', iconName: 'Map', requiredPermissions: ['MANAGE_SECTORS'] },
                     { id: 'reg_users', label: 'Usuários', iconName: 'Users', requiredPermissions: ['MANAGE_USERS'] },
-                    { id: 'reg_escalas', label: 'Escalas de Serviço', iconName: 'Clock', requiredPermissions: ['MANAGE_ESCALAS'] },
-                    { id: 'reg_job_titles', label: 'Cargos e Funções', iconName: 'Briefcase', requiredPermissions: ['MANAGE_JOB_TITLES'] },
+                    { id: 'reg_escalas', label: 'Escalas', iconName: 'Clock', requiredPermissions: ['MANAGE_ESCALAS'] },
+                    { id: 'reg_job_titles', label: 'Cargos', iconName: 'Briefcase', requiredPermissions: ['MANAGE_JOB_TITLES'] },
                     { id: 'reg_vehicles', label: 'Veículos', iconName: 'Car', requiredPermissions: ['MANAGE_VEHICLES'] },
                     { id: 'reg_vests', label: 'Coletes', iconName: 'Shield', requiredPermissions: ['MANAGE_VESTS'] },
                     { id: 'reg_radios', label: 'Rádios HT', iconName: 'RadioIcon', requiredPermissions: ['MANAGE_RADIOS'] },
@@ -78,10 +78,10 @@ export const MENU_STRUCTURE: MenuItemDef[] = [
                 requiredPermissions: ['ACCESS_TOOLS'],
                 children: [
                     { id: 'tool_appearance', label: 'Aparência', requiredPermissions: ['ACCESS_TOOLS'] },
-                    { id: 'tool_import', label: 'Importação / Exportação', requiredPermissions: ['ACCESS_TOOLS'] },
+                    { id: 'tool_import', label: 'Imp. / Exp.', requiredPermissions: ['ACCESS_TOOLS'] },
                     { id: 'tool_permissions', label: 'Permissões', requiredPermissions: ['ACCESS_TOOLS'] },
                     { id: 'tool_logs', label: 'Log do Sistema', requiredPermissions: ['ACCESS_TOOLS'] },
-                    { id: 'tool_database', label: 'Banco de Dados', requiredPermissions: ['ACCESS_TOOLS'] },
+                    { id: 'tool_database', label: 'Banco Dados', requiredPermissions: ['ACCESS_TOOLS'] },
                     { id: 'tool_system', label: 'Sobre o Sistema', requiredPermissions: ['ACCESS_TOOLS'] }
                 ]
             }

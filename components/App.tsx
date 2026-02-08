@@ -173,44 +173,44 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, collaps
   <button
     onClick={onClick}
     className={`w-full flex items-center transition-all duration-300 relative group gap-4
-      ${collapsed ? 'justify-center py-4 px-0' : 'px-4 py-3 mx-0 rounded-2xl'} 
+      ${collapsed ? 'justify-center py-4 px-0' : 'px-5 py-3.5 mx-0 rounded-xl'} 
       ${active
-        ? `bg-blue-50 text-blue-600 ring-1 ring-blue-500/20 ${sidebarDark ? 'bg-slate-100 text-slate-900 ring-0 shadow-lg shadow-white/5' : ''}`
-        : `text-slate-600 hover:bg-slate-200 hover:text-slate-900 ${sidebarDark ? 'text-slate-400 hover:bg-[#1f2937] hover:text-white' : ''}`} 
-      ${isSubItem ? 'pl-11' : ''}`}
+        ? `${sidebarDark ? 'bg-blue-500/10 text-blue-400 shadow-[0_4px_12px_rgba(59,130,246,0.1)]' : 'bg-blue-50 text-blue-600 shadow-sm'}`
+        : `${sidebarDark ? 'text-slate-400 hover:bg-white/5 hover:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`} 
+      ${isSubItem ? 'pl-12 opacity-80' : ''}`}
     title={collapsed ? label : ''}
   >
-    {/* Active indicator pill (only if not collapsed and not subitem) */}
-    {active && !collapsed && !isSubItem && (
-      <div className="absolute left-[-16px] h-6 w-1 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
+    {/* Subtle active indicator (Magic Indicator effect) */}
+    {active && (
+      <div className={`absolute left-0 w-1.5 h-6 rounded-r-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.5)] transition-all duration-500 ${collapsed ? 'left-0' : 'left-0'}`} />
     )}
 
     {icon && (
-      <div className={`flex-shrink-0 transition-transform duration-300 ${active ? 'scale-110 drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]' : 'group-hover:scale-110'}`}>
-        {icon}
+      <div className={`flex-shrink-0 transition-all duration-300 ${active ? 'scale-110 text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]' : 'text-slate-400 group-hover:scale-110 group-hover:text-slate-600 dark:group-hover:text-slate-200'}`}>
+        {React.cloneElement(icon as React.ReactElement, { size: collapsed ? 24 : 20, strokeWidth: active ? 2.5 : 2 })}
       </div>
     )}
 
     {!collapsed && (
-      <span className={`text-sm font-semibold tracking-wide truncate flex-1 text-left ${isSubItem ? 'text-[13px]' : ''}`}>
+      <span className={`text-[13px] font-semibold tracking-tight truncate flex-1 text-left ${active ? 'font-bold' : 'font-medium opacity-90'}`}>
         {label}
       </span>
     )}
 
-    {/* Badge - Static when expanded, Absolute when collapsed */}
+    {/* Badge */}
     {badge && badge > 0 && (
       <span className={`
         ${collapsed
-          ? 'absolute top-2 right-1'
-          : 'relative ml-auto mr-2'} 
-        bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full ring-2 ring-[#0b101d] shadow-lg transform transition-transform group-hover:scale-110 flex-shrink-0`}
+          ? 'absolute -top-1 -right-1'
+          : 'relative ml-auto'} 
+        bg-blue-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full ring-2 ${sidebarDark ? 'ring-[#0f172a]' : 'ring-white'} shadow-lg transform transition-transform group-hover:scale-110 flex-shrink-0`}
       >
         {badge}
       </span>
     )}
 
     {hasChevron && !collapsed && (
-      <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} text-slate-500 flex-shrink-0`}>
+      <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} text-slate-400 flex-shrink-0`}>
         <ChevronDown size={14} />
       </div>
     )}
@@ -3421,9 +3421,12 @@ export function App() {
       case 'dashboard': return view === 'DASHBOARD';
       case 'announcements': return view === 'ANNOUNCEMENTS';
       case 'new_record': return view === 'NEW_RECORD';
+      case 'new_loan': return view === 'NEW_LOAN';
       case 'loans': return view === 'LOANS';
       case 'history_incidents': return view === 'HISTORY';
       case 'history_loans': return view === 'LOAN_HISTORY';
+      case 'report_incidents': return view === 'INCIDENT_REPORTS';
+      case 'report_loans': return view === 'LOAN_REPORTS';
       case 'pending_incidents': return view === 'PENDING_APPROVALS' && pendingSubTab === 'INCIDENTS';
       case 'pending_loans': return view === 'PENDING_APPROVALS' && pendingSubTab === 'LOANS';
       case 'map': return view === 'MAP';
@@ -3495,12 +3498,18 @@ export function App() {
       if (!isMenuVisible(item)) return null;
 
       if (item.isSection) {
-        if (isSidebarCollapsed) return null;
+        if (isSidebarCollapsed) {
+          return (
+            <React.Fragment key={item.id}>
+              {item.children && renderMenuItems(item.children, depth + 1)}
+            </React.Fragment>
+          );
+        }
         return (
-          <div key={item.id} className="pt-10 first:pt-4">
-            <h3 className="text-[10px] font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400/90 to-indigo-400/90 uppercase tracking-[0.15em] px-4 mb-3 select-none flex items-center gap-3">
+          <div key={item.id} className="mt-8 mb-4 first:mt-2 animate-in fade-in duration-500">
+            <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] px-5 mb-3 select-none flex items-center gap-3 ${sidebarDark ? 'text-slate-500' : 'text-slate-400'}`}>
               {item.label}
-              <div className="h-px bg-gradient-to-r from-blue-500/20 to-transparent flex-1 opacity-50"></div>
+              <div className={`h-px flex-1 opacity-10 ${sidebarDark ? 'bg-white' : 'bg-slate-900'}`}></div>
             </h3>
             {item.children && renderMenuItems(item.children, depth + 1)}
           </div>
@@ -3525,7 +3534,7 @@ export function App() {
             sidebarDark={sidebarDark}
           />
           {item.children && isOpen && !isSidebarCollapsed && (
-            <div className={`space-y-1 mt-1 ${depth > 0 ? 'pl-0' : 'pl-0'}`}>
+            <div className={`space-y-1 mt-1 origin-top animate-in fade-in slide-in-from-top-1 duration-300`}>
               {renderMenuItems(item.children, depth + 1)}
             </div>
           )}
@@ -3536,32 +3545,62 @@ export function App() {
 
   return (
     <div className="min-h-screen flex transition-colors duration-200">
-      {sidebarOpen && <div className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />}
-      <aside className={`fixed inset-y-0 left-0 z-50 transform transition-all duration-500 lg:relative border-r shadow-[10px_0_30px_-15px_rgba(0,0,0,0.1)] ${sidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'} ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'} ${sidebarDark ? 'bg-[#0b101d] border-white/5 shadow-[10px_0_30px_-15px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-200'}`}>
-        <div className={`h-full flex flex-col ${sidebarDark ? 'text-white' : 'text-slate-800'}`}>
-          <div className={`transition-all duration-500 flex items-center ${isSidebarCollapsed ? 'h-20 justify-center px-2' : 'h-24 px-8 justify-start gap-4'}`}>
-            <div className={`transition-all duration-500 flex items-center justify-center group hover:scale-110 ${isSidebarCollapsed ? 'h-12 w-12' : 'h-16 w-16'}`}>
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 transform transition-all duration-300 lg:relative border-r flex flex-col
+          ${sidebarOpen ? 'translate-x-0 w-[85vw] max-w-[320px]' : '-translate-x-full lg:translate-x-0'} 
+          ${isSidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'} 
+          ${sidebarDark ? 'bg-[#0f172a] border-white/5 shadow-2xl' : 'bg-[#f8fafc] border-slate-200 shadow-sm'}`}
+      >
+        <div className="h-full flex flex-col">
+          {/* Logo Section */}
+          <div className={`flex items-center transition-all duration-300 relative ${isSidebarCollapsed ? 'h-20 justify-center px-2' : 'h-24 px-6 justify-start gap-3'}`}>
+            <div className={`transition-all duration-300 flex items-center justify-center group ${isSidebarCollapsed ? 'h-10 w-10' : 'h-12 w-12'}`}>
               {customLogoRight ? (
-                <img src={customLogoRight} className="w-full h-full object-contain" alt="Logo" />
+                <img src={customLogoRight} className="w-full h-full object-contain drop-shadow-sm" alt="Logo" />
               ) : (
-                <Shield className={`${sidebarDark ? 'text-white' : 'text-brand-600'} drop-shadow-md`} size={isSidebarCollapsed ? 28 : 36} strokeWidth={1.5} />
+                <Shield className={`${sidebarDark ? 'text-blue-400' : 'text-blue-600'} drop-shadow-sm animate-in zoom-in duration-500`} size={isSidebarCollapsed ? 28 : 32} strokeWidth={2} />
               )}
             </div>
             {!isSidebarCollapsed && (
-              <div className="flex flex-col animate-in fade-in duration-500 slide-in-from-left-2">
-                <span className={`${sidebarDark ? 'text-white' : 'text-slate-800'} font-black text-lg tracking-tighter uppercase leading-none`}>Vigilante</span>
-                <span className="text-blue-500 text-[10px] font-black tracking-[0.3em] uppercase mt-0.5">Municipal</span>
+              <div className="flex flex-col animate-in fade-in slide-in-from-left-2 duration-500">
+                <span className={`${sidebarDark ? 'text-white' : 'text-slate-900'} font-black text-base tracking-tight uppercase leading-none`}>Vigilante</span>
+                <span className="text-blue-500 text-[9px] font-black tracking-[0.2em] uppercase mt-0.5 opacity-80">MUNICIPAL</span>
               </div>
             )}
+
+            {/* Collapse Toggle Button (Desktop Only) */}
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className={`hidden lg:flex absolute -right-3 top-8 h-6 w-6 rounded-full border shadow-sm items-center justify-center transition-all z-20 hover:scale-110
+                ${sidebarDark ? 'bg-[#0f172a] border-white/10 text-slate-400 hover:text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-blue-600'}`}
+              title={isSidebarCollapsed ? "Expandir Menu" : "Recolher Menu"}
+            >
+              {isSidebarCollapsed ? <ChevronRight size={14} /> : <ArrowLeft size={14} />}
+            </button>
           </div>
-          <nav className={`flex-1 overflow-y-auto no-scrollbar pt-4 ${isSidebarCollapsed ? 'px-0' : 'px-4 space-y-1'}`}>
+
+          {/* Navigation Section */}
+          <nav className={`flex-1 overflow-y-auto no-scrollbar py-4 custom-scrollbar ${isSidebarCollapsed ? 'px-2' : 'px-3 space-y-1'}`}>
             {renderMenuItems(MENU_STRUCTURE)}
 
-            <div className={`mt-8 pt-4 border-t ${sidebarDark ? 'border-white/5' : 'border-slate-200'}`}>
-              <NavItem icon={<LogOut className="rotate-180" />} label="Sair do Sistema" onClick={handleLogout} collapsed={isSidebarCollapsed} sidebarDark={sidebarDark} />
+            <div className={`mt-10 pt-6 border-t ${sidebarDark ? 'border-white/5' : 'border-slate-200'}`}>
+              <NavItem
+                icon={<LogOut size={20} className="rotate-180" />}
+                label="Sair do Sistema"
+                onClick={handleLogout}
+                collapsed={isSidebarCollapsed}
+                sidebarDark={sidebarDark}
+              />
               {!isSidebarCollapsed && (
-                <div className="py-2 text-center group-hover:opacity-100 transition-opacity duration-700">
-                  <p className={`text-[11px] font-sans font-black mt-1 tracking-widest ${sidebarDark ? 'text-white/70' : 'text-slate-400'}`}>
+                <div className="mt-4 px-4 py-2 border border-slate-200/50 dark:border-white/5 rounded-xl bg-slate-500/5">
+                  <p className={`text-[10px] font-sans font-black text-center tracking-widest opacity-40 ${sidebarDark ? 'text-white' : 'text-slate-900'}`}>
                     {DISPLAY_VERSION}
                   </p>
                 </div>
