@@ -3083,6 +3083,29 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     </div>
                 )
             }
+            {showVehicleStartModal && vehicleStartData && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6">
+                        <h3 className="text-lg font-black uppercase text-slate-800 dark:text-slate-200 mb-4">Dados do Veículo</h3>
+                        <p className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-4">{vehicleStartData.model}</p>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase mb-2">KM Atual: {vehicleStartData.currentKm}</label>
+                                <label className="block text-xs font-black text-slate-500 uppercase mb-2">KM Inicial da Cautela</label>
+                                <input type="number" value={vehicleStartData.manualKm} onChange={(e) => setVehicleStartData({ ...vehicleStartData, manualKm: Number(e.target.value) })} className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-bold bg-white dark:bg-slate-800" placeholder="Digite o KM inicial" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase mb-2">Motivo da Cautela</label>
+                                <input type="text" value={vehicleStartData.reason || ''} onChange={(e) => setVehicleStartData({ ...vehicleStartData, reason: e.target.value.toUpperCase() })} className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-bold bg-white dark:bg-slate-800 uppercase" placeholder="MOTIVO DA SAÍDA" />
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button onClick={() => { setShowVehicleStartModal(false); setVehicleStartData(null); }} className="flex-1 px-4 py-2 text-sm font-bold uppercase text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">Cancelar</button>
+                            <button onClick={() => { if (vehicleStartData.manualKm && vehicleStartData.reason) { confirmCreationStep(vehicleStartData.manualKm, vehicleStartData.reason); } else { alert('Preencha o KM e o motivo'); } }} disabled={!vehicleStartData.manualKm || !vehicleStartData.reason} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-black uppercase hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">Confirmar</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {
                 showQRScanner && (
