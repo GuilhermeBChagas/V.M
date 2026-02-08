@@ -640,7 +640,7 @@ const IncidentHistory: React.FC<{
       const rowHeight = (row as HTMLElement).offsetHeight;
       const incident = displayIncidents[index];
 
-      if ((currentHeight + rowHeight > availableHeightPx || currentChunk.length >= 14) && currentChunk.length > 0) {
+      if ((currentHeight + rowHeight > availableHeightPx || currentChunk.length >= 15) && currentChunk.length > 0) {
         chunkedIncidents.push(currentChunk);
         currentChunk = [incident];
         currentHeight = rowHeight;
@@ -675,8 +675,8 @@ const IncidentHistory: React.FC<{
       let current: Incident[] = [];
       displayIncidents.forEach((item, idx) => {
         current.push(item);
-        // User requested maximum of 14 lines/records per page
-        if (current.length >= 14 || idx === displayIncidents.length - 1) {
+        // User requested maximum of 15 lines/records per page
+        if (current.length >= 15 || idx === displayIncidents.length - 1) {
           chunks.push(current);
           current = [];
         }
@@ -1122,6 +1122,54 @@ const IncidentHistory: React.FC<{
               <div className="flex items-center gap-4">
                 <div className="h-10 w-px bg-slate-200 dark:bg-slate-800 hidden md:block mx-2"></div>
                 <button
+                  onClick={async () => {
+                    const reportContainer = document.querySelector('.report-preview-container');
+                    if (!reportContainer || typeof html2pdf === 'undefined') return;
+
+                    try {
+                      const element = reportContainer as HTMLElement;
+                      await html2pdf().set({
+                        margin: 0,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 3, useCORS: true, scrollY: 0 }
+                      }).from(element).toCanvas().get('canvas').then(async (canvas: HTMLCanvasElement) => {
+                        canvas.toBlob(async (blob: Blob | null) => {
+                          if (!blob) return;
+
+                          const fileName = `Relatorio_Geral_${new Date().toISOString().split('T')[0]}.jpg`;
+                          const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+                          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                            try {
+                              await navigator.share({
+                                files: [file],
+                                title: 'Relatório Geral de Atendimentos',
+                                text: 'Segue o Relatório Geral de Atendimentos em anexo.'
+                              });
+                            } catch (err) {
+                              console.error('Erro ao compartilhar:', err);
+                            }
+                          } else {
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(blob);
+                            link.download = fileName;
+                            link.click();
+                            URL.revokeObjectURL(link.href);
+                          }
+                        }, 'image/jpeg', 0.95);
+                      });
+                    } catch (err) {
+                      console.error('Erro ao gerar imagem para compartilhamento:', err);
+                    }
+                  }}
+                  className="px-6 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 transition-all hover:border-brand-400 hover:text-brand-600 dark:hover:border-brand-500 dark:hover:text-brand-400 shadow-sm active:scale-95"
+                >
+                  <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  Compartilhar
+                </button>
+                <button
                   onClick={handleExportPDF}
                   disabled={isExporting}
                   className="px-8 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 transition-all shadow-xl shadow-brand-500/30 active:scale-95 disabled:opacity-50 disabled:cursor-wait"
@@ -1182,7 +1230,7 @@ const IncidentHistory: React.FC<{
                 </section>
               </div>
 
-              <div className="flex-1 bg-[#F3F4F6] dark:bg-slate-950 p-12 overflow-y-auto no-scrollbar scroll-smooth flex flex-col items-center">
+              <div className="flex-1 bg-[#F3F4F6] dark:bg-slate-950 p-12 overflow-y-auto no-scrollbar scroll-smooth flex flex-col items-center report-preview-container">
                 {(() => {
                   let chunks: Incident[][] = (window as any)._measuredChunks;
 
@@ -1191,7 +1239,7 @@ const IncidentHistory: React.FC<{
                     let current: Incident[] = [];
                     displayIncidents.forEach((item, idx) => {
                       current.push(item);
-                      if (current.length >= 14 || idx === displayIncidents.length - 1) {
+                      if (current.length >= 15 || idx === displayIncidents.length - 1) {
                         chunks.push(current);
                         current = [];
                       }
