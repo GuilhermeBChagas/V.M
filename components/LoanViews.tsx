@@ -3083,25 +3083,174 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     </div>
                 )
             }
+
             {showVehicleStartModal && vehicleStartData && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6">
-                        <h3 className="text-lg font-black uppercase text-slate-800 dark:text-slate-200 mb-4">Dados do Ve�culo</h3>
-                        <p className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-4">{vehicleStartData.model}</p>
-                        <div className="space-y-4">
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 bg-blue-100 text-blue-600 rounded-full"><Car size={24} /></div>
                             <div>
-                                <label className="block text-xs font-black text-slate-500 uppercase mb-2">KM Atual: {vehicleStartData.currentKm}</label>
-                                <label className="block text-xs font-black text-slate-500 uppercase mb-2">KM Inicial da Cautela</label>
-                                <input type="number" value={vehicleStartData.manualKm} onChange={(e) => setVehicleStartData({ ...vehicleStartData, manualKm: Number(e.target.value) })} className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-bold bg-white dark:bg-slate-800" placeholder="Digite o KM inicial" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-black text-slate-500 uppercase mb-2">Motivo da Cautela</label>
-                                <input type="text" value={vehicleStartData.reason || ''} onChange={(e) => setVehicleStartData({ ...vehicleStartData, reason: e.target.value.toUpperCase() })} className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-bold bg-white dark:bg-slate-800 uppercase" placeholder="MOTIVO DA SA�DA" />
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Saída de Viatura</h3>
+                                <p className="text-xs text-slate-500 uppercase">{vehicleStartData.model}</p>
                             </div>
                         </div>
-                        <div className="flex gap-3 mt-6">
-                            <button onClick={() => { setShowVehicleStartModal(false); setVehicleStartData(null); }} className="flex-1 px-4 py-2 text-sm font-bold uppercase text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">Cancelar</button>
-                            <button onClick={() => { if (vehicleStartData.manualKm && vehicleStartData.reason) { confirmCreationStep(vehicleStartData.manualKm, vehicleStartData.reason); } else { alert('Preencha o KM e o motivo'); } }} disabled={!vehicleStartData.manualKm || !vehicleStartData.reason} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-black uppercase hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">Confirmar</button>
+
+                        <div className="mb-6">
+                            <label className="block text-xs font-black text-slate-500 uppercase mb-1">Quilometragem Inicial (KM)</label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={vehicleStartData.manualKm ? vehicleStartData.manualKm.toLocaleString('pt-BR') : ''}
+                                    onChange={(e) => {
+                                        const rawValue = e.target.value.replace(/\D/g, '');
+                                        const numeric = rawValue ? parseInt(rawValue) : 0;
+                                        setVehicleStartData({ ...vehicleStartData, manualKm: numeric });
+                                    }}
+                                    className={`w-full pl-10 p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 font-bold text-lg outline-none focus:ring-2 transition-all ${vehicleStartData.manualKm < vehicleStartData.currentKm
+                                        ? 'border-red-300 focus:ring-red-500 text-red-600'
+                                        : 'border-slate-300 dark:border-slate-600 focus:ring-blue-500 text-slate-800 dark:text-white'
+                                        }`}
+                                />
+                                <Gauge className="absolute left-3 top-3.5 text-slate-400" size={20} />
+                            </div>
+
+                            {/* Visual Validation & Mask Display */}
+                            <div className="mt-3">
+                                {vehicleStartData.manualKm < vehicleStartData.currentKm ? (
+                                    <div className="flex items-start gap-2 text-red-600 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-100 dark:border-red-900">
+                                        <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase">KM Inconsistente</p>
+                                            <p className="text-[10px]">Valor menor que a última utilização ({vehicleStartData.currentKm.toLocaleString('pt-BR')} KM).</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-between text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg border border-emerald-100 dark:border-emerald-900">
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle size={16} />
+                                            <span className="text-[10px] font-black uppercase">Quilometragem Validada</span>
+                                        </div>
+                                        {vehicleStartData.manualKm > vehicleStartData.currentKm && (
+                                            <span className="text-[10px] font-mono font-bold">+{vehicleStartData.manualKm - vehicleStartData.currentKm} Km</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="block text-xs font-black text-slate-500 uppercase mb-1">Motivo da Saída</label>
+                            <input
+                                type="text"
+                                value={vehicleStartData.reason || ''}
+                                onChange={(e) => setVehicleStartData({ ...vehicleStartData, reason: e.target.value.toUpperCase() })}
+                                className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-bold bg-white dark:bg-slate-800 uppercase"
+                                placeholder="MOTIVO DA SAÍDA"
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                            <button onClick={() => setShowVehicleStartModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                            <button
+                                onClick={() => {
+                                    if (vehicleStartData.manualKm && vehicleStartData.reason) {
+                                        confirmCreationStep(vehicleStartData.manualKm, vehicleStartData.reason);
+                                    } else {
+                                        alert('Preencha o KM e o motivo');
+                                    }
+                                }}
+                                disabled={isSubmitting || vehicleStartData.manualKm < vehicleStartData.currentKm || !vehicleStartData.reason}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                            >
+                                {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : null}
+                                {isSubmitting ? 'Confirmando...' : 'Confirmar Saída'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showVehicleStartModal && vehicleStartData && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 bg-blue-100 text-blue-600 rounded-full"><Car size={24} /></div>
+                            <div>
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Saída de Viatura</h3>
+                                <p className="text-xs text-slate-500 uppercase">{vehicleStartData.model}</p>
+                            </div>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="block text-xs font-black text-slate-500 uppercase mb-1">Quilometragem Inicial (KM)</label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={vehicleStartData.manualKm ? vehicleStartData.manualKm.toLocaleString('pt-BR') : ''}
+                                    onChange={(e) => {
+                                        const rawValue = e.target.value.replace(/\D/g, '');
+                                        const numeric = rawValue ? parseInt(rawValue) : 0;
+                                        setVehicleStartData({ ...vehicleStartData, manualKm: numeric });
+                                    }}
+                                    className={`w-full pl-10 p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 font-bold text-lg outline-none focus:ring-2 transition-all ${vehicleStartData.manualKm < vehicleStartData.currentKm
+                                            ? 'border-red-300 focus:ring-red-500 text-red-600'
+                                            : 'border-slate-300 dark:border-slate-600 focus:ring-blue-500 text-slate-800 dark:text-white'
+                                        }`}
+                                />
+                                <Gauge className="absolute left-3 top-3.5 text-slate-400" size={20} />
+                            </div>
+
+                            {/* Visual Validation & Mask Display */}
+                            <div className="mt-3">
+                                {vehicleStartData.manualKm < vehicleStartData.currentKm ? (
+                                    <div className="flex items-start gap-2 text-red-600 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-100 dark:border-red-900">
+                                        <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase">KM Inconsistente</p>
+                                            <p className="text-[10px]">Valor menor que a última utilização ({vehicleStartData.currentKm.toLocaleString('pt-BR')} KM).</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-between text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg border border-emerald-100 dark:border-emerald-900">
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle size={16} />
+                                            <span className="text-[10px] font-black uppercase">Quilometragem Validada</span>
+                                        </div>
+                                        {vehicleStartData.manualKm > vehicleStartData.currentKm && (
+                                            <span className="text-[10px] font-mono font-bold">+{vehicleStartData.manualKm - vehicleStartData.currentKm} Km</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="block text-xs font-black text-slate-500 uppercase mb-1">Motivo da Saída</label>
+                            <input
+                                type="text"
+                                value={vehicleStartData.reason || ''}
+                                onChange={(e) => setVehicleStartData({ ...vehicleStartData, reason: e.target.value.toUpperCase() })}
+                                className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-bold bg-white dark:bg-slate-800 uppercase"
+                                placeholder="MOTIVO DA SAÍDA"
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                            <button onClick={() => setShowVehicleStartModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                            <button
+                                onClick={() => {
+                                    if (vehicleStartData.manualKm && vehicleStartData.reason) {
+                                        confirmCreationStep(vehicleStartData.manualKm, vehicleStartData.reason);
+                                    } else {
+                                        alert('Preencha o KM e o motivo');
+                                    }
+                                }}
+                                disabled={isSubmitting || vehicleStartData.manualKm < vehicleStartData.currentKm || !vehicleStartData.reason}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                            >
+                                {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : null}
+                                {isSubmitting ? 'Confirmando...' : 'Confirmar Saída'}
+                            </button>
                         </div>
                     </div>
                 </div>
