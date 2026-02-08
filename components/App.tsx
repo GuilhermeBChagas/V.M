@@ -511,7 +511,7 @@ const IncidentHistory: React.FC<{
                     return (
                       <>
                         <th className={`p-3 text-[10px] font-black uppercase text-left border-r border-slate-700`} style={{ width: isPortrait ? '50px' : '80px' }}>R.A</th>
-                        <th className={`p-3 text-[10px] font-black uppercase text-left border-r border-slate-700`} style={{ width: isPortrait ? '100px' : '150px' }}>Próprio</th>
+                        <th className={`p-3 text-[10px] font-black uppercase text-left border-r border-slate-700`} style={{ width: isPortrait ? '130px' : '200px' }}>Próprio</th>
                         <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '60px' : '90px' }}>Data</th>
                         <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '45px' : '70px' }}>Início</th>
                         <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '45px' : '70px' }}>Fim</th>
@@ -533,7 +533,7 @@ const IncidentHistory: React.FC<{
                         return (
                           <>
                             <td className={`p-2 text-[9px] font-black border-x border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : 'text-slate-900'}`} style={{ width: isPortrait ? '50px' : '80px' }}>{i.raCode}</td>
-                            <td className={`p-2 text-[9px] font-bold uppercase border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : 'text-slate-700'}`} style={{ width: isPortrait ? '100px' : '150px' }}>{building?.name || '---'}</td>
+                            <td className={`p-2 text-[9px] font-bold uppercase border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : 'text-slate-700'}`} style={{ width: isPortrait ? '130px' : '200px' }}>{building?.name || '---'}</td>
                             <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '60px' : '90px' }}>{formatDateBR(i.date)}</td>
                             <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '45px' : '70px' }}>{i.startTime}</td>
                             <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '45px' : '70px' }}>{i.endTime || '--:--'}</td>
@@ -1235,7 +1235,7 @@ const IncidentHistory: React.FC<{
               return (
                 <tr key={i.id} className="incident-row">
                   <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '50px' : '80px' }}>{i.raCode}</td>
-                  <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '100px' : '150px' }}>{building?.name}</td>
+                  <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '130px' : '200px' }}>{building?.name}</td>
                   <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '80px' : '130px' }}>{i.alterationType}</td>
                   <td className="p-2 text-[8px] whitespace-pre-wrap break-words">
                     {i.status === 'CANCELLED' && <span>[CANCELADO] </span>}
