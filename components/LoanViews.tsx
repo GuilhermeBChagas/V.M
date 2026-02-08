@@ -389,11 +389,14 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
         if (!receiverId || selectedAssets.length === 0) return alert("Selecione um recebedor e ao menos um item.");
 
         const vehicleAssets = selectedAssets.filter(a => a.type === 'VEHICLE');
+        console.log('📊 Veículos encontrados:', vehicleAssets.length);
 
         if (vehicleAssets.length > 0) {
+            console.log('🚗 Iniciando processo com veículos...');
             // Start the queue process
             processNextCreationStep(vehicleAssets, {});
         } else {
+            console.log('✅ Sem veículos, criando cautela diretamente...');
             // No vehicles, regular creation
             await finalProcessLoanCreation({});
         }
@@ -416,6 +419,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
     };
 
     const finalProcessLoanCreation = async (vehicleData: Record<string, { km: number, reason: string }>) => {
+        console.log('💾 finalProcessLoanCreation INICIADO', { vehicleData });
         setIsSubmitting(true);
         const batchId = generateUUID();
         const receiver = users.find(u => u.id === receiverId);
