@@ -639,8 +639,8 @@ const IncidentHistory: React.FC<{
     rows.forEach((row, index) => {
       const incident = displayIncidents[index];
 
-      // Use ONLY the 15-row limit, ignore height calculations
-      if (currentChunk.length >= 15 && currentChunk.length > 0) {
+      // Use ONLY the 13-row limit, ignore height calculations
+      if (currentChunk.length >= 13 && currentChunk.length > 0) {
         chunkedIncidents.push(currentChunk);
         currentChunk = [incident];
       } else {
@@ -673,8 +673,8 @@ const IncidentHistory: React.FC<{
       let current: Incident[] = [];
       displayIncidents.forEach((item, idx) => {
         current.push(item);
-        // User requested maximum of 15 lines/records per page
-        if (current.length >= 15 || idx === displayIncidents.length - 1) {
+        // User requested maximum of 13 lines/records per page
+        if (current.length >= 13 || idx === displayIncidents.length - 1) {
           chunks.push(current);
           current = [];
         }
@@ -1237,7 +1237,7 @@ const IncidentHistory: React.FC<{
                     let current: Incident[] = [];
                     displayIncidents.forEach((item, idx) => {
                       current.push(item);
-                      if (current.length >= 15 || idx === displayIncidents.length - 1) {
+                      if (current.length >= 13 || idx === displayIncidents.length - 1) {
                         chunks.push(current);
                         current = [];
                       }
