@@ -139,12 +139,12 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding,
 
     if (validBuildings.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 h-[500px]">
-                <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full mb-4">
-                    <MapPin size={48} className="text-slate-400" />
+            <div className="flex flex-col items-center justify-center p-6 md:p-12 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 h-[400px] md:h-[500px]">
+                <div className="p-3 md:p-4 bg-slate-100 dark:bg-slate-800 rounded-full mb-4">
+                    <MapPin size={32} className="text-slate-400 md:size-12" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">Nenhuma Geolocalização Encontrada</h3>
-                <p className="text-sm text-slate-500 max-w-xs text-center mt-2">
+                <h3 className="text-base md:text-lg font-bold text-slate-700 dark:text-slate-300 text-center">Nenhuma Geolocalização Encontrada</h3>
+                <p className="text-[11px] md:text-sm text-slate-500 max-w-xs text-center mt-2">
                     Nenhum dos prédios cadastrados possui coordenadas de latitude e longitude válidas. Edite os cadastros para visualizar no mapa.
                 </p>
             </div>
@@ -161,14 +161,14 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding,
                     </button>
                 </div>
             )}
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 no-print transition-all">
+            <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 no-print transition-all">
                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
-                        <MapPin size={22} strokeWidth={2} />
+                    <div className="p-2 md:p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                        <MapPin size={20} className="md:size-22" strokeWidth={2} />
                     </div>
-                    <div>
-                        <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">Mapa de Prédios</h2>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
+                    <div className="flex-1">
+                        <h2 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-none">Mapa de Prédios</h2>
+                        <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">
                             {validBuildings.length} Locais Mapeados
                         </p>
                     </div>
@@ -178,15 +178,15 @@ export const MapView: React.FC<MapViewProps> = ({ buildings, onNavigateBuilding,
                     <button
                         onClick={handleLocateUser}
                         disabled={isLocating}
-                        className="flex-1 sm:flex-none px-4 py-2.5 bg-brand-600 text-white rounded-xl text-xs font-black uppercase hover:bg-brand-700 flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+                        className="w-full sm:w-auto px-4 py-2.5 bg-brand-600 text-white rounded-xl text-[10px] md:text-xs font-black uppercase hover:bg-brand-700 flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
                     >
-                        {isLocating ? <Loader2 size={16} className="animate-spin" /> : <Crosshair size={16} />}
+                        {isLocating ? <Loader2 size={14} className="animate-spin" /> : <Crosshair size={14} />}
                         Minha Localização (GPS)
                     </button>
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden h-[70vh] md:h-[600px] relative z-0 transition-all">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden h-[60vh] md:h-[600px] relative z-0 transition-all w-full max-w-full">
                 <MapContainer
                     center={defaultCenter}
                     zoom={13}
