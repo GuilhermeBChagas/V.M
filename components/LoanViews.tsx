@@ -17,6 +17,19 @@ import CryptoJS from 'crypto-js';
 
 declare var html2pdf: any;
 
+const generateUUID = () => {
+    try {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+    } catch (e) { }
+    // Fallback: simple random string
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+};
+
 type LoanGroup = {
     type: 'PENDING' | 'ACTIVE' | 'HISTORY';
     receiverId: string;
@@ -402,7 +415,7 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
 
     const finalProcessLoanCreation = async (vehicleData: Record<string, { km: number, reason: string }>) => {
         setIsSubmitting(true);
-        const batchId = crypto.randomUUID();
+        const batchId = generateUUID();
         const receiver = users.find(u => u.id === receiverId);
 
         // Fetch IP for Audit
@@ -1418,6 +1431,18 @@ export const LoanViews: React.FC<LoanViewsProps> = ({
                     </div>
                 )}
 
+
+                {/* Header Title (Contextual) */}
+                {!showTabs && (
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                            {activeTab === 'NEW' ? <Plus size={18} /> : (activeTab === 'HISTORY' ? <History size={18} /> : <Shield size={18} />)}
+                        </div>
+                        <h2 className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200">
+                            {activeTab === 'NEW' ? 'Nova Cautela' : (activeTab === 'HISTORY' ? 'Histórico de Cautelas' : 'Monitoramento de Ativos')}
+                        </h2>
+                    </div>
+                )}
 
                 {/* Tabs */}
                 {showTabs && activeTab !== 'NEW' && false && (

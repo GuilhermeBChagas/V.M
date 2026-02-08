@@ -1701,6 +1701,7 @@ export function App() {
   const [pendingSubTab, setPendingSubTab] = useState<'INCIDENTS' | 'LOANS'>('INCIDENTS');
   const [openMenus, setOpenMenus] = useState<string[]>([]);
   const [viewHistory, setViewHistory] = useState<ViewState[]>([]);
+  const [viewRefreshCounter, setViewRefreshCounter] = useState(0);
 
   // Data States
   const [sectors, setSectors] = useState<Sector[]>([]);
@@ -2242,6 +2243,7 @@ export function App() {
   const handleNavigate = (newView: ViewState, skipHistory = false) => {
     if (!skipHistory) setViewHistory(prev => [...prev, view]);
     setView(newView);
+    setViewRefreshCounter(prev => prev + 1);
     setSidebarOpen(false);
   };
 
@@ -3224,6 +3226,7 @@ export function App() {
                 />
               ) : (
                 <LoanViews
+                  key={`pending-loans-${viewRefreshCounter}`}
                   currentUser={user!}
                   users={users}
                   vehicles={vehicles}
@@ -3260,9 +3263,9 @@ export function App() {
       case 'RADIO_FORM': return <RadioForm initialData={editingRadio} onSave={(i: any) => handleSaveAsset('radios', i, 'RADIOS', 'Rádio')} onCancel={handleBack} onDelete={() => editingRadio && handleDeleteAsset('radios', editingRadio.id, 'Rádio')} isLoading={saving} />;
       case 'EQUIPMENTS': return <EquipmentList items={equipments} onAdd={() => { setEditingEquipment(null); handleNavigate('EQUIPMENT_FORM'); }} onEdit={(i) => { setEditingEquipment(i); handleNavigate('EQUIPMENT_FORM'); }} onDelete={(id) => handleDeleteAsset('equipments', id, 'Equipamento')} canEdit={can('MANAGE_EQUIPMENTS')} canDelete={can('MANAGE_EQUIPMENTS')} onBack={handleBack} />;
       case 'EQUIPMENT_FORM': return <EquipmentForm initialData={editingEquipment} onSave={(i: any) => handleSaveAsset('equipments', i, 'EQUIPMENTS', 'Equipamento')} onCancel={handleBack} onDelete={() => editingEquipment && handleDeleteAsset('equipments', editingEquipment.id, 'Equipamento')} isLoading={saving} />;
-      case 'NEW_LOAN': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} initialTab="NEW" filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} onBack={handleBack} />;
-      case 'LOANS': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} onBack={handleBack} />;
-      case 'LOAN_HISTORY': return <LoanViews currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} initialTab="HISTORY" loans={loans} onRefresh={() => fetchLoans(false)} hasMore={hasMoreLoans} isLoadingMore={loadingMoreLoans} onLoadMore={() => fetchLoans(true)} onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} onBack={handleBack} />;
+      case 'NEW_LOAN': return <LoanViews key={`new-loan-${viewRefreshCounter}`} currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} initialTab="NEW" filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} onBack={handleBack} />;
+      case 'LOANS': return <LoanViews key={`active-loans-${viewRefreshCounter}`} currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} loans={loans} onRefresh={() => fetchLoans(false)} filterStatus="ACTIVE" onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} onBack={handleBack} />;
+      case 'LOAN_HISTORY': return <LoanViews key={`loan-history-${viewRefreshCounter}`} currentUser={user!} users={users} vehicles={vehicles} vests={vests} radios={radios} equipments={equipments} onLogAction={createLog} initialTab="HISTORY" loans={loans} onRefresh={() => fetchLoans(false)} hasMore={hasMoreLoans} isLoadingMore={loadingMoreLoans} onLoadMore={() => fetchLoans(true)} onShowConfirm={showConfirm} canCreate={can('CREATE_LOAN')} canApprove={can('APPROVE_LOAN')} canReturn={can('RETURN_LOAN')} canViewHistory={can('VIEW_MY_LOANS') || can('VIEW_ALL_LOANS')} canViewAll={can('VIEW_ALL_LOANS')} customLogo={customLogoRight} customLogoLeft={customLogoLeft} onFilterChange={(f) => fetchLoans(false, f)} onBack={handleBack} />;
       case 'SECTORS': return <SectorList sectors={sectors} onEdit={(s) => { setEditingSector(s); handleNavigate('SECTOR_FORM'); }} onDelete={handleDeleteSector} onAdd={() => { setEditingSector(null); handleNavigate('SECTOR_FORM'); }} canEdit={can('MANAGE_SECTORS')} canDelete={can('MANAGE_SECTORS')} onBack={handleBack} />;
       case 'SECTOR_FORM': return <SectorForm initialData={editingSector} onSave={handleSaveSector} onCancel={handleBack} onDelete={handleDeleteSector} />;
       case 'ALTERATION_TYPES': return <AlterationTypeManager types={alterationTypes} onAdd={async (name) => { const newType = { id: crypto.randomUUID(), name, order: alterationTypes.length }; await handleSaveAlterationType(newType); }} onEdit={(t) => { setEditingAlterationType(t); setView('ALTERATION_TYPE_FORM'); }} onDelete={handleDeleteAlterationType} onReorder={handleReorderAlterationTypes} canManage={can('MANAGE_ALTERATION_TYPES')} onBack={handleBack} />;
