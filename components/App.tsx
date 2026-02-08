@@ -503,53 +503,58 @@ const IncidentHistory: React.FC<{
               </div>
             </div>
 
-            <table className="w-full border-collapse border-b-2 border-slate-900">
-              <thead style={{ display: 'table-header-group' }}>
-                <tr className="bg-slate-900 text-white">
-                  {(() => {
-                    const isPortrait = pdfOrientation === 'portrait';
-                    return (
-                      <>
-                        <th className={`p-3 text-[10px] font-black uppercase text-left border-r border-slate-700`} style={{ width: isPortrait ? '50px' : '80px' }}>R.A</th>
-                        <th className={`p-3 text-[10px] font-black uppercase text-left border-r border-slate-700`} style={{ width: isPortrait ? '100px' : '150px' }}>Próprio</th>
-                        <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '60px' : '90px' }}>Data</th>
-                        <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '45px' : '70px' }}>Início</th>
-                        <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '45px' : '70px' }}>Fim</th>
-                        <th className={`p-3 text-[10px] font-black uppercase text-center border-r border-slate-700`} style={{ width: isPortrait ? '80px' : '130px' }}>Natureza</th>
-                        <th className="p-3 text-[10px] font-black uppercase text-left">Relato</th>
-                      </>
-                    );
-                  })()}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {chunk.map(i => {
-                  const building = buildings.find(b => b.id === i.buildingId);
-                  return (
-                    <tr key={i.id} style={{ pageBreakInside: 'avoid' }} className="hover:bg-slate-50 transition-colors break-inside-avoid">
-                      {/* Calculated styling for columns */}
-                      {(() => {
-                        const isPortrait = pdfOrientation === 'portrait';
-                        return (
-                          <>
-                            <td className={`p-2 text-[9px] font-black border-x border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : 'text-slate-900'}`} style={{ width: isPortrait ? '50px' : '80px' }}>{i.raCode}</td>
-                            <td className={`p-2 text-[9px] font-bold uppercase border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : 'text-slate-700'}`} style={{ width: isPortrait ? '100px' : '150px' }}>{building?.name || '---'}</td>
-                            <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '60px' : '90px' }}>{formatDateBR(i.date)}</td>
-                            <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '45px' : '70px' }}>{i.startTime}</td>
-                            <td className={`p-2 text-[9px] font-bold text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '45px' : '70px' }}>{i.endTime || '--:--'}</td>
-                            <td className={`p-2 text-[8px] font-black uppercase text-center border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : 'text-slate-900'}`} style={{ width: isPortrait ? '80px' : '130px' }}>{i.alterationType}</td>
-                            <td className={`p-2 text-[8px] leading-tight align-top whitespace-pre-wrap break-words border-r border-slate-200 ${i.status === 'CANCELLED' ? 'text-red-600 font-bold' : 'font-medium'}`}>
-                              {i.status === 'CANCELLED' && <span className="text-red-700 font-black mr-1">[CANCELADO]</span>}
-                              {i.status !== 'CANCELLED' && i.description}
-                            </td>
-                          </>
-                        );
-                      })()}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            {/* --- INCIDENT BLOCKS (NEW CARD-BASED LAYOUT) --- */}
+            <div className="space-y-4">
+              {chunk.map(i => {
+                const building = buildings.find(b => b.id === i.buildingId);
+                const isCancelled = i.status === 'CANCELLED';
+                return (
+                  <div
+                    key={i.id}
+                    className={`incident-block border ${isCancelled ? 'border-red-200 bg-red-50/20' : 'border-slate-200'} rounded-xl overflow-hidden shadow-sm`}
+                    style={{ pageBreakInside: 'avoid' }}
+                  >
+                    {/* Block Header: Metadata */}
+                    <div className={`flex items-center justify-between px-3 py-2 border-b ${isCancelled ? 'bg-red-100/50 border-red-200' : 'bg-slate-50 border-slate-200'}`}>
+                      <div className="flex items-center gap-4">
+                        <span className={`text-[10px] font-black uppercase tracking-tight ${isCancelled ? 'text-red-600 line-through' : 'text-slate-900'}`}>
+                          R.A {i.raCode}
+                        </span>
+                        <div className="w-px h-3 bg-slate-300 mx-1"></div>
+                        <span className={`text-[9px] font-bold uppercase ${isCancelled ? 'text-red-500 line-through' : 'text-slate-500'}`}>
+                          {formatDateBR(i.date)}
+                        </span>
+                        <div className="w-px h-3 bg-slate-300 mx-1"></div>
+                        <span className={`text-[9px] font-bold uppercase ${isCancelled ? 'text-red-500 line-through' : 'text-slate-500'}`}>
+                          {i.startTime} {i.endTime ? `às ${i.endTime}` : ''}
+                        </span>
+                      </div>
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg ${isCancelled ? 'bg-red-200 text-red-700' : 'bg-brand-100 text-brand-700'}`}>
+                        {i.alterationType}
+                      </span>
+                    </div>
+
+                    {/* Block Body: Content */}
+                    <div className="p-3 bg-white">
+                      <div className="mb-2">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Próprio Municipal / Local:</span>
+                        <p className={`text-[10px] font-black uppercase ${isCancelled ? 'text-red-600 line-through' : 'text-slate-800'}`}>
+                          {building?.name || '---'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Relato do Atendimento:</span>
+                        <div className={`text-[9px] leading-relaxed whitespace-pre-wrap break-words ${isCancelled ? 'text-red-600 font-bold italic' : 'text-slate-700 font-medium'}`}>
+                          {isCancelled && <span className="font-black mr-1">[REGISTRO CANCELADO]</span>}
+                          {i.description}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {!hideFooter && (
@@ -617,7 +622,7 @@ const IncidentHistory: React.FC<{
     const MM_TO_PX = 3.78;
     const availableHeightPx = AVAILABLE_HEIGHT_MM * MM_TO_PX;
 
-    const rows = Array.from(measureRef.current.querySelectorAll('tr.incident-row'));
+    const rows = Array.from(measureRef.current.querySelectorAll('.incident-block'));
     const chunkedIncidents: Incident[][] = [];
     let currentChunk: Incident[] = [];
     let currentHeight = 0;
@@ -1227,25 +1232,29 @@ const IncidentHistory: React.FC<{
           paddingRight: `${pdfMargins.right}${pdfUnit}`
         }}
       >
-        <table className="w-full border-collapse">
-          <tbody>
-            {displayIncidents.map(i => {
-              const building = buildings.find(b => b.id === i.buildingId);
-              const isPortrait = pdfOrientation === 'portrait';
-              return (
-                <tr key={i.id} className="incident-row">
-                  <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '50px' : '80px' }}>{i.raCode}</td>
-                  <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '100px' : '150px' }}>{building?.name}</td>
-                  <td className={`p-2 text-[9px] ${i.status === 'CANCELLED' ? 'text-red-600 line-through' : ''}`} style={{ width: isPortrait ? '80px' : '130px' }}>{i.alterationType}</td>
-                  <td className="p-2 text-[8px] whitespace-pre-wrap break-words">
-                    {i.status === 'CANCELLED' && <span>[CANCELADO] </span>}
-                    {i.status !== 'CANCELLED' && i.description}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="w-full space-y-4">
+          {displayIncidents.map(i => {
+            const building = buildings.find(b => b.id === i.buildingId);
+            const isCancelled = i.status === 'CANCELLED';
+            return (
+              <div
+                key={i.id}
+                className="incident-block border border-slate-200 rounded-xl overflow-hidden"
+              >
+                <div className="flex items-center justify-between px-3 py-2 border-b bg-slate-50 border-slate-200">
+                  <span className="text-[10px] font-black uppercase tracking-tight">R.A {i.raCode}</span>
+                  <span className="text-[9px] font-black uppercase">{i.alterationType}</span>
+                </div>
+                <div className="p-3 bg-white">
+                  <p className="text-[10px] font-black mb-2 uppercase">{building?.name}</p>
+                  <div className="text-[9px] leading-relaxed whitespace-pre-wrap break-words">
+                    {i.description}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
