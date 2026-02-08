@@ -1188,7 +1188,7 @@ const IncidentHistory: React.FC<{
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* Margin Controls Bar */}
               <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-8 py-4">
-                <div className="flex items-center gap-8">
+                <div className="flex items-center gap-8 flex-wrap">
                   {/* Margin Presets */}
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
@@ -1200,6 +1200,24 @@ const IncidentHistory: React.FC<{
                       <button onClick={() => applyPreset('narrow')} className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-lg transition-all ${pdfMargins.top === 5 ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50 dark:hover:bg-slate-700/50'}`}>Estreita</button>
                       <button onClick={() => applyPreset('none')} className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-lg transition-all ${pdfMargins.top === 0 ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-600' : 'text-slate-500 hover:bg-white/50 dark:hover:bg-slate-700/50'}`}>Zero</button>
                     </div>
+                  </div>
+
+                  {/* Manual Margin Inputs */}
+                  <div className="flex items-center gap-2">
+                    <label className="text-[9px] font-black text-slate-400 uppercase">Topo</label>
+                    <input type="number" value={pdfMargins.top} onChange={(e) => setPdfMargins({ ...pdfMargins, top: Number(e.target.value) })} className="w-14 px-2 py-1.5 text-center text-[10px] font-black border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-brand-500 bg-white dark:bg-slate-800" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[9px] font-black text-slate-400 uppercase">Fundo</label>
+                    <input type="number" value={pdfMargins.bottom} onChange={(e) => setPdfMargins({ ...pdfMargins, bottom: Number(e.target.value) })} className="w-14 px-2 py-1.5 text-center text-[10px] font-black border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-brand-500 bg-white dark:bg-slate-800" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[9px] font-black text-slate-400 uppercase">Esq.</label>
+                    <input type="number" value={pdfMargins.left} onChange={(e) => setPdfMargins({ ...pdfMargins, left: Number(e.target.value) })} className="w-14 px-2 py-1.5 text-center text-[10px] font-black border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-brand-500 bg-white dark:bg-slate-800" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[9px] font-black text-slate-400 uppercase">Dir.</label>
+                    <input type="number" value={pdfMargins.right} onChange={(e) => setPdfMargins({ ...pdfMargins, right: Number(e.target.value) })} className="w-14 px-2 py-1.5 text-center text-[10px] font-black border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-brand-500 bg-white dark:bg-slate-800" />
                   </div>
 
                   {/* Margin Guides Toggle */}
